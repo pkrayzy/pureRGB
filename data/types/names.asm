@@ -10,6 +10,9 @@ TypeNames:
 	dw .Typeless
 	dw .Bug
 	dw .Ghost
+	dw .Dragon
+	dw .Dark
+	dw .Steel
 	dw .Crystal
 	dw .Ground ; bonemerang type
 
@@ -25,7 +28,7 @@ ENDR
 	dw .Electric
 	dw .Psychic
 	dw .Ice
-	dw .Dragon
+	dw .Fairy
 
 	assert_table_length NUM_TYPES
 
@@ -45,6 +48,9 @@ ENDR
 .Bug:      db "BUG@"
 .Ghost:    db "GHOST@"
 .Dragon:   db "DRAGON@"
+.Dark	   db "DARK@"
+.Steel	   db "STEEL@"
+.Fairy	   db "FAIRY@"
 .Tri:      db "TRI@"
 .Crystal:  db "CRYSTAL@"
 .Floating: db "FLOATING@"

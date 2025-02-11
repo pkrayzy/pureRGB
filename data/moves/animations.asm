@@ -133,9 +133,9 @@ AttackAnimationPointers:
 	dw SwiftAnim
 	dw SkullBashAnim
 	dw SpikeCannonAnim
-	dw ConstrictAnim
+	dw HeadbuttAnim
 	dw AmnesiaAnim
-	dw KinesisAnim
+	dw BiteAnim
 	dw SoftboiledAnim
 	dw HiJumpKickAnim
 	dw GlareAnim

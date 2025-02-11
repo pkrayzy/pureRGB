@@ -20,7 +20,7 @@ MoveNames::
 	li "WHIRLWIND"
 	li "FLY"
 	li "BIND"
-	li "FILTHY SLAM" ; changed from SLAM
+	li "POISON JAB" ; changed from SLAM
 	li "VINE WHIP"
 	li "STOMP"
 	li "DOUBLE KICK"
@@ -35,7 +35,7 @@ MoveNames::
 	li "TACKLE"
 	li "BODY SLAM"
 	li "WRAP"
-	li "HEAT RUSH" ; changed from TAKE DOWN
+	li "FLARE BLITZ" ; changed from TAKE DOWN
 	li "THRASH"
 	li "DOUBLE-EDGE"
 	li "TAIL WHIP"
@@ -131,9 +131,9 @@ MoveNames::
 	li "SWIFT"
 	li "SKULL BASH"
 	li "SPIKE CANNON"
-	li "STATIC SNAG" ; changed from CONSTRICT
+	li "IRON HEAD" ; changed from CONSTRICT
 	li "AMNESIA"
-	li "FIREWALL" ; changed from KINESIS
+	li "CRUNCH" ; changed from KINESIS
 	li "SOFTBOILED"
 	li "HI JUMP KICK"
 	li "GLARE"
@@ -153,7 +153,7 @@ MoveNames::
 	li "ACID ARMOR"
 	li "CRABHAMMER"
 	li "EXPLOSION"
-	li "DUST CLAW" ; changed from FURY SWIPES
+	li "METAL CLAW" ; changed from FURY SWIPES
 	li "BONEMERANG"
 	li "REST"
 	li "ROCK SLIDE"
