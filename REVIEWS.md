@@ -2,6 +2,10 @@
 
 Want to leave a review? Go [here](https://www.romhacking.net/?page=reviews&action=addentrypage&section=Hacks&subid=8803) or [here](https://github.com/Vortyne/pureRGB/issues/new?assignees=&labels=review&projects=&template=review.yml&title=%5BReview%5D%3A+Summarize+your+review+here).
 
+### Review by xWildz on v2.6.4
+
+Very great ROM, highly recommend for 151 or just a casual playthrough. Be sure to get the recent versions from this git. 5/5
+
 ### Review by IdiotBlueMage on v2.6.4 - You'll learn to love Pokemon all over again.
 
 Usually I don't buy into the hype of romhacking. I stay away from people claiming that they've made the perfect version, or brag that every single mon in all creation is crammed into one single region. That may or may not lend some gravity to my stating that PureRGB has somehow recaptured the fun and addictiveness of the original games for me all over again. The most brilliant stroke is PureRGB's mastery of the early game. Through the new moves and pokemon types that you'll encounter early (such as a low level ground-type move, or the newly ground/flying doduo), the game immediately hooks you in a way that most Pokemon games could not.
