@@ -17,7 +17,7 @@ Moves:
 	move KARATE_CHOP,  NO_ADDITIONAL_EFFECT,        50, FIGHTING,     100, 25 ; high crit ratio
 	move DOUBLESLAP,   ATTACK_TWICE_EFFECT,  		30, FAIRY,        100, 20
 	move COMET_PUNCH,  NO_ADDITIONAL_EFFECT,       100, FAIRY,     	  100, 15  
-	move MEGA_PUNCH,   FLINCH_SIDE_EFFECT2,        100, FIGHTING,     100, 20
+	move MEGA_PUNCH,   MEGA_PUNCH_EFFECT,          100, FIGHTING,     100, 20
 	move PAY_DAY,      PAY_DAY_EFFECT,              90, DARK,         100, 20
 	move FIRE_PUNCH,   BURN_SIDE_EFFECT1,           75, FIRE,         100, 15
 	move ICE_PUNCH,    FREEZE_SIDE_EFFECT1,         75, ICE,          100, 15
@@ -47,8 +47,8 @@ Moves:
 	move HORN_DRILL,   NO_ADDITIONAL_EFFECT,        90, STEEL,         95, 15
 	move TACKLE,       NO_ADDITIONAL_EFFECT,        35, NORMAL,       100, 35
 	move BODY_SLAM,    PARALYZE_SIDE_EFFECT2,       85, NORMAL,       100, 15
-	move WRAP,         TRAPPING_EFFECT,             25, NORMAL,        85, 15
-	move TAKE_DOWN,    RECOIL_EFFECT,           	90, FIRE,         100, 20 ; -> HEAT RUSH
+	move WRAP,         TRAPPING_EFFECT,             22, NORMAL,        85, 15
+	move TAKE_DOWN,    HEAT_RUSH_EFFECT,            75, FIRE,         100, 20 ; -> HEAT RUSH
 	move THRASH,       THRASH_PETAL_DANCE_EFFECT,   90, NORMAL,       100, 20
 	move DOUBLE_EDGE,  RECOIL_EFFECT,          	   120, NORMAL,       100, 10
 	move TAIL_WHIP,    DEFENSE_DOWN1_EFFECT,         0, NORMAL,       100, 30
@@ -63,7 +63,7 @@ Moves:
 	move SUPERSONIC,   CONFUSION_EFFECT,             0, NORMAL,        70, 20
 	move SONICBOOM,    FLINCH_SIDE_EFFECT1,         50, GHOST,        100, 15 ; priority move
 	move DISABLE,      DISABLE_EFFECT,               0, NORMAL,        85, 20
-	move ACID,         DEFENSE_DOWN_SIDE_EFFECT,    50, POISON,       100, 30
+	move ACID,         ACID_SIDE_EFFECT,            50, POISON,       100, 30
 	move EMBER,        BURN_SIDE_EFFECT1,           40, FIRE,         100, 25
 	move FLAMETHROWER, BURN_SIDE_EFFECT1,           95, FIRE,         100, 15
 	move MIST,         MIST_EFFECT,                  0, ICE,          100, 30
@@ -71,7 +71,7 @@ Moves:
 	move HYDRO_PUMP,   NO_ADDITIONAL_EFFECT,       120, WATER,         90, 10
 	move SURF,         NO_ADDITIONAL_EFFECT,        95, WATER,        100, 15
 	move ICE_BEAM,     FREEZE_SIDE_EFFECT1,         95, ICE,          100, 10
-	move BLIZZARD,     FREEZE_SIDE_EFFECT1,        120, ICE,           85, 10 ; TODO: 90
+	move BLIZZARD,     FREEZE_SIDE_EFFECT1,        120, ICE,           90, 10
 	move PSYBEAM,      CONFUSION_SIDE_EFFECT,       65, PSYCHIC_TYPE, 100, 20
 	move BUBBLEBEAM,   SPEED_DOWN_SIDE_EFFECT,      65, WATER,        100, 20
 	move AURORA_BEAM,  ATTACK_DOWN_SIDE_EFFECT,     65, ICE,          100, 20
@@ -115,7 +115,7 @@ Moves:
 	move TELEPORT,     TELEPORT_EFFECT,              0, PSYCHIC_TYPE, 100, 20
 	move NIGHT_SHADE,  NO_ADDITIONAL_EFFECT,        65, GHOST,        100, 20  
 	move MIMIC,        MIMIC_EFFECT,                 0, NORMAL,       100, 10 ; now uses the mimic'd attack the same turn it's learned
-	move SCREECH,      DEFENSE_DOWN2_EFFECT,         0, NORMAL,        85, 40
+	move SCREECH,      SCREECH_EFFECT,               0, GHOST,        100, 40 ; now has a SLEEP-prevention effect added
 	move DOUBLE_TEAM,  EVASION_UP1_EFFECT,           0, NORMAL,       100, 15
 	move RECOVER,      HEAL_EFFECT,                  0, PSYCHIC_TYPE, 100, 20
 	move HARDEN,       DEFENSE_UP1_EFFECT,           0, ROCK,         100, 30
@@ -141,10 +141,10 @@ Moves:
 	move FIRE_BLAST,   BURN_SIDE_EFFECT2,          120, FIRE,          85, 10
 	move WATERFALL,    FLINCH_SIDE_EFFECT2,         80, WATER,        100, 15
 	move CLAMP,        TRAPPING_EFFECT,             25, WATER,         85, 15
-	move SWIFT,        SWIFT_EFFECT,                60, NORMAL,       100, 20 ; priority move
-	move SKULL_BASH,   JUMP_KICK_EFFECT,           100, NORMAL,        90, 10
-	move SPIKE_CANNON, TWO_OR_THREE_ATTACKS_EFFECT, 42, STEEL,        100, 10
-	move CONSTRICT,    FLINCH_SIDE_EFFECT2,       	80, STEEL,     100, 20 ; -> IRON HEAD
+	move SWIFT,        SWIFT_EFFECT,                60, ICE,          100, 20 ; priority move
+	move SKULL_BASH,   JUMP_KICK_EFFECT,           100, ROCK,          90, 10
+	move SPIKE_CANNON, TWO_OR_THREE_ATTACKS_EFFECT, 42, ROCK,         100, 10
+	move CONSTRICT,    SIPHON_SNAG_EFFECT,          75, ELECTRIC,     100, 20 ; -> SIPHON SNAG
 	move AMNESIA,      SPECIAL_UP2_EFFECT,           0, PSYCHIC_TYPE, 100, 20 
 	move KINESIS,      DEFENSE_DOWN_SIDE_EFFECT,    80, DARK,         100, 20 ; -> CRUNCH
 	move SOFTBOILED,   HEAL_EFFECT,                  0, NORMAL,       100, 10
