@@ -9,7 +9,7 @@ ENDM
 ; - MapHeaderBanks (see data/maps/map_header_banks.asm)
 ; - MapHeaderPointers (see data/maps/map_header_pointers.asm)
 ; - MapSongBanks (see data/maps/songs.asm)
-; - MapHSPointers (see data/maps/hide_show_data.asm)
+; - ToggleableObjectMapPointers (see data/maps/toggleable_objects.asm)
 ; - MapSpriteSets (see data/maps/sprite_sets.asm)
 ; - ExternalMapEntries (see data/maps/town_map_entries.asm)
 ; - WildDataPointers (see data/wild/grass_water.asm)
@@ -128,7 +128,7 @@ DEF FIRST_INDOOR_MAP EQU const_value
 	map_const CERULEAN_ROCKET_HOUSE_1F,       3,  3 ; $6A ; PureRGBnote: ADDED: New map
 	map_const CERULEAN_ROCKET_HOUSE_B1F,      8,  8 ; $6B ; PureRGBnote: ADDED: New map
 	map_const VICTORY_ROAD_1F,               10,  9 ; $6C
-	map_const VIRIDIAN_SCHOOL_HOUSE_B1F,      9,  6 ; $6D ; PureRGBnote: ADDED: New map
+	map_const VIRIDIAN_SCHOOL_HOUSE_B1F,      9,  7 ; $6D ; PureRGBnote: ADDED: New map
 	map_const BILLS_GARDEN,                  11, 10 ; $6E ; PureRGBnote: ADDED: New map
 	map_const SECRET_LAB,                     5, 22 ; $6F ; PureRGBnote: ADDED: New map
 	map_const POKEMON_TOWER_B1F,              8, 29 ; $70 ; PureRGBnote: ADDED: New map
@@ -278,4 +278,6 @@ DEF NUM_MAPS EQU const_value
 
 ; Indoor maps, such as houses, use this as the Map ID in their exit warps
 ; This map ID takes the player back to the last outdoor map they were on, stored in wLastMap
-DEF LAST_MAP EQU -1
+DEF LAST_MAP EQU $ff
+
+ASSERT NUM_MAPS <= LAST_MAP, "map IDs overlap LAST_MAP"

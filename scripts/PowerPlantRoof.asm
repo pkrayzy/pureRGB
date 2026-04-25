@@ -84,7 +84,9 @@ PlayThunderRumbleSound::
 PowerPlantRoof_TextPointers:
 	def_text_pointers
 	dw_const PowerPlantRoofZapdosText,  TEXT_POWER_PLANT_ROOF_ZAPDOS
+	dw_const PowerPlantRoofSignText, TEXT_POWER_PLANT_ROOF_SIGN
 	dw_const PowerPlantRoofDarkCloudsText,  TEXT_POWER_PLANT_ROOF_DARK_CLOUDS
+
 
 PowerPlantRoofDarkCloudsText:
 	text_far _PowerPlantRoofDarkCloudsText
@@ -337,7 +339,7 @@ PowerPlantDrawLightning:
 	cp c
 	ld a, $C1
 	jr z, .load
-	ld a, " " ; empty
+	ld a, ' ' ; empty
 .load
 	ld [hli], a
 	dec b
@@ -371,7 +373,10 @@ ZapdosEndBattleScript:
 	cp $ff ; do nothing if you lost the battle
 	ret z
 	SetEvent EVENT_BEAT_ZAPDOS
-	ld a, HS_POWER_PLANT_ROOF_ZAPDOS
-	ld [wMissableObjectIndex], a
+	ld a, TOGGLE_POWER_PLANT_ROOF_ZAPDOS
+	ld [wToggleableObjectIndex], a
 	predef_jump HideExtraObject
 	
+PowerPlantRoofSignText::
+	text_far _PowerPlantRoofSignText
+	text_end

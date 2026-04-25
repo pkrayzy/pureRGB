@@ -148,18 +148,21 @@ IF DEF(_DEBUG)
 	;callfar SilphCo11FTeamRocketLeavesScript
 
 	
-	ld a, HS_LYING_OLD_MAN
-	ld [wMissableObjectIndex], a
+	ld a, TOGGLE_LYING_OLD_MAN
+	ld [wToggleableObjectIndex], a
 	predef HideObject
-	ld a, HS_OLD_MAN
-	ld [wMissableObjectIndex], a
+	ld a, TOGGLE_OLD_MAN
+	ld [wToggleableObjectIndex], a
 	predef ShowObject
-	ld a, HS_ERIK_HOUSE
-	ld [wMissableObjectIndex], a
+	ld a, TOGGLE_ERIK_HOUSE
+	ld [wToggleableObjectIndex], a
 	predef ShowExtraObject
-	ld a, HS_SARA_HOUSE
-	ld [wMissableObjectIndex], a
+	ld a, TOGGLE_SARA_HOUSE
+	ld [wToggleableObjectIndex], a
 	predef ShowExtraObject
+	ld hl, wPocketAbraNick
+	ld de, PocketAbraTestName
+	call CopyString
 
 	; Rival chose Squirtle,
 	; Player chose Charmander.
@@ -178,6 +181,9 @@ DebugSetPokedexEntries:
 	dec b
 	jr nz, .loop
 	ret
+
+PocketAbraTestName:
+	db "Snoozer@"
 
 DebugNewGameItemsList:
 	db BICYCLE, 1

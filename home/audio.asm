@@ -1,5 +1,10 @@
 PlayDefaultMusic::
 	call WaitForSoundToFinish
+	ld a, [wIsInBattle]
+	and a
+	jr nz, .skipResetPausedAudio
+	callfar ResetPausedAudioData
+.skipResetPausedAudio
 	xor a
 	ld c, a
 	ld d, a
@@ -402,7 +407,7 @@ HalfVolume::
   	set BIT_NO_AUDIO_FADE_OUT, a
   	ld [wStatusFlags2], a
 	ld a, $33 ; 3/7 volume
-	ldh [rNR50], a
+	ldh [rAUDVOL], a
 	ret
 
 MaxVolume::
@@ -410,7 +415,7 @@ MaxVolume::
   	res BIT_NO_AUDIO_FADE_OUT, a
   	ld [wStatusFlags2], a
 	ld a, $77 ; max volume
-	ldh [rNR50], a
+	ldh [rAUDVOL], a
 	ret
 
 StopChannel8:
@@ -489,3 +494,10 @@ PlayDefaultMusicWithExtraCheck::
 	ld [wReplacedMapMusic], a
 	ld d, 1
 	jpfar TryPlayExtraMusic
+
+WaitForAudioFadeToFinish::
+	rst _DelayFrame
+	ld a, [wAudioFadeOutControl]
+	and a
+	ret z
+	jr WaitForAudioFadeToFinish
