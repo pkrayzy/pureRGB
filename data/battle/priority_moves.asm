@@ -3,6 +3,7 @@
 PriorityMoves:
 	db QUICK_ATTACK
 	db WING_ATTACK
+	db ROLLING_KICK ; New
 	db FLASH
 	db SWIFT
 	db TRANSFORM

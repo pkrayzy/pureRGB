@@ -1,6 +1,6 @@
-; PureRGBnote: ADDED: Firewall burns the opponent, and its power increases each time you use it on burned opponents.
+; PureRGBnote: ADDED: CRUNCH burns the opponent, and its power increases each time you use it on burned opponents.
 
-FirewallEffect_:
+CRUNCHEffect_:
 	ld hl, wEnemyMonStatus
 	ld de, wEnemyMonType1
 	ldh a, [hWhoseTurn]
@@ -11,7 +11,7 @@ FirewallEffect_:
 .gotTurn
 	ld a, [hl]
 	bit BRN, a
-	jr nz, .setFirewallFlag
+	jr nz, .setCRUNCHFlag
 	and a ; does the target already have a status ailment?
 	ret nz
 ; check if the target is immune to burn due to types
@@ -25,7 +25,7 @@ FirewallEffect_:
 	set BRN, [hl]
 	callfar HalveAttackDueToBurn
 	jpfar PrintBurnText	
-.setFirewallFlag
+.setCRUNCHFlag
 	; if already burned and the move hit, set a flag that will increase power further
 	ldh a, [hWhoseTurn]
 	and a
@@ -33,7 +33,7 @@ FirewallEffect_:
 	jr z, .gotTurn2
 	ld hl, wPlayerBattleStatus3
 .gotTurn2
-	set BOOSTED_FIREWALL, [hl]
+	set BOOSTED_CRUNCH, [hl]
 	ret
 
 ; input de = wBattleMonStatus or wEnemyMonStatus

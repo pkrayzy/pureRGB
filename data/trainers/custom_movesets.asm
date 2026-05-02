@@ -122,7 +122,7 @@ ChampArenaBlaineMoveset:
 	db DIG
 	db FLASH
 	; rapidash
-	db KINESIS ; FIREWALL
+	db KINESIS ; CRUNCH
 	db HYPER_BEAM
 	db SKULL_BASH
 	db MEGA_KICK
@@ -156,7 +156,7 @@ ChampArenaSurgeMoveset:
 	; jolteon
 	db THUNDER
 	db FLASH
-	db TAKE_DOWN ; HEAT RUSH
+	db TAKE_DOWN ; FLAME CHARGE
 	db THUNDER_WAVE
 	; raichu
 	db WITHDRAW
@@ -206,7 +206,7 @@ ChampArenaBrunoMoveset:
 	db COMET_PUNCH
 	db MIRROR_MOVE
 	db COUNTER ; DRAIN_PUNCH
-	db SLAM ; FILTHY_SLAM
+	db SLAM ; POISON JAB_SLAM
 	; hitmonlee
 	db HI_JUMP_KICK
 	db AGILITY

@@ -3,7 +3,7 @@
 	db  50,  50,  95,  35,  40
 	;   hp  atk  def  spd  spc
 
-	db GROUND, GROUND ; type
+	db GROUND, GHOST ; type
 	db 190 ; catch rate
 	db 87 ; base exp
 
@@ -32,13 +32,13 @@
 	EARTHQUAKE,\
 	CRABHAMMER,\
 	DIG,\
-	KINESIS,\ ; FIREWALL
+	KINESIS,\ ; CRUNCH
 	SWORDS_DANCE,\
 	BIDE,\
 	BARRAGE,\
 	FIRE_BLAST,\
 	FLAMETHROWER,\
-	SLAM,\ ; FILTHY SLAM
+	SLAM,\ ; POISON JAB
 	KARATE_CHOP,\
 	MEDITATE,\
 	LIGHT_SCREEN,\

@@ -947,8 +947,8 @@ FlashScreenEveryFourFrameBlocks:
 	call z, AnimationFlashScreen
 	ret
 
-; PureRGBnote: ADDED: when using firewall on a burned opponent, the animation changes slightly to indicate how powerful it is.
-FirewallSpecialEffect:
+; PureRGBnote: ADDED: when using CRUNCH on a burned opponent, the animation changes slightly to indicate how powerful it is.
+CRUNCHSpecialEffect:
 	ldh a, [hWhoseTurn]
 	and a
 	ld hl, wEnemyBattleStatus3
@@ -960,7 +960,7 @@ FirewallSpecialEffect:
 	ld a, [de]
 	bit BRN, a
 	ret z
-	bit BOOSTED_FIREWALL, [hl]
+	bit BOOSTED_CRUNCH, [hl]
 	jr nz, .endOfAnimCheck
 .notEndAnim
 	ld a, [wSubAnimCounter]
@@ -1397,7 +1397,7 @@ AnimationWaterDropletsEverywhereDefault::
 	lb de, 32, $71
 	jr AnimationTileEverywhereInit
 
-;;;;;;;;;; PureRGBnote: ADDED: new animations used with heat rush and poison gas
+;;;;;;;;;; PureRGBnote: ADDED: new animations used with FLAME CHARGE and poison gas
 
 AnimationWaterDropletsEverywhereFast:
 	xor a
@@ -1892,7 +1892,7 @@ AnimationResetMonPosition:
 	call ClearMonPicFromTileMap
 	jp AnimationShowMonPic
 
-;;;;;;;;;; PureRGBnote: ADDED: new animations used for Horn Drill, Drill Peck, Firewall's most powerful version, and when using a Master Ball
+;;;;;;;;;; PureRGBnote: ADDED: new animations used for Horn Drill, Drill Peck, CRUNCH's most powerful version, and when using a Master Ball
 AnimationSpiralFireInwardFast::
 	lb de, $72, 1
 	ld a, 1
@@ -2361,7 +2361,7 @@ _AnimationSlideMonOff:
 	ld a, ' '
 	ret
 
-;;;;;;;;;; PureRGBnote: ADDED: new animation used in some moves like Filthy Slam.
+;;;;;;;;;; PureRGBnote: ADDED: new animation used in some moves like POISON JAB.
 AnimationSlideEnemyMonHalfOff:
 ; Slides the enemy mon off the screen horizontally.
 	ld hl, AnimationSlideMonHalfOff

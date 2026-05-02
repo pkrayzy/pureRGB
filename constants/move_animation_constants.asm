@@ -13,7 +13,7 @@ DEF FIRST_SE_ID EQU const_value
 	const SE_SNOWFLAKES_EVERYWHERE     ; $D1 used in Blizzard
 	const SE_SIPHON_SNAG_ATTACK        ; $D2 used in Constrict (Siphon Snag)
 	const SE_SMOKE_EVERYWHERE          ; $D3 used in Poison Gas 
-	const SE_FIRE_EVERYWHERE           ; $D4 used in Take Down (Heat Rush)
+	const SE_FIRE_EVERYWHERE           ; $D4 used in Take Down (FLAME CHARGE)
 	const SE_SLIDE_ENEMY_MON_DOWN_AND_HIDE   ; $D5 used in Sludge 
 	const SE_SHAKE_ENEMY_BACK_AND_FORTH ; $D6 used in pokedoll animation 
 	const SE_SHAKE_BACK_AND_FORTH_SHORT; $D7 used in Rolling Kick

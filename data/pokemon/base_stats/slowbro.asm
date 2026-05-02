@@ -3,7 +3,7 @@
 	db  95,  75, 110,  30,  90
 	;   hp  atk  def  spd  spc
 
-	db WATER, PSYCHIC_TYPE ; type
+	db PSYCHIC_TYPE, POISON ; type
 	db 75 ; catch rate
 	db 164 ; base exp
 
@@ -38,7 +38,7 @@
 	BARRAGE,\
 	FIRE_BLAST,\
 	FLAMETHROWER,\
-	SLAM,\ ; FILTHY SLAM
+	SLAM,\ ; POISON JAB
 	KARATE_CHOP,\
 	MEDITATE,\
 	LIGHT_SCREEN,\

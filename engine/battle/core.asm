@@ -4335,6 +4335,8 @@ GetDamageVarsForPlayerAttack:
 	ld a, [hl] ; a = [wPlayerMoveType]
 	cp GHOST
 	jr z, DynamicTypeCheckPlayer
+	cp DRAGON
+	jr z, DynamicTypeCheckPlayer
 	cp SPECIAL ; types >= SPECIAL are all special
 	jr nc, .specialAttack
 .physicalAttack
@@ -4461,6 +4463,8 @@ GetDamageVarsForEnemyAttack:
 	ret z ; return if move power is zero
 	ld a, [hl] ; a = [wEnemyMoveType]
 	cp GHOST
+	jr z, DynamicTypeCheckEnemy
+	cp DRAGON
 	jr z, DynamicTypeCheckEnemy
 	cp SPECIAL ; types >= SPECIAL are all special
 	jr nc, .specialAttack

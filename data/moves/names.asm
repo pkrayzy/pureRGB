@@ -210,7 +210,7 @@ FLYName:
 BINDName:
 	db "BIND@"
 SLAMName:
-	db "FILTHY SLAM@" ; changed from SLAM
+	db "POISON JAB@" ; changed from SLAM
 VINEWHIPName:
 	db "VINE WHIP@"
 STOMPName:
@@ -240,7 +240,7 @@ BODYSLAMName:
 WRAPName:
 	db "WRAP@"
 TAKEDOWNName:
-	db "HEAT RUSH@" ; changed from TAKE DOWN
+	db "FLAME CHARGE@" ; changed from TAKE DOWN
 THRASHName:
 	db "THRASH@"
 DOUBLEEDGEName:
@@ -436,7 +436,7 @@ CONSTRICTName:
 AMNESIAName:
 	db "AMNESIA@"
 KINESISName:
-	db "FIREWALL@" ; changed from KINESIS
+	db "CRUNCH@" ; changed from KINESIS
 SOFTBOILEDName:
 	db "SOFTBOILED@"
 HIJUMPKICKName:
@@ -476,7 +476,7 @@ CRABHAMMERName:
 EXPLOSIONName:
 	db "EXPLOSION@"
 FURYSWIPESName:
-	db "DUST CLAW@" ; changed from FURY SWIPES
+	db "METAL CLAW@" ; changed from FURY SWIPES
 BONEMERANGName:
 	db "BONEMERANG@"
 RESTName:

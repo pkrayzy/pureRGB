@@ -3,7 +3,7 @@
 	db  75, 105, 105,  91,  40
 	;   hp  atk  def  spd  spc
 
-	db GROUND, NORMAL ; type
+	db GROUND, STEEL ; type
 	db 90 ; catch rate
 	db 163 ; base exp
 
@@ -35,7 +35,7 @@
 	BIDE,\
 	AGILITY,\
 	BARRAGE,\
-	SLAM,\ ; FILTHY SLAM
+	SLAM,\ ; POISON JAB
 	KARATE_CHOP,\
 	MEDITATE,\
 	ROCK_SLIDE,\

@@ -9,5 +9,5 @@ VermilionMartClerkText::
 
 VermilionTMKidShop::
 	script_mart \
-	TM_KINESIS, \ ; FIREWALL
+	TM_KINESIS, \ ; CRUNCH
 	TM_LEECH_SEED

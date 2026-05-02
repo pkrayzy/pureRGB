@@ -167,8 +167,8 @@ AIMoveChoiceModification1:
 	jp z, .checkAsleep
 	cp OHKO_EFFECT
 	jr z, .ohko
-	cp FIREWALL_EFFECT
-	jp z, .firewall
+	cp CRUNCH_EFFECT
+	jp z, .CRUNCH
 	ld a, [wEnemyMovePower]
 	and a
 	jr nz, .nextMove
@@ -250,23 +250,23 @@ AIMoveChoiceModification1:
 	pop bc
 	pop hl
 	jp .nextMove
-.firewall
-	; discourage firewall if opponent has a status that isn't burned since it will stay at 20 power in that case
+.CRUNCH
+	; discourage CRUNCH if opponent has a status that isn't burned since it will stay at 20 power in that case
 	ld a, [wAITargetMonStatus]
 	and a
 	jr nz, .aiThinksStatus
 	; ai doesn't think opponent has status on switching/healing
 	ld a, [wAIMoveSpamAvoider] ; set if we switched or healed this turn
 	cp 2 ; set to 2 if we switched
-	jr z, .firewallNext ; if we switched and opponent thinks no status, don't discourage firewall 
+	jr z, .CRUNCHNext ; if we switched and opponent thinks no status, don't discourage CRUNCH 
 	ld a, [wBattleMonStatus]
 	and a
-	jr z, .firewallNext ; if no status, don't discourage
+	jr z, .CRUNCHNext ; if no status, don't discourage
 .aiThinksStatus
 	bit BRN, a
 	jr z, .discourage
 	; fall through
-.firewallNext
+.CRUNCHNext
 	jp .nextMove
 .discourageStatBoostingMoveWhenMaxedOut
 	ld a, [wEnemyMoveEffect]
@@ -1038,7 +1038,7 @@ Modifier4PreferredMoves:
 	db SLEEP_EFFECT
 	db POISON_EFFECT
 	db PARALYZE_EFFECT
-	db FIREWALL_EFFECT
+	db CRUNCH_EFFECT
 	db CONFUSION_EFFECT
 	db -1 ; end
 

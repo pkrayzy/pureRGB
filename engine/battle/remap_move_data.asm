@@ -81,10 +81,10 @@ RemappableMoves::
 	db DOUBLESLAP, -1, -2, 0
 	db EXPLOSION, -1, -2, 2
 	db SELFDESTRUCT, -1, -2, 2
-	db KINESIS, -1, -2, 3 ; FIREWALL
-	db TOXIC, -1, -2, 4
-	db SKULL_BASH, -1, -2, 5
-	db SLAM, -1, -2, 6 ; FILTHY SLAM
+	; db KINESIS, -1, -2, 3 ; CRUNCH ; FIX now that this is crunch
+	db TOXIC, -1, -2, 3
+	db SKULL_BASH, -1, -2, 4
+	db SLAM, -1, -2, 5 ; POISON JAB
 	; signature moves start here
 	db POISON_STING, BEEDRILL, 45, 0
 	db TWINEEDLE, BEEDRILL, 65, 0 
@@ -92,29 +92,36 @@ RemappableMoves::
 	db DRILL_PECK, FEAROW, 110, 0
 	db ROCK_SLIDE, GOLEM, 110, 0
 	db HI_JUMP_KICK, HITMONLEE, 160, 0
-	db COMET_PUNCH, HITMONCHAN, 90, 0
+	db MEGA_PUNCH, HITMONCHAN, 150, 0
 	db THUNDERPUNCH, ELECTABUZZ, 105, 0
 	db FIRE_PUNCH, MAGMAR, 105, 0
 	db ICE_PUNCH, JYNX, 105, 0
-	db HYPNOSIS, HYPNO, -1, 85 percent
 	db DRAGON_RAGE, DRAGONITE, 100, 0
 	db WATERFALL, SEAKING, 160, 0
 	db DIZZY_PUNCH, KANGASKHAN, 130, 0
-	db LICK, LICKITUNG, 70, 0
+	; db LICK, LICKITUNG, 70, 0
+	db LICK, LICKITUNG, 100, 0
 	db SPIKE_CANNON, OMASTAR, 70, 0
+	db HYPNOSIS, HYPNO, -1, 85 percent
 	db FIRE_BLAST, ARCANINE, -1, 100 percent
 	db BLIZZARD, DEWGONG, -1, 100 percent
+	db HYDRO_PUMP, BLASTOISE, -1, 100 percent ; New
 	db PSYBEAM, GOLDUCK, 105, 0
+	db SMOG, WEEZING, 90, 0 ; New
+	db BIND, ONIX, 40, 0 ; New
+	db FLAMETHROWER, CHARIZARD, 110, 0 ; New
+	db NIGHT_SHADE, HAUNTER, 90, 0 ; New
+	db NIGHT_SHADE, GENGAR, 90, 0 ; New
 	db -1
 
 ModifierFuncs:
 	dw DoubleSlapModifier
 	dw SingModifier
 	dw ExplosionSelfdestructModifier
-	dw FirewallModifier
+	;	dw CRUNCHModifier
 	dw ToxicModifier
 	dw SkullBashModifier
-	dw FilthySlamModifier
+	dw PoisonJabModifier
 
 CheckIfAsleep::
 GetOpponentStatus::
@@ -212,42 +219,42 @@ ExplosionSelfdestructModifier:
 	ld [de], a
 	jpfar DrawHUDsAndHPBars
 
-FirewallModifier:
-	ldh a, [hWhoseTurn]
-	and a
-	ld hl, wEnemyBattleStatus3
-	ld de, wEnemyMonStatus
-	jr z, .gotTurn
-	ld hl, wPlayerBattleStatus3
-	ld de, wBattleMonStatus
-.gotTurn
-	ld a, [de]
-	bit BRN, a
-	ret z ; no power boosts if opponent not already burned
-	push hl
-	call GetMoveRemapData
-	ld a, e
-	cp 50 ; is pokemon at least level 50
-	jr nc, .stronger ; if so the move will boost higher in power on burned mons
-.weaker
-	pop hl
-	bit BOOSTED_FIREWALL, [hl]
-	ld a, 50
-	jr z, .loadPower
-	ld a, 80
-	jr .loadPower
-.stronger
-	pop hl
-	bit BOOSTED_FIREWALL, [hl]
-	ld a, 80
-	jr z, .loadPower
-	ld a, 140
-.loadPower
-	push af
-	call GetMoveRemapData2
-	pop af
-	ld [bc], a
-	ret
+; CRUNCHModifier:
+; 	ldh a, [hWhoseTurn]
+; 	and a
+; 	ld hl, wEnemyBattleStatus3
+; 	ld de, wEnemyMonStatus
+; 	jr z, .gotTurn
+; 	ld hl, wPlayerBattleStatus3
+; 	ld de, wBattleMonStatus
+; .gotTurn
+; 	ld a, [de]
+; 	bit BRN, a
+; 	ret z ; no power boosts if opponent not already burned
+; 	push hl
+; 	call GetMoveRemapData
+; 	ld a, e
+; 	cp 50 ; is pokemon at least level 50
+; 	jr nc, .stronger ; if so the move will boost higher in power on burned mons
+; .weaker
+; 	pop hl
+; 	bit BOOSTED_CRUNCH, [hl]
+; 	ld a, 50
+; 	jr z, .loadPower
+; 	ld a, 80
+; 	jr .loadPower
+; .stronger
+; 	pop hl
+; 	bit BOOSTED_CRUNCH, [hl]
+; 	ld a, 80
+; 	jr z, .loadPower
+; 	ld a, 140
+; .loadPower
+; 	push af
+; 	call GetMoveRemapData2
+; 	pop af
+; 	ld [bc], a
+; 	ret
 
 ; input d = which pokemon
 GetRemappedMoveAndPowerFromPokemon::
@@ -314,10 +321,10 @@ SkullBashModifier:
 	ret nz
 	jr Modifier100Accuracy
 
-FilthySlamModifier::
+PoisonJabModifier::
 	call GetOpponentStatus
 	ld a, [bc]
 	bit PSN, a
 	ret z
-	ld [hl], 130 ; increase filthy slam power to 130 if opponent poisoned
+	ld [hl], 130 ; increase poison jab power to 130 if opponent poisoned
 	ret

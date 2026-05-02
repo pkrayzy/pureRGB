@@ -1,6 +1,7 @@
 	db DEX_PSYDUCK ; pokedex id
 
-	db  50,  52,  48,  55,  50
+	db  50,  52,  48,  55,  85
+	;	db  50,  52,  48,  55,  50
 	;   hp  atk  def  spd  spc
 
 	db WATER, PSYCHIC_TYPE ; type
@@ -38,7 +39,7 @@
 	BIDE,\
 	AGILITY,\
 	BARRAGE,\
-	SLAM,\ ; FILTHY SLAM
+	SLAM,\ ; POISON JAB
 	KARATE_CHOP,\
 	MEDITATE,\
 	LOVELY_KISS,\

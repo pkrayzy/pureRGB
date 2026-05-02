@@ -1368,8 +1368,8 @@ ConfusionEffectFailed:
 	rst _DelayFrames
 	jp ConditionalPrintButItFailed
 
-FirewallEffect:
-	jpfar FirewallEffect_
+CRUNCHEffect:
+	jpfar CRUNCHEffect_
 
 ParalyzeEffect:
 	jpfar ParalyzeEffect_

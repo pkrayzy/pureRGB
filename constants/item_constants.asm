@@ -169,7 +169,7 @@ DEF TM01 EQU const_value
 	add_tm DIG          ; $E4
 	add_tm PSYCHIC_M    ; $E5
 	add_tm MEGA_DRAIN   ; $E6
-	add_tm KINESIS      ; $E7 FIREWALL
+	add_tm KINESIS      ; $E7 CRUNCH
 	add_tm SWORDS_DANCE ; $E8
 	add_tm REFLECT      ; $E9
 	add_tm BIDE         ; $EA 
@@ -177,7 +177,7 @@ DEF TM01 EQU const_value
 	add_tm BARRAGE 		; $EC
 	add_tm FLAMETHROWER ; $ED
 	add_tm FIRE_BLAST   ; $EE
-	add_tm SLAM        	; $EF FILTHY SLAM
+	add_tm SLAM        	; $EF POISON JAB
 	add_tm KARATE_CHOP  ; $F0
 	add_tm MEDITATE   	; $F1 
 	add_tm LOVELY_KISS  ; $F2

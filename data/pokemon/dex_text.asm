@@ -119,7 +119,7 @@ _ExeggcuteDexEntry::
 	dex
 
 _GrimerDexEntry::
-	text "Appears in filthy"
+	text "Appears in POISON JAB"
 	next "areas. Thrives by"
 	next "sucking up"
 
@@ -1110,7 +1110,7 @@ _MagikarpDexEntry::
 
 _MukDexEntry::
 	text "Thickly covered"
-	next "with a filthy,"
+	next "with a POISON JAB,"
 	next "vile sludge. It"
 
 	bage "is so toxic, even"

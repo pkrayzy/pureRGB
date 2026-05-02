@@ -64,7 +64,7 @@ IndigoGymGuideSonShop2: ; all TMs
 	TM_DIG, \
 	TM_PSYCHIC_M, \
 	TM_MEGA_DRAIN, \
-	TM_KINESIS, \    	; FIREWALL
+	TM_KINESIS, \    	; CRUNCH
 	TM_SWORDS_DANCE, \
 	TM_REFLECT, \
 	TM_BIDE, \
@@ -72,7 +72,7 @@ IndigoGymGuideSonShop2: ; all TMs
 	TM_BARRAGE, \
 	TM_FIRE_BLAST, \
 	TM_FLAMETHROWER, \
-	TM_SLAM, \          ; FILTHY SLAM
+	TM_SLAM, \          ; POISON JAB
 	TM_KARATE_CHOP, \
 	TM_MEDITATE, \
 	TM_LOVELY_KISS, \

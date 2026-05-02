@@ -3547,10 +3547,10 @@ ClearParaBurnBattleFlagsOnHeal:
 	; store active mon's status before being healed for AI purposes
 	ld a, [wBattleMonStatus]
 	ld [wAITargetMonStatus], a
-	; reset toxic and "extra firewall damage" flags in active mon status flags
+	; reset toxic and "extra CRUNCH damage" flags in active mon status flags
 	ld hl, wPlayerBattleStatus3
 	res BADLY_POISONED, [hl]
-	res BOOSTED_FIREWALL, [hl]
+	res BOOSTED_CRUNCH, [hl]
 	ldh a, [hWhoseTurn]
 	push af
 	xor a	;forcibly set it to the player's turn

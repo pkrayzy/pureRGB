@@ -11,7 +11,7 @@ DEF PHYSICAL EQU const_value
 	const TYPELESS     ; $06 PureRGBnote: CHANGED: used with struggle
 	const BUG          ; $07
 	const GHOST        ; $08 PureRGBnote: CHANGED: GHOST type has dynamic typing, special if your base special is higher than attack, physical if they're the same or attack is higher
-	const DRAGON       ; $09
+	const DRAGON       ; $09 PK: CHANGED: DRAGON type has dynamic typing, special if your base special is higher than attack, physical if they're the same or attack is higher
 	const DARK         ; $0A
 	const STEEL        ; $0B
 	const CRYSTAL      ; $0C PureRGBnote: ADDED: used with hardened onix (same as rock type but resists water and ice + normally damaged by grass, still gets stab on rock moves)

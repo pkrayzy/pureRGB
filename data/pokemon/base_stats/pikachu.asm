@@ -1,6 +1,6 @@
 	db DEX_PIKACHU ; pokedex id
 
-	db  45,  80,  50, 120,  70
+	db  45,  80,  50, 120,  75
 	;   hp  atk  def  spd  spc
 
 	db ELECTRIC, ELECTRIC ; type
@@ -33,7 +33,7 @@
 	BIDE,\
 	AGILITY,\
 	BARRAGE,\
-	SLAM,\ ; FILTHY SLAM
+	SLAM,\ ; POISON JAB
 	KARATE_CHOP,\
 	MEDITATE,\
 	LIGHT_SCREEN,\

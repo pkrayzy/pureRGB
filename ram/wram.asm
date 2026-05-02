@@ -1509,7 +1509,7 @@ wPlayerBattleStatus2:: db
 ; bit 2 - reflect
 ; bit 3 - transformed
 ; bit 4 - PureRGBnote: ADDED: already acted this turn (used when an enemy switches or uses an item)
-; bit 5 - has been hit by firewall already once while burned
+; bit 5 - has been hit by CRUNCH already once while burned
 wPlayerBattleStatus3:: db
 
 ; always 0

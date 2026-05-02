@@ -451,12 +451,12 @@ The fifth page contains some additional options.
 - Trapping moves only last 2 or 3 turns but deal a bit more damage to compensate. 2/3 chance of 2 turns, 1/3 chance of 3 turns.
 - 7 moves that people almost never use were renamed and changed to have much more useful effects (mostly based on unused prototype moves):
   - CONSTRICT is now SIPHON SNAG - 75 base power, electric type, move that heals status effects on the user, or one pokemon in your party if the user doesn't have status, 100% accuracy (Inspired by the unused prototype moves `PARALYZING SCISSORS` and `ELEKITER`)
-  - TAKE DOWN is now HEAT RUSH - 75 base power, fire type, 30% chance of burn, 100% accuracy. If used by a FIRE type pokemon, also has a 40% chance of increasing SPECIAL stat by one stage. (Inspired by the unused prototype move `MEGA FIRE`)
-  - KINESIS is now FIREWALL - 20 base power, fire type, causes burn, 90% accuracy (Inspired by the unused prototype move `F WALL`). If used on a pokemon that is already burned, power increases to 40. If used again after that, power increases to a maximum of 80. If the user is at least level 50, the increases are instead to 80 and 140 power maximum.
+  - TAKE DOWN is now FLAME CHARGE - 75 base power, fire type, 30% chance of burn, 100% accuracy. If used by a FIRE type pokemon, also has a 40% chance of increasing SPECIAL stat by one stage. (Inspired by the unused prototype move `MEGA FIRE`)
+  - KINESIS is now CRUNCH - 80 base power, dark type
   - COUNTER is now DRAIN PUNCH - 75 base power, fighting type, drains HP, 100% accuracy
   - RAZOR WIND is now ROOST - heals 1/2 max HP
-  - SLAM is now FILTHY SLAM - 80 base power, poison type, no additional effect, 100% accuracy. Power increases to 130 if the target is poisoned.  (Inspired by the unused prototype move `GASTRO ACID`)
-  - FURY SWIPES is now DUST CLAW - 40 base power, ground type, no additional effect, 100% accuracy (early-game ground type move) (Inspired by the numerous cut content physical moves)
+  - SLAM is now POISON JAB - 80 base power, poison type, no additional effect, 100% accuracy. Power increases to 130 if the target is poisoned.  (Inspired by the unused prototype move `GASTRO ACID`)
+  - FURY SWIPES is now METAL CLAW - 30 base power, steel type, raises attack, 100% accuracy (early-game ground type move)
 - Some moves that were fairly useless were made less useless
   - WHIRLWIND - 110 base power, flying type, 30% chance of confusion, 85% accuracy
   - WITHDRAW - heals around 1/3 max HP and raises DEFENSE. Doesn't do anything if you have full health.
@@ -511,13 +511,12 @@ As soon as you have your first badge (Boulderbadge) from Pewter City, there is a
 - Kingler is Water/Ground
 - Pinsir is Bug/Fighting
 - Electabuzz is Electric/Fighting
-- Mr Mime is Psychic/Ghost
-- Sandshrew and Sandslash are Ground/Normal (stronger slash damage!)
-- Ponyta and Rapidash are now Fire/Normal 
-- Goldeen and Seaking are now Water/Normal
-- Victreebel is Grass/Dragon
+- Mr Mime is Psychic/Fairy
+- Sandshrew and Sandslash are Ground/Steel
+- Rapidash is now Fire/Fairy 
+- Victreebel is Grass/Dark
 
-Additionally, GHOST type was made a "Dynamic type". What this means, is it can do Physical or Special damage depending on your base SPECIAL and base ATTACK. If base SPECIAL is higher than base ATTACK for your pokemon, GHOST type moves will be use SPECIAL for damage calculation. Otherwise, they will use ATTACK and the opponent's DEFENSE for damage calculation. This lets pokemon like Gengar be a bit more useful while also allowing physical attacker pokemon to benefit from physical damage on ghost attacks.
+Additionally, GHOST and DRAGON type were made a "Dynamic type". What this means, is it can do Physical or Special damage depending on your base SPECIAL and base ATTACK. If base SPECIAL is higher than base ATTACK for your pokemon, GHOST and DRAGON type moves will be use SPECIAL for damage calculation. Otherwise, they will use ATTACK and the opponent's DEFENSE for damage calculation. 
 
 ## Trainer AI changes
 - Opponents can have tracked PP if you turn on NPC PP in the game options
