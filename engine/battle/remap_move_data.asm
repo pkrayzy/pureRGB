@@ -106,6 +106,7 @@ RemappableMoves::
 	db FIRE_BLAST, ARCANINE, -1, 100 percent
 	db BLIZZARD, DEWGONG, -1, 100 percent
 	db HYDRO_PUMP, BLASTOISE, -1, 100 percent ; New
+	db SKULL_BASH, BLASTOISE, 130, 0 ; New
 	db PSYBEAM, GOLDUCK, 105, 0
 	db SMOG, WEEZING, 90, 0 ; New
 	db BIND, ONIX, 40, 0 ; New

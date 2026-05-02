@@ -144,14 +144,14 @@ Moves:
 	move CLAMP,        TWO_TO_FIVE_ATTACKS_EFFECT,  25, WATER,        100, 20
 	move SWIFT,        SWIFT_EFFECT,                60, TRI,          100, 20 ; priority move
 	move SKULL_BASH,   JUMP_KICK_EFFECT,           100, ROCK,          90, 10
-	move SPIKE_CANNON, TWO_OR_THREE_ATTACKS_EFFECT, 42, ROCK,         100, 10
+	move SPIKE_CANNON, TWO_OR_THREE_ATTACKS_EFFECT, 30, ROCK,         100, 10
 	move CONSTRICT,    SIPHON_SNAG_EFFECT,          75, ELECTRIC,     100, 20 ; -> SIPHON SNAG
 	move AMNESIA,      SPECIAL_UP2_EFFECT,           0, PSYCHIC_TYPE, 100, 20 
 	move KINESIS,      DEFENSE_DOWN_SIDE_EFFECT,    80, DARK,         100, 20 ; -> CRUNCH
 	move SOFTBOILED,   HEAL_EFFECT,                  0, NORMAL,       100, 10
 	move HI_JUMP_KICK, JUMP_KICK_EFFECT,           130, FIGHTING,      90, 10
 	move GLARE,        PARALYZE_EFFECT,              0, NORMAL,       100, 30
-	move DREAM_EATER,  DREAM_EATER_EFFECT,         100, GHOST,        100, 15
+	move DREAM_EATER,  DREAM_EATER_EFFECT,         100, PSYCHIC_TYPE, 100, 15
 	move POISON_GAS,   POISON_SIDE_EFFECT1,         60, POISON,       100, 20 ; high critical hit ratio
 	move BARRAGE,      ATTACK_TWICE_EFFECT,         40, GHOST,        100, 20 
 	move LEECH_LIFE,   DRAIN_HP_EFFECT,             70, BUG,          100, 15
@@ -159,7 +159,7 @@ Moves:
 	move SKY_ATTACK,   JUMP_KICK_EFFECT,           100, FLYING,       100, 10
 	move TRANSFORM,    TRANSFORM_EFFECT,             0, NORMAL,       100, 10 ; priority move
 	move BUBBLE,       SPEED_DOWN_SIDE_EFFECT,      20, WATER,        100, 30
-	move DIZZY_PUNCH,  CONFUSION_BIG_SIDE_EFFECT,   90, FIGHTING,     100, 10
+	move DIZZY_PUNCH,  CONFUSION_BIG_SIDE_EFFECT,   90, NORMAL,     100, 10
 	move SPORE,        SLEEP_EFFECT,                 0, GRASS,        100, 15
 	move FLASH,        FLINCH_SIDE_EFFECT1,         60, ELECTRIC,     100, 15 ; priority move
 	move PSYWAVE,      SPECIAL_DOWN_SIDE_EFFECT,    30, PSYCHIC_TYPE, 100, 20

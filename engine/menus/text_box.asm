@@ -536,54 +536,54 @@ PokemonMenuEntries:
 
 GetMonFieldMoves:
 	ld a, [wWhichPokemon]
-	ld hl, wPartyMon1Moves
-	ld bc, PARTYMON_STRUCT_LENGTH
-	call AddNTimes
-	ld d, h
-	ld e, l
-	ld c, NUM_MOVES + 1
+	ld hl, wPartySpecies
+	ld b, 0
+	ld c, a
+	add hl, bc
+	ld a, [hl] ; a = species
+	ld [wCurPartySpecies], a
+	ld de, FieldMoveDisplayData
 	ld hl, wFieldMoves
 .loop
-	push hl
-.nextMove
-	dec c
-	jr z, .done
 	ld a, [de] ; move ID
-	and a
-	jr z, .done
-	ld b, a
-	inc de
-	ld hl, FieldMoveDisplayData
-.fieldMoveLoop
-	ld a, [hli]
 	cp $ff
-	jr z, .nextMove ; if the move is not a field move
-	cp b
-	jr z, .foundFieldMove
-	inc hl
-	inc hl
-	jr .fieldMoveLoop
-.foundFieldMove
-	ld a, b
-	ld [wLastFieldMoveID], a
-	ld a, [hli] ; field move name index
-	ld b, [hl] ; field move leftmost X coordinate
+	jr z, .done
+	push hl
+	push de
+	ld [wMoveNum], a
+	predef CanLearnTM
+	ld a, c
+	and a
+	pop de
 	pop hl
-	ld [hli], a ; store name index in wFieldMoves
+	jr z, .next ; if not learnable
+	ld a, [wMoveNum]
+	ld [wLastFieldMoveID], a
+	inc de
+	ld a, [de] ; name index
+	ld [hli], a ; store in wFieldMoves
+	inc de
+	ld a, [de] ; x coord
+	ld b, a
+	ld a, [wFieldMovesLeftmostXCoord]
+	cp b
+	jr c, .skipUpdateX
+	ld a, b
+	ld [wFieldMovesLeftmostXCoord], a
+.skipUpdateX
 	ld a, [wNumFieldMoves]
 	inc a
 	ld [wNumFieldMoves], a
-	ld a, [wFieldMovesLeftmostXCoord]
-	cp b
-	jr c, .skipUpdatingLeftmostXCoord
-	ld a, b
-	ld [wFieldMovesLeftmostXCoord], a
-.skipUpdatingLeftmostXCoord
-	ld a, [wLastFieldMoveID]
-	ld b, a
+	cp NUM_MOVES ; only room for 4 moves in the menu
+	jr z, .done
+	inc de
+	jr .loop
+.next
+	inc de
+	inc de
+	inc de
 	jr .loop
 .done
-	pop hl
 	ret
 
 INCLUDE "data/moves/field_moves.asm"
