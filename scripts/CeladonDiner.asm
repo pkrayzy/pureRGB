@@ -3,11 +3,11 @@ CeladonDiner_Script:
 
 CeladonDiner_TextPointers:
 	def_text_pointers
-	dw_const CeladonDinerCookText,            TEXT_CELADONDINER_COOK
-	dw_const CeladonDinerMiddleAgedWomanText, TEXT_CELADONDINER_MIDDLE_AGED_WOMAN
-	dw_const CeladonDinerMiddleAgedManText,   TEXT_CELADONDINER_MIDDLE_AGED_MAN
-	dw_const CeladonDinerFisherText,          TEXT_CELADONDINER_FISHER
-	dw_const CeladonDinerCoinCaseGuyText,     TEXT_CELADONDINER_COIN_CASE_GUY
+	dba_const CeladonDinerCookText,            TEXT_CELADONDINER_COOK
+	dba_const _CeladonDinerMiddleAgedWomanText, TEXT_CELADONDINER_MIDDLE_AGED_WOMAN
+	dba_const _CeladonDinerMiddleAgedManText,   TEXT_CELADONDINER_MIDDLE_AGED_MAN
+	dba_const _CeladonDinerFisherText,          TEXT_CELADONDINER_FISHER
+	dba_const CeladonDinerCoinCaseGuyText,     TEXT_CELADONDINER_COIN_CASE_GUY
 
 CeladonDinerCookText:
 ; PureRGBnote: ADDED: celadon diner sells drinks after giving a drink to the guards guarding saffron
@@ -18,73 +18,41 @@ CeladonDinerCookText:
 	jr nz, .noBreak
 	ld hl, CeladonDinerBreakText
 	rst _PrintText
-	jr .done
+	rst TextScriptEnd
 .noBreak
 	ld hl, CeladonDinerOpenText
 	rst _PrintText
 	ld hl, CeladonDinerMenu
 	call DisplayPokemartNoGreeting
-.done
 	rst TextScriptEnd
 
 INCLUDE "data/items/marts/celadon_diner.asm"
 
 CeladonDinerOpenText:
-	text_far _CeladonDinerOpenText
-	text_end
+	text_far_end _CeladonDinerOpenText
 
 CeladonDinerBreakText:
-	text_far _CeladonDinerCookText
-	text_end
-
-CeladonDinerMiddleAgedWomanText:
-	text_far _CeladonDinerMiddleAgedWomanText
-	text_end
-
-CeladonDinerMiddleAgedManText:
-	text_far _CeladonDinerMiddleAgedManText
-	text_end
-
-CeladonDinerFisherText:
-	text_far _CeladonDinerFisherText
-	text_end
+	text_far_end _CeladonDinerCookText
 
 CeladonDinerCoinCaseGuyText:
+; PureRGBnote: CHANGED: COIN_CASE is not an item, it's just an event that lets you use the game corner
 	text_asm
 	CheckEvent EVENT_GOT_COIN_CASE
-	jr nz, .got_item
+	ld hl, .WinItBackText
+	jr nz, .printDone
 	ld hl, .ImFlatOutBustedText
 	rst _PrintText
-	;lb bc, COIN_CASE, 1 ; PureRGBnote: CHANGED: COIN_CASE is not an item, it's just an event that lets you use the game corner
-	;call GiveItem
-	;jr nc, .bag_full
 	SetEvent EVENT_GOT_COIN_CASE
 	ld hl, .ReceivedCoinCaseText
+.printDone
 	rst _PrintText
-	jr .done
-;.bag_full
-;	ld hl, .CoinCaseNoRoomText
-;	rst _PrintText
-;   jr .done
-.got_item
-	ld hl, .WinItBackText
-	rst _PrintText
-.done
 	rst TextScriptEnd
 
 .ImFlatOutBustedText:
-	text_far _CeladonDinerCoinCaseGuyImFlatOutBustedText
-	text_end
+	text_far_end _CeladonDinerCoinCaseGuyImFlatOutBustedText
 
 .ReceivedCoinCaseText:
-	text_far _CeladonDinerCoinCaseGuyReceivedCoinCaseText
-	sound_get_key_item
-	text_end
-
-;.CoinCaseNoRoomText:
-;	text_far _CeladonDinerCoinCaseGuyCoinCaseNoRoomText
-;	text_end
+	text_far_end _CeladonDinerCoinCaseGuyReceivedCoinCaseText
 
 .WinItBackText:
-	text_far _CeladonDinerCoinCaseGuyWinItBackText
-	text_end
+	text_far_end _CeladonDinerCoinCaseGuyWinItBackText

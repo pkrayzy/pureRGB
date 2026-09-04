@@ -1,69 +1,5 @@
 DrawHPBar::
-; Draw an HP bar d tiles long, and fill it to e pixels.
-; If c is nonzero, show at least a sliver regardless.
-; The right end of the bar changes with [wHPBarType].
-
-	push hl
-	push de
-	push bc
-
-	; Left
-	ld a, $71 ; "HP:"
-	ld [hli], a
-	ld a, $62
-	ld [hli], a
-
-	push hl
-
-	; Middle
-	ld a, $63 ; empty
-.draw
-	ld [hli], a
-	dec d
-	jr nz, .draw
-
-	; Right
-	ld a, [wHPBarType]
-	dec a
-	ld a, $6d ; status screen and battle
-	jr z, .ok
-	dec a ; pokemon menu
-.ok
-	ld [hl], a
-
-	pop hl
-
-	ld a, e
-	and a
-	jr nz, .fill
-
-	; If c is nonzero, draw a pixel anyway.
-	ld a, c
-	and a
-	jr z, .done
-	ld e, 1
-
-.fill
-	ld a, e
-	sub 8
-	jr c, .partial
-	ld e, a
-	ld a, $6b ; full
-	ld [hli], a
-	ld a, e
-	and a
-	jr z, .done
-	jr .fill
-
-.partial
-	; Fill remaining pixels at the end if necessary.
-	ld a, $63 ; empty
-	add e
-	ld [hl], a
-.done
-	pop bc
-	pop de
-	pop hl
+	homecall _DrawHPBar
 	ret
 
 
@@ -103,7 +39,7 @@ LoadFrontSpriteByMonIndex::
 	push af
 	ld a, [wCurPartySpecies]
 	ld [wPokedexNum], a
-	predef IndexToPokedex
+	call IndexToPokedex
 	ld hl, wPokedexNum
 	ld a, [hl]
 	pop bc
@@ -166,7 +102,7 @@ DisplayPartyMenu::
 	push af
 	xor a
 	ldh [hTileAnimations], a
-	call GBPalWhiteOutWithDelay3
+	call GBPalWhiteOut
 	call ClearSprites
 	call PartyMenuInit
 	call DrawPartyMenu
@@ -185,8 +121,7 @@ PartyMenuInit::
 	ld a, 1 ; hardcoded bank
 	call BankswitchHome
 	call LoadHpBarAndStatusTilePatterns
-	ld hl, wStatusFlags5
-	set BIT_NO_TEXT_DELAY, [hl]
+	call DisableTextDelay
 	xor a ; PLAYER_PARTY_DATA
 	ld [wMonDataLocation], a
 	ld [wMenuWatchMovingOutOfBounds], a
@@ -244,8 +179,7 @@ HandlePartyMenuInput::
 .swap
 	pop af
 .notSelect
-	ld hl, wStatusFlags5
-	res BIT_NO_TEXT_DELAY, [hl]
+	call EnableTextDelay
 	ld a, [wMenuItemToSwap]
 	and a
 	jp nz, .swappingPokemon
@@ -274,8 +208,8 @@ HandlePartyMenuInput::
 	ret
 .swappingPokemon
 	bit B_PAD_B, b
-	jr z, .handleSwap ; if not, handle swapping the pokemon
-.cancelSwap ; if the B button was pressed
+	jr z, .handleSwap
+; cancel swap if the B button was pressed
 	farcall ErasePartyMenuCursors
 	xor a
 	ld [wMenuItemToSwap], a
@@ -331,6 +265,7 @@ PrintStatusConditionNotFainted::
 ; [wLoadedMonLevel] = level
 PrintLevel::
 	ld a, '<LV>' ; ":L" tile ID
+PrintLevelArbitraryTile::
 	ld [hli], a
 	ld c, 2 ; number of digits
 	ld a, [wLoadedMonLevel] ; level
@@ -420,4 +355,8 @@ AreLearnsetsEnabled::
 	ret
 .no
 	xor a
+	ret
+	
+IndexToPokedex::
+	homecall _IndexToPokedex
 	ret

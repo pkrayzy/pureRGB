@@ -74,7 +74,10 @@ RedrawPartyMenu_::
 	set BIT_PARTY_MENU_HP_BAR, a
 	ldh [hUILayoutFlags], a
 	add hl, bc
-	predef DrawHP2 ; draw HP bar and prints current / max HP
+	ld d, h
+	ld e, l
+	ld c, 2
+	callfar DrawHP ; draw HP bar and prints current / max HP
 	ldh a, [hUILayoutFlags]
 	res BIT_PARTY_MENU_HP_BAR, a
 	ldh [hUILayoutFlags], a
@@ -83,13 +86,11 @@ RedrawPartyMenu_::
 	jr .printLevel
 .teachMoveMenu
 	push hl
-	predef CanLearnTM ; check if the pokemon can learn the move
+	call CanLearnTM ; check if the pokemon can learn the move
 	pop hl
-	ld de, .ableToLearnMoveText
-	ld a, c
-	and a
+	ld de, .ableToLearnMoveOrEvolveText
 	jr nz, .placeMoveLearnabilityString
-	ld de, .notAbleToLearnMoveText
+	ld de, .notAbleToLearnMoveOrEvolveText
 .placeMoveLearnabilityString
 	ld bc, SCREEN_WIDTH + 9 ; 1 row down and 9 columns right
 	push hl
@@ -108,9 +109,9 @@ RedrawPartyMenu_::
 	pop bc
 	inc c
 	jp .loop
-.ableToLearnMoveText
+.ableToLearnMoveOrEvolveText
 	db "ABLE@"
-.notAbleToLearnMoveText
+.notAbleToLearnMoveOrEvolveText
 	db "NOT ABLE@"
 .evolutionStoneMenu
 	push hl
@@ -135,7 +136,7 @@ RedrawPartyMenu_::
 	ld bc, wEvoDataBufferEnd - wEvoDataBuffer
 	call FarCopyData
 	ld hl, wEvoDataBuffer
-	ld de, .notAbleToEvolveText
+	ld de, .notAbleToLearnMoveOrEvolveText
 ; loop through the pokemon's evolution entries
 .checkEvolutionsLoop
 	ld a, [hli]
@@ -149,29 +150,25 @@ RedrawPartyMenu_::
 	dec hl
 	dec hl
 	ld b, [hl]
-	ld a, [wEvoStoneItemID] ; the stone the player used
+	ld a, [wPartyItemID] ; the stone the player used
 	inc hl
 	inc hl
 	inc hl
 	cp b ; does the player's stone match this evolution entry's stone?
 	jr nz, .checkEvolutionsLoop
 ; if it does match
-	ld de, .ableToEvolveText
+	ld de, .ableToLearnMoveOrEvolveText
 .placeEvolutionStoneString
-	ld bc, 20 + 9 ; down 1 row and right 9 columns
+	ld bc, SCREEN_WIDTH + 9 ; down 1 row and right 9 columns
 	pop hl
 	push hl
 	add hl, bc
 	call PlaceString
 	pop hl
 	jr .printLevel
-.ableToEvolveText
-	db "ABLE@"
-.notAbleToEvolveText
-	db "NOT ABLE@"
 .afterDrawingMonEntries
-	ld b, SET_PAL_PARTY_MENU
-	call RunPaletteCommand
+	ld d, SET_PAL_PARTY_MENU
+	call RunPaletteCommandWithoutGBCDelay
 .printMessage
 	ld hl, wStatusFlags5
 	ld a, [hl]
@@ -181,15 +178,39 @@ RedrawPartyMenu_::
 	ld a, [wPartyMenuTypeOrMessageID] ; message ID
 	cp FIRST_PARTY_MENU_TEXT_ID
 	jr nc, .printItemUseMessage
+	cp FIRST_ITEM_NAME_NEEDING_PARTY_MENU_ID
+	jr c, .noItemNameNeeded
+.itemNameNeeded
+	push af
+	ld a, [wPartyItemID]
+	ld [wNamedObjectIndex], a
+	call GetItemName
+	pop af
+.noItemNameNeeded
 	add a
+	add a ; multiply by TEXT_FAR_TABLE_ENTRY_SIZE
 	ld hl, PartyMenuMessagePointers
 	ld b, 0
 	ld c, a
 	add hl, bc
-	ld a, [hli]
-	ld h, [hl]
-	ld l, a
 	rst _PrintText
+	ld a, [wPartyMenuTypeOrMessageID]
+	cp USE_ITEM_PARTY_MENU
+	jr nz, .done
+	hlcoord 15, 15
+	lb bc, 1, 3
+	call TextBoxBorder
+	hlcoord 16, 16
+	ld [hl], '×'
+	ld a, [wPartyItemID]
+	ld b, a
+	predef GetQuantityOfItemInBag
+	ld a, b
+	ld de, w2CharStringBuffer
+	ld [de], a
+	hlcoord 17, 16
+	lb bc, 1 | LEADING_ZEROES, 2
+	call PrintNumber
 .done
 	pop hl
 	pop af
@@ -202,12 +223,10 @@ RedrawPartyMenu_::
 	and $0F
 	ld hl, PartyMenuItemUseMessagePointers
 	add a
+	add a ; multiply by TEXT_FAR_TABLE_ENTRY_SIZE
 	ld c, a
 	ld b, 0
 	add hl, bc
-	ld a, [hli]
-	ld h, [hl]
-	ld l, a
 	push hl
 	ld a, [wUsedItemOnWhichPokemon]
 	ld hl, wPartyMonNicks
@@ -217,86 +236,43 @@ RedrawPartyMenu_::
 	jr .done
 
 PartyMenuItemUseMessagePointers:
-	dw AntidoteText
-	dw BurnHealText
-	dw IceHealText
-	dw AwakeningText
-	dw ParlyzHealText
-	dw PotionText
-	dw FullHealText
-	dw ReviveText
-	dw RareCandyText
+AntidoteText:
+	text_far_end _AntidoteText
+BurnHealText:
+	text_far_end _BurnHealText
+IceHealText:
+	text_far_end _IceHealText
+AwakeningText:
+	text_far_end _AwakeningText
+ParlyzHealText:
+	text_far_end _ParlyzHealText
+PotionText:
+	text_far_end _PotionText
+FullHealText:
+	text_far_end _FullHealText
+ReviveText:
+	text_far_end _ReviveText
+RareCandyText:
+	text_far_end _RareCandyText
 
 PartyMenuMessagePointers:
-	dw PartyMenuNormalText
-	dw PartyMenuItemUseText
-	dw PartyMenuBattleText
-	dw PartyMenuUseTMText
-	dw PartyMenuSwapMonText
-	dw PartyMenuItemUseText
-	dw PartyMenuEmptyText
-
 PartyMenuNormalText:
-	text_far _PartyMenuNormalText
-	text_end
-
-PartyMenuItemUseText:
-	text_far _PartyMenuItemUseText
-	text_end
-
+	text_far_end _PartyMenuNormalText
 PartyMenuBattleText:
-	text_far _PartyMenuBattleText
-	text_end
-
+	text_far_end _PartyMenuBattleText
 PartyMenuUseTMText:
-	text_far _PartyMenuUseTMText
-	text_end
-
+	text_far_end _PartyMenuUseTMText
 PartyMenuSwapMonText:
-	text_far _PartyMenuSwapMonText
-	text_end
-
+	text_far_end _PartyMenuSwapMonText
 PartyMenuEmptyText:
-	text_far _PartyMenuEmptyText
-	text_end
+	text_far_end _PartyMenuEmptyText
+PartyMenuItemUseText:
+	text_far_end _PartyMenuItemUseText
+PartyMenuItemUseText2:
+	text_far_end _PartyMenuItemUseFullText
+PartyMenuItemUseBattleText:
+	text_far_end _PartyMenuItemUseFullText
 
-PotionText:
-	text_far _PotionText
-	text_end
-
-AntidoteText:
-	text_far _AntidoteText
-	text_end
-
-ParlyzHealText:
-	text_far _ParlyzHealText
-	text_end
-
-BurnHealText:
-	text_far _BurnHealText
-	text_end
-
-IceHealText:
-	text_far _IceHealText
-	text_end
-
-AwakeningText:
-	text_far _AwakeningText
-	text_end
-
-FullHealText:
-	text_far _FullHealText
-	text_end
-
-ReviveText:
-	text_far _ReviveText
-	text_end
-
-RareCandyText:
-	text_far _RareCandyText
-	sound_get_item_1 ; probably supposed to play SFX_LEVEL_UP but the wrong music bank is loaded
-	text_promptbutton
-	text_end
 
 SetPartyMenuHPBarColor:
 	ld hl, wPartyMenuHPBarColors
@@ -305,7 +281,7 @@ SetPartyMenuHPBarColor:
 	ld b, 0
 	add hl, bc
 	call GetHealthBarColor
-	ld b, SET_PAL_PARTY_MENU_HP_BARS
+	ld d, SET_PAL_PARTY_MENU_HP_BARS
 	call RunPaletteCommand
 	ld hl, wWhichPartyMenuHPBar
 	inc [hl]

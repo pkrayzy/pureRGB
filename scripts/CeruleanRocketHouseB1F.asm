@@ -4,10 +4,9 @@
 ; contains a big machine that will summon missingno when checked with A button.
 ; this floor is only accessible after becoming champion.
 CeruleanRocketHouseB1F_Script:
-	call EnableAutoTextBoxDrawing
 	ld hl, CeruleanRocketHouse_ScriptPointers
-	ld a, [wCeruleanRocketHouseCurScript]
-	jp CallFunctionInTable
+	ld de, wCeruleanRocketHouseCurScript
+	jp CallMapScriptInTable
 
 CeruleanRocketHouse_ScriptPointers:
 	def_script_pointers
@@ -17,13 +16,19 @@ CeruleanRocketHouse_ScriptPointers:
 
 CeruleanRocketHouseB1F_TextPointers:
 	def_text_pointers
-	dw_const CeruleanRocketHouseB1FRocketText,            TEXT_CERULEANROCKETHOUSEB1F_ROCKET
-	dw_const PickUpItemText,                              TEXT_CERULEANROCKETHOUSEB1F_ITEM1
-	dw_const CeruleanRocketHouseB1FEntranceDoorSignText,  TEXT_CERULEANROCKETHOUSEB1F_ENTRANCE_DOOR_SIGN
-	dw_const CeruleanRocketHouseB1FBottomDoorSignText,    TEXT_CERULEANROCKETHOUSEB1F_BOTTOM_DOOR_SIGN
-	dw_const CeruleanRocketHouseB1FTopDoorSignText,       TEXT_CERULEANROCKETHOUSEB1F_TOP_DOOR_SIGN  
-	dw_const CeruleanRocketHouseB1FMapText,               TEXT_CERULEANROCKETHOUSEB1F_MAP
-	dw_const CeruleanRocketHouseB1FVendingMachineText,    TEXT_CERULEANROCKETHOUSEB1F_VENDING_MACHINE
+	dba_const CeruleanRocketHouseB1FRocketText,            TEXT_CERULEANROCKETHOUSEB1F_ROCKET
+	dba_const PickUpItemText,                              TEXT_CERULEANROCKETHOUSEB1F_ITEM1
+	dba_const _CeruleanRocketHouseB1FEntranceDoorSignText,  TEXT_CERULEANROCKETHOUSEB1F_ENTRANCE_DOOR_SIGN
+	dba_const _CeruleanRocketHouseB1FBottomDoorSignText,    TEXT_CERULEANROCKETHOUSEB1F_BOTTOM_DOOR_SIGN
+	dba_const _CeruleanRocketHouseB1FTopDoorSignText,       TEXT_CERULEANROCKETHOUSEB1F_TOP_DOOR_SIGN  
+	dba_const _CeruleanRocketHouseB1FMapText,               TEXT_CERULEANROCKETHOUSEB1F_MAP
+	dba_const CeruleanRocketHouseB1FVendingMachineText,    TEXT_CERULEANROCKETHOUSEB1F_VENDING_MACHINE
+	dba_const CeruleanRocketHouseB1FLeftComputerText,      TEXT_CERULEANROCKETHOUSEB1F_LEFT_COMPUTER
+	dba_const CeruleanRocketHouseB1FCenterComputerText,    TEXT_CERULEANROCKETHOUSEB1F_CENTER_COMPUTER
+	dba_const CeruleanRocketHouseB1FRightComputerText,     TEXT_CERULEANROCKETHOUSEB1F_RIGHT_COMPUTER
+	dba_const _CeruleanRocketHouseB1FLeftPaperText,         TEXT_CERULEANROCKETHOUSEB1F_LEFT_PAPER
+	dba_const _CeruleanRocketHouseB1FRightPaperText,        TEXT_CERULEANROCKETHOUSEB1F_RIGHT_PAPER
+	dba_const CeruleanRocketHouseB1FMachineText,           TEXT_CERULEANROCKETHOUSEB1F_MACHINE
 
 CeruleanRocketHouseB1FRocketText:
 	text_asm
@@ -45,8 +50,7 @@ CeruleanRocketHouseB1FRocketText:
 	rst TextScriptEnd
 
 CeruleanRocketHouseMissingnoScript:
-	ld a, $FF
-	ld [wJoyIgnore], a
+	call DisableAllJoypad
 	ld a, SFX_STOP_ALL_MUSIC
 	rst _PlaySound
 	ld b, 100
@@ -73,10 +77,10 @@ CeruleanRocketHouseMissingnoScript:
 	call Random
 	ld e, a
 	call Random
-	and %1111 ; only use first 16 banks
+	and %1111 ; only use first 16 banks which are mostly full
 	ld b, a
 	ld c, 4
-	call CopyVideoData
+	call CopyVideoDataHBlank
 	; fill the screen with garbage tiles to make things look like they glitched out
 	call FillScreenWithRandomTilesFromC0
 	xor a
@@ -85,17 +89,16 @@ CeruleanRocketHouseMissingnoScript:
 	inc a
 	ldh [hAutoBGTransferEnabled], a ; enable continuous WRAM to VRAM transfer each V-blank
 	ld b, $FF
-	rst _DelayFrames
+	rst DelayFrames
 	ld a, MISSINGNO
 	call PlayCry
 	ld a, 120
 	ld [wCurEnemyLevel], a
 	ld a, MISSINGNO
 	ld [wCurOpponent], a
-	xor a
-	ld [wJoyIgnore], a
+	call EnableAllJoypad
 	call GBPalNormal
-	predef InitOpponent
+	callfar InitOpponent
 	xor a
 	ld [wCeruleanRocketHouseCurScript], a
 	jp BattleOccurred
@@ -116,28 +119,10 @@ FillScreenWithRandomTilesFromC0:
 	jp Delay3
 
 CeruleanRocketHouseB1FBeforeTradeText:
-	text_far _CeruleanRocketHouseB1FBeforeTradeText
-	text_end
+	text_far_end _CeruleanRocketHouseB1FBeforeTradeText
 
 CeruleanRocketHouseB1FAfterTradeText:
-	text_far _CeruleanRocketHouseB1FAfterTradeText
-	text_end
-
-CeruleanRocketHouseB1FEntranceDoorSignText:
-	text_far _CeruleanRocketHouseB1FEntranceDoorSignText
-	text_end
-
-CeruleanRocketHouseB1FBottomDoorSignText:
-	text_far _CeruleanRocketHouseB1FBottomDoorSignText
-	text_end
-
-CeruleanRocketHouseB1FTopDoorSignText:
-	text_far _CeruleanRocketHouseB1FTopDoorSignText
-	text_end
-
-CeruleanRocketHouseB1FMapText:
-	text_far _CeruleanRocketHouseB1FMapText
-	text_end
+	text_far_end _CeruleanRocketHouseB1FAfterTradeText
 
 CeruleanRocketHouseB1FVendingMachineText:
 	text_asm
@@ -158,5 +143,89 @@ CeruleanRocketHouseB1FVendingMachineText:
 	rst TextScriptEnd
 
 CeruleanRocketHouseB1FCodeText:
-	text_far _CeruleanRocketHouseB1FCodeText
-	text_end
+	text_far_end _CeruleanRocketHouseB1FCodeText
+
+OptionalText:
+	ld hl, .OptionalTextQ
+	rst _PrintText
+	call YesNoChoice
+	jr nz, .no
+	scf
+	ret
+.no
+	ld hl, .OptionalDidntRead
+	rst _PrintText
+	ret
+
+.OptionalTextQ::
+	text_far_end _CeruleanRocketHouseB1FOptionalText
+
+.OptionalDidntRead::
+	text_far_end _CeruleanRocketHouseB1FOptionalTextNo
+
+CeruleanRocketHouseB1FLeftComputerText::
+	text_asm
+	ld hl, .LeftComputerText1
+	rst _PrintText
+	call OptionalText
+	jr nc, .done
+	ld hl, .LeftComputerText2
+	rst _PrintText
+.done
+	rst TextScriptEnd
+
+.LeftComputerText1::
+	text_far_end _CeruleanRocketHouseB1FLeftComputerText
+
+.LeftComputerText2::
+	text_far_end _CeruleanRocketHouseB1FLeftComputerText2
+
+CeruleanRocketHouseB1FCenterComputerText::
+	text_asm
+	ld hl, .CenterComputerText1
+	rst _PrintText
+	call OptionalText
+	jr nc, .done
+	ld hl, .CenterComputerText2
+	rst _PrintText
+.done
+	rst TextScriptEnd
+
+.CenterComputerText1::
+	text_far_end _CeruleanRocketHouseB1FCenterComputerText
+
+.CenterComputerText2::
+	text_far_end _CeruleanRocketHouseB1FCenterComputerText2
+
+CeruleanRocketHouseB1FRightComputerText::
+	text_asm
+	ld hl, .RightComputerText1
+	rst _PrintText
+	call OptionalText
+	jr nc, .done
+	ld hl, .RightComputerText2
+	rst _PrintText
+.done
+	rst TextScriptEnd
+
+.RightComputerText1:
+	text_far_end _CeruleanRocketHouseB1FRightComputerText
+
+.RightComputerText2:
+	text_far_end _CeruleanRocketHouseB1FRightComputerText2
+
+CeruleanRocketHouseB1FMachineText:
+	text_asm
+	ld hl, .MachineText
+	rst _PrintText
+	ld a, SCRIPT_CERULEANROCKETHOUSEB1F_MISSINGNO
+	ld [wCeruleanRocketHouseCurScript], a
+	rst TextScriptEnd
+
+.MachineText:
+	text_far_end _CeruleanRocketHouseB1FMachineText
+
+RocketBasementMachine::
+	ld a, TEXT_CERULEANROCKETHOUSEB1F_MACHINE
+	ldh [hTextID], a
+	jp DisplayTextID

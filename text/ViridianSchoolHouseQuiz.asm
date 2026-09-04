@@ -158,8 +158,10 @@ _SchoolB1FLeftTeacherQuizFinish::
 
 _ReceivedMovedexText::
 	text "<PLAYER> received"
-	line "the MOVEDEX!"
-	done
+	line "the MOVEDEX!@"
+	sound_get_item_2
+	text_promptbutton
+	text_end
 
 
 _SchoolB1FLeftTeacherQuizFinalInfo::

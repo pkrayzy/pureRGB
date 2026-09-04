@@ -1,8 +1,7 @@
 ; PureRGBnote: CHANGED: most of the players pc code was changed to remember your location in the item list after performing actions
 ; like withdrawing, depositing...etc.
 PlayerPC::
-	ld hl, wStatusFlags5
-	set BIT_NO_TEXT_DELAY, [hl]
+	call DisableTextDelay
 	call SaveScreenTilesToBuffer1
 	xor a
 	ld [wBagSavedMenuItem], a
@@ -11,6 +10,8 @@ PlayerPC::
 	bit BIT_USING_GENERIC_PC, a
 	jr nz, PlayerPCMenu
 ; accessing it directly
+	xor a
+	ld [wLetterPrintingDelayFlags], a
 	ld a, SFX_TURN_ON_PC
 	rst _PlaySound
 	ld hl, TurnedOnPC2Text
@@ -30,6 +31,8 @@ PlayerPCMenu:
 	hlcoord 2, 2
 	ld de, PlayersPCMenuEntries
 	call PlaceString
+	; place the "sort" prompt
+	callfar DrawSortPromptInPC
 	ld hl, wTopMenuItemY
 	ld a, 2
 	ld [hli], a ; wTopMenuItemY
@@ -39,7 +42,12 @@ PlayerPCMenu:
 	inc hl
 	ld a, 4 ; PureRGBnote: CHANGED: increased menu length for WORLD OPTIONS to be added
 	ld [hli], a ; wMaxMenuItem
+	ld a, [wNumBoxItems]
+	cp 2
 	ld a, PAD_A | PAD_B
+	jr c, .noSelect ; can't sort items when less than 2 in pc
+	ld a, PAD_A | PAD_B | PAD_SELECT
+.noSelect
 	ld [hli], a ; wMenuWatchedKeys
 	xor a
 	ld [hl], a
@@ -47,20 +55,21 @@ PlayerPCMenu:
 	ld [hli], a ; wListScrollOffset
 	ld [hl], a ; wMenuWatchMovingOutOfBounds
 	ld [wPlayerMonNumber], a
-	ld hl, wStatusFlags5
-	set BIT_NO_TEXT_DELAY, [hl]
+	call DisableTextDelay
 	ld hl, WhatDoYouWantText
 	rst _PrintText
 	call HandleMenuInput
 	bit B_PAD_B, a
-	jp nz, ExitPlayerPC
+	jr nz, ExitPlayerPC
+	bit B_PAD_SELECT, a
+	jr nz, PressedSelectPlayerPC
 	call PlaceUnfilledArrowMenuCursor
 	ld a, [wCurrentMenuItem]
 	ld [wParentMenuItem], a
 	and a
 	jp z, PlayerPCWithdraw
 	dec a
-	jp z, PlayerPCDeposit
+	jr z, PlayerPCDeposit
 	dec a
 	jp z, PlayerPCToss
 	dec a
@@ -81,29 +90,36 @@ ExitPlayerPC:
 	xor a
 	ld [wListScrollOffset], a
 	ld [wBagSavedMenuItem], a
-	ld hl, wStatusFlags5
-	res BIT_NO_TEXT_DELAY, [hl]
+	call EnableTextDelay
 	xor a
 	ld [wDoNotWaitForButtonPressAfterDisplayingText], a
 	ret
+
+PressedSelectPlayerPC:
+	ld a, [wNumBoxItems]
+
+	ld a, SFX_PRESS_AB
+	rst _PlaySound
+	ld a, [wCurrentMenuItem]
+	ld [wParentMenuItem], a
+	callfar SortPCItems
+	jp PlayerPCMenu
 
 PlayerPCDeposit:
 	xor a
 	ld [wCurrentMenuItem], a
 	ld [wListScrollOffset], a
-	inc a
+	inc a ; TM_HOVER_TEXT
 	ld [wListMenuHoverTextType], a ; PureRGBnote: ADDED: this list menu can have TMs so turn on that flag so it checks each item scrolled over
 	ld a, [wNumBagItems]
 	and a
 	jr nz, .loop
-	ld hl, wStatusFlags5
-	res BIT_NO_TEXT_DELAY, [hl]
+	call EnableTextDelay
 	ld hl, NothingToDepositText
 	rst _PrintText
 	jp PlayerPCMenu
 .loop
-	ld hl, wStatusFlags5
-	set BIT_NO_TEXT_DELAY, [hl]
+	call DisableTextDelay
 	ld hl, WhatToDepositText
 	rst _PrintText
 	ld hl, wNumBagItems
@@ -155,19 +171,17 @@ PlayerPCWithdraw:
 	xor a
 	ld [wCurrentMenuItem], a
 	ld [wListScrollOffset], a
-	inc a
+	inc a ; TM_HOVER_TEXT
 	ld [wListMenuHoverTextType], a ; PureRGBnote: ADDED: this list menu can have TMs so turn on that flag so it checks each item scrolled over
 	ld a, [wNumBoxItems]
 	and a
 	jr nz, .loop
-	ld hl, wStatusFlags5
-	res BIT_NO_TEXT_DELAY, [hl]
+	call EnableTextDelay
 	ld hl, NothingStoredText
 	rst _PrintText
 	jp PlayerPCMenu
 .loop
-	ld hl, wStatusFlags5
-	set BIT_NO_TEXT_DELAY, [hl]
+	call DisableTextDelay
 	ld hl, WhatToWithdrawText
 	rst _PrintText
 	ld hl, wNumBoxItems
@@ -219,19 +233,17 @@ PlayerPCToss:
 	xor a
 	ld [wCurrentMenuItem], a
 	ld [wListScrollOffset], a
-	inc a
+	inc a ; TM_HOVER_TEXT
 	ld [wListMenuHoverTextType], a ; PureRGBnote: ADDED: this list menu can have TMs so turn on that flag so it checks each item scrolled over
 	ld a, [wNumBoxItems]
 	and a
 	jr nz, .loop
-	ld hl, wStatusFlags5
-	res BIT_NO_TEXT_DELAY, [hl]
+	call EnableTextDelay
 	ld hl, NothingStoredText
 	rst _PrintText
 	jp PlayerPCMenu
 .loop
-	ld hl, wStatusFlags5
-	set BIT_NO_TEXT_DELAY, [hl]
+	call DisableTextDelay
 	ld hl, WhatToTossText
 	rst _PrintText
 	ld hl, wNumBoxItems
@@ -325,8 +337,17 @@ RestoreItemListIndex:
 DepositItemFromItemMenu::
 ;;;;; PureRGBnote: CHANGED: cannot deposit SS TICKET while you're on the SS ANNE.
 	ld a, [wCurItem]
+	cp BICYCLE
+	jr nz, .notBicycle
+	ld hl, wStatusFlags6
+	bit 5, [hl]
+	jr z, .noDepositBlock
+	ld hl, .cantGetOffHere
+	rst _PrintText
+	ret
+.notBicycle
 	cp S_S_TICKET
-	jr nz, .notSSTicket
+	jr nz, .noDepositBlock
 	; block depositing the SS ticket when past the vermilion guard
 	ld a, [wCurMap]
 	cp VERMILION_CITY
@@ -336,27 +357,25 @@ DepositItemFromItemMenu::
 	jr z, .checkYCoord
 	cp 19
 	jr z, .checkYCoord
-	jr .notSSTicket
+	jr .noDepositBlock
 .checkYCoord
 	ld a, [wYCoord]
-	cp 30
-	jr z, .blockSSTicket
-	cp 31
-	jr z, .blockSSTicket
-	jr .notSSTicket
+	cp 32
+	jr c, .noDepositBlock
+	jr .blockSSTicket
 .notVermilionCity
 	; also block it inside the ss anne areas
 	cp SS_ANNE_B1F_ROOMS + 1 ; last SS ANNE room
-	jr nc, .notSSTicket
+	jr nc, .noDepositBlock
 	cp VERMILION_DOCK ; first SS ANNE room
-	jr c, .notSSTicket
+	jr c, .noDepositBlock
 .blockSSTicket
+	ld hl, .cantDeposit
 	ld a, SFX_DENIED
 	rst _PlaySound
-	ld hl, .cantDeposit
 	rst _PrintText
 	ret
-.notSSTicket
+.noDepositBlock
 ;;;;;
 	call IsKeyItem
 	ld a, 1
@@ -372,7 +391,7 @@ DepositItemFromItemMenu::
 	call DisplayChooseQuantityMenu
 	cp $ff
 	jr z, .done
-	jp .next
+	jr .next
 .keyItem
 ; if it is a key item, ask whether to deposit first
 	xor a
@@ -380,7 +399,7 @@ DepositItemFromItemMenu::
 	ld hl, WantToDepositText
 	rst _PrintText
 	call YesNoChoice
-	ld a, 1
+	ld a, TM_HOVER_TEXT
 	ld [wListMenuHoverTextType], a ; enable displaying TM names again.
 	jr nz, .done
 .next
@@ -400,25 +419,35 @@ DepositItemFromItemMenu::
 	call WaitForSoundToFinish
 	ld hl, ItemWasStoredText
 	rst _PrintText
+
+	ld a, [wCurItem]
+	cp BICYCLE
+	jr nz, .done
+	ld a, [wWalkBikeSurfState]
+	cp BIKING
+	jr nz, .done
+	ld a, WALKING
+	ld [wWalkBikeSurfState], a
 .done
 	call RestoreItemListIndex
 	; wCurrentMenuItem's new value still currently loaded in a
 	ld [wBagSavedMenuItem], a
 	ret
 .cantDeposit
-	text_far _CantDepositSSTicketText
-	text_end
+	text_far_end _CantDepositSSTicketText
+.depositBikeWhileRidingIt
+	text_far_end _CantDepositBikeText
+.cantGetOffHere
+	text_far_end _CannotGetOffHereText
 
 WorldOptions:
 	call ClearScreen
-	ld hl, wStatusFlags5
-	res BIT_NO_TEXT_DELAY, [hl] ; turn off instant text to display the options menu
+	call EnableTextDelay ; turn off instant text to display the options menu
 	xor a
 	ld [wOptionsCancelCursorX], a
 	ld [wTopMenuItemY], a
 	callfar DisplayWorldOptions
-	ld hl, wStatusFlags5
-	set BIT_NO_TEXT_DELAY, [hl] ; go back to instant text
+	call DisableTextDelay ; go back to instant text
 	jp PlayerPCMenu
 
 
@@ -430,66 +459,49 @@ PlayersPCMenuEntries:
 	next "LOG OFF@"
 
 TurnedOnPC2Text:
-	text_far _TurnedOnPC2Text
-	text_end
+	text_far_end _TurnedOnPC2Text
 
 WhatDoYouWantText:
-	text_far _WhatDoYouWantText
-	text_end
+	text_far_end _WhatDoYouWantText
 
 WhatToDepositText:
-	text_far _WhatToDepositText
-	text_end
+	text_far_end _WhatToDepositText
 
 WantToDepositText:
-	text_far _WantToDepositText
-	text_end
+	text_far_end _WantToDepositText
 
 DepositHowManyToPCText:
-	text_far _DepositHowManyToPCText
-	text_end
+	text_far_end _DepositHowManyToPCText
 
 DepositHowManyText:
-	text_far _DepositHowManyText
-	text_end
+	text_far_end _DepositHowManyText
 
 ItemWasStoredText:
-	text_far _ItemWasStoredText
-	text_end
+	text_far_end _ItemWasStoredText
 
 NothingToDepositText:
-	text_far _NothingToDepositText
-	text_end
+	text_far_end _NothingToDepositText
 
 NoRoomToStoreText:
-	text_far _NoRoomToStoreText
-	text_end
+	text_far_end _NoRoomToStoreText
 
 WhatToWithdrawText:
-	text_far _WhatToWithdrawText
-	text_end
+	text_far_end _WhatToWithdrawText
 
 WithdrawHowManyText:
-	text_far _WithdrawHowManyText
-	text_end
+	text_far_end _WithdrawHowManyText
 
 WithdrewItemText:
-	text_far _WithdrewItemText
-	text_end
+	text_far_end _WithdrewItemText
 
 NothingStoredText:
-	text_far _NothingStoredText
-	text_end
+	text_far_end _NothingStoredText
 
 CantCarryMoreText:
-	text_far _CantCarryMoreText
-	text_end
+	text_far_end _CantCarryMoreText
 
 WhatToTossText:
-	text_far _WhatToTossText
-	text_end
+	text_far_end _WhatToTossText
 
 TossHowManyText:
-	text_far _TossHowManyText
-	text_end
-
+	text_far_end _TossHowManyText

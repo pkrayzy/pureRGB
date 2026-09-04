@@ -64,7 +64,7 @@ HealEffectCommon:
 	push de
 	push af
 	ld c, 50
-	rst _DelayFrames
+	rst DelayFrames
 	ld hl, wBattleMonStatus
 	ldh a, [hWhoseTurn]
 	and a
@@ -153,7 +153,7 @@ HealEffectCommon:
 	xor a
 .updateHPBar
 	ld [wHPBarType], a
-	predef UpdateHPBar2
+	predef UpdateHPBar
 	ld hl, DrawHUDsAndHPBars
 	call EffectCallBattleCore
 	ld hl, RegainedHealthText
@@ -167,7 +167,7 @@ HealEffectCommon:
 	cp TELEPORT
 	ret z
 	ld c, 50
-	rst _DelayFrames
+	rst DelayFrames
 	ld hl, PrintButItFailedText_
 	jp EffectCallBattleCore
 ;;;;;;;;;; PureRGBnote: ADDED: withdraw and growth heal around 1/3rd health instead of 1/2
@@ -213,13 +213,10 @@ GetMoveNumber:
 	ret
 
 StartedSleepingEffect:
-	text_far _StartedSleepingEffect
-	text_end
+	text_far_end _StartedSleepingEffect
 
 FellAsleepBecameHealthyText:
-	text_far _FellAsleepBecameHealthyText
-	text_end
+	text_far_end _FellAsleepBecameHealthyText
 
 RegainedHealthText:
-	text_far _RegainedHealthText
-	text_end
+	text_far_end _RegainedHealthText

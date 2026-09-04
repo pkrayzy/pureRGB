@@ -15,15 +15,15 @@ ShowPokedexMenu:
 	ld [wPokedexNum], a
 	ldh [hJoy7], a
 .setUpGraphics
-	ld b, SET_PAL_GENERIC
-	call RunPaletteCommand
+	ld d, SET_PAL_GENERIC
+	call RunPaletteCommandWithoutGBCDelay
 	callfar LoadPokedexTilePatterns
 ;;;;;;;;;;; PureRGBnote: ADDED: load these new button prompt graphics into VRAM
 	call CheckLoadMetricGraphics
 	ld de, PokedexPromptGraphics
 	ld hl, vChars1 tile $40
 	lb bc, BANK(PokedexPromptGraphics), (PokedexPromptGraphicsEnd - PokedexPromptGraphics) / $10
-	call CopyVideoData
+	call CopyVideoDataHBlank
 ;;;;;;;;;;
 .doPokemonListMenu
 	ld hl, wTopMenuItemY
@@ -203,7 +203,7 @@ HandlePokedexSideMenu:
 	jr .handleMenuInput
 
 .choseArea
-	predef LoadTownMap_Nest ; display pokemon areas
+	callfar LoadTownMap_Nest ; display pokemon areas
 	ld b, 0
 	jr .exitSideMenu
 
@@ -551,10 +551,7 @@ IsPokemonBitSet:
 	dec a
 	ld c, a
 	ld b, FLAG_TEST
-	predef FlagActionPredef
-	ld a, c
-	and a
-	ret
+	jp FlagAction
 
 ShowPokedexDataInternal:
 	ld hl, wPokedexDataFlags
@@ -568,7 +565,7 @@ ShowPokedexDataInternal:
 	ld de, PokedexDataUI
 	lb bc, BANK(PokedexDataUI), 2
 	ld hl, vChars1 tile $4D
-	call CopyVideoDataDouble
+	call CopyVideoDataHBlankDouble
 
 	ld a, PAD_B
 	ld [wMenuWatchedKeys], a ; buttons this menu will track when displaying text (A Button used to proceed the text)
@@ -576,7 +573,7 @@ ShowPokedexDataInternal:
 	jr ShowPokedexDataCommon
 
 ; function to display pokedex data from outside the pokedex
-ShowPokedexData:
+ShowPokedexData::
 	ld hl, wPokedexDataFlags
 	set BIT_POKEDEX_DATA_DISPLAY_TYPE, [hl]
 	CheckEvent EVENT_GOT_POKEDEX
@@ -651,8 +648,8 @@ ShowNextPokemonData:
 	ld [wCurPartySpecies], a
 	ld [wBattleMonSpecies2], a
 	push af
-	ld b, SET_PAL_POKEDEX
-	call RunPaletteCommand
+	ld d, SET_PAL_POKEDEX
+	call RunPaletteCommandWithoutGBCDelay
 	pop af
 	ld [wPokedexNum], a
 
@@ -760,7 +757,7 @@ ShowNextPokemonData:
 	push de
 	push hl
 
-	call Delay3
+	call Delay3IfNotGBC
 	call GBPalNormal
 	call GetMonHeader ; load pokemon picture location
 	hlcoord 1, 1
@@ -957,8 +954,8 @@ ShowNextPokemonData:
 	hlcoord 1, 11
 	ld de, DexType1Text
 	call PlaceString
-	hlcoord 2, 12
-	predef PrintMonType
+	decoord 2, 12
+	callfar PrintMonType
 	hlcoord 2, 14
 	ld a, [hl]
 	cp ' '
@@ -1024,8 +1021,8 @@ ShowNextPokemonData:
 	callfar LoadMonBackPicInPokedex ; draw back sprite
 	xor a
 	ldh [hStartTileID], a
-	hlcoord 1, 1
-	predef CopyUncompressedPicToTilemap
+	decoord 1, 1
+	callfar FarCopyUncompressedPicToTilemap
 	jr .reloadwPokedexNum
 .nextMon
 	ld a, [wPokedexNum]
@@ -1103,7 +1100,7 @@ PokedexDataDividerLine:
 INCLUDE "data/pokemon/dex_entries.asm"
 INCLUDE "data/pokemon/dex_pokemon_categories.asm"
 
-PokedexToIndex:
+PokedexToIndex::
 	; converts the Pokédex number at [wPokedexNum] to an index
 	push bc
 	push hl
@@ -1124,7 +1121,7 @@ PokedexToIndex:
 	pop bc
 	ret
 
-IndexToPokedex:
+_IndexToPokedex::
 	; converts the index number at [wPokedexNum] to a Pokédex number
 	push bc
 	push hl
@@ -1184,7 +1181,7 @@ CheckLoadMetricGraphics:
 	ld de, MetricGraphics
 	ld hl, vChars2 tile $60
 	lb bc, BANK(MetricGraphics), 2
-	jp CopyVideoDataDouble ; load pokeball tile for marking caught mons
+	jp CopyVideoDataHBlankDouble ; load pokeball tile for marking caught mons
 
 INCLUDE "data/pokemon/dex_order.asm"
 

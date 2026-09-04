@@ -67,7 +67,7 @@ SetPokedexOwnedFlag:
 	ld a, [wCurPartySpecies]
 	push af
 	ld [wPokedexNum], a
-	predef IndexToPokedex
+	call IndexToPokedex
 	ld a, [wPokedexNum]
 	and a
 	ret z ; PureRGBnote: ADDED: do nothing for missingno to avoid glitchy results (missingno isn't part of the dex	)
@@ -75,7 +75,7 @@ SetPokedexOwnedFlag:
 	ld c, a
 	ld hl, wPokedexOwned
 	ld b, FLAG_SET
-	predef FlagActionPredef
+	call FlagAction
 	pop af
 	ld [wNamedObjectIndex], a
 	call GetMonName
@@ -88,9 +88,7 @@ GotMonText:
 	text_end
 
 SentToBoxText:
-	text_far _SentToBoxText
-	text_end
+	text_far_end _SentToBoxText
 
 BoxIsFullText:
-	text_far _BoxIsFullText
-	text_end
+	text_far_end _BoxIsFullText

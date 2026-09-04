@@ -1,21 +1,17 @@
 CeruleanBallDesigner_Script:
-	ld hl, wCurrentMapScriptFlags
-	bit BIT_CUR_MAP_LOADED_1, [hl]
-	res BIT_CUR_MAP_LOADED_1, [hl]
-	jr z, .mapLoaded
-	call CeruleanBallDesignerLoadExtraTiles
-.mapLoaded
+	call WasMapJustLoaded
+	call nz, CeruleanBallDesignerLoadExtraTiles
 	jp EnableAutoTextBoxDrawing
 
 CeruleanBallDesignerLoadExtraTiles::
 	ld hl, vTileset tile $2C
 	ld de, HouseBetaTiles
 	lb bc, BANK(HouseBetaTiles), 8
-	call CopyVideoData
+	call CopyVideoDataHBlank
 	ld hl, vTileset tile $3C
 	ld de, SmallPCPic
 	lb bc, BANK(SmallPCPic), 4
-	call CopyVideoData
+	call CopyVideoDataHBlank
 	; fall through
 CeruleanBallDesignerLoadExtraSprites::
 	ld a, [wXCoord]
@@ -28,7 +24,7 @@ CeruleanBallDesignerLoadExtraSprites::
 	ld hl, vNPCSprites tile $7C
 	ld de, CameraSprite
 	lb bc, BANK(CameraSprite), 4
-	call CopyVideoData
+	call CopyVideoDataHBlank
 	ld b, 3
 .skip
 	ld a, [wOnSGB]
@@ -41,31 +37,26 @@ CeruleanBallDesignerLoadExtraSprites::
 
 CeruleanBallDesigner_TextPointers:
 	def_text_pointers
-	dw_const CeruleanBallDesignerDesignerText, TEXT_CERULEANBALLDESIGNER_DESIGNER
-	dw_const TextScriptEnd, TEXT_CERULEANBALLDESIGNER_NONE
-	dw_const TextScriptEnd, TEXT_CERULEANBALLDESIGNER_NONE2
-	dw_const TextScriptEnd, TEXT_CERULEANBALLDESIGNER_NONE3
-	dw_const CeruleanBallDesignerBallText, TEXT_CERULEANBALLDESIGNER_BALL
-	dw_const CeruleanBallDesignerClipboardText, TEXT_CERULEANBALLDESIGNER_CLIPBOARD
-	dw_const CeruleanBallDesignerCameraText, TEXT_CERULEANBALLDESIGNER_CAMERA
-	dw_const CeruleanBallDesignerClipboard2Text, TEXT_CERULEANBALLDESIGNER_CLIPBOARD2
-	dw_const CeruleanBallDesignerCustomizeBallMenu, TEXT_CERULEANBALLDESIGNER_BALL_CUSTOMIZE
-	dw_const CeruleanBallDesignerSwitchBallMenu, TEXT_CERULEANBALLDESIGNER_BALL_SWITCH
-	dw_const CeruleanBallDesignerDarkRoomSignText, TEXT_CERULEANBALLDESIGNER_DARK_ROOM_SIGN
-	dw_const CeruleanBallDesignerBallDisplayText, TEXT_CERULEANBALLDESIGNER_BALL_DISPLAY1
-	dw_const CeruleanBallDesignerBallDisplayText, TEXT_CERULEANBALLDESIGNER_BALL_DISPLAY2
-	dw_const CeruleanBallDesignerPhotosText, TEXT_CERULEANBALLDESIGNER_PHOTOS1
-	dw_const CeruleanBallDesignerPhotosText, TEXT_CERULEANBALLDESIGNER_PHOTOS2
-	dw_const CeruleanBallDesignerSinkText, TEXT_CERULEANBALLDESIGNER_SINK1
-	dw_const CeruleanBallDesignerSinkText, TEXT_CERULEANBALLDESIGNER_SINK2
-	dw_const CeruleanBallDesignerPosterText, TEXT_CERULEANBALLDESIGNER_POSTER
-	dw_const CeruleanBallDesignerBookshelfText, TEXT_CERULEANBALLDESIGNER_BOOKSHELF
-	dw_const CeruleanBallDesignerPCText, TEXT_CERULEANBALLDESIGNER_PC
-
-
-CeruleanBallDesignerBallText:
-	text_far _CeruleanBallDesignerBlankPokeballText
-	text_end
+	dba_const CeruleanBallDesignerDesignerText, TEXT_CERULEANBALLDESIGNER_DESIGNER
+	dba_const TextScriptEnd, TEXT_CERULEANBALLDESIGNER_NONE
+	dba_const TextScriptEnd, TEXT_CERULEANBALLDESIGNER_NONE2
+	dba_const TextScriptEnd, TEXT_CERULEANBALLDESIGNER_NONE3
+	dba_const _CeruleanBallDesignerBlankPokeballText, TEXT_CERULEANBALLDESIGNER_BALL
+	dba_const CeruleanBallDesignerClipboardText, TEXT_CERULEANBALLDESIGNER_CLIPBOARD
+	dba_const CeruleanBallDesignerCameraText, TEXT_CERULEANBALLDESIGNER_CAMERA
+	dba_const CeruleanBallDesignerClipboard2Text, TEXT_CERULEANBALLDESIGNER_CLIPBOARD2
+	dba_const CeruleanBallDesignerCustomizeBallMenu, TEXT_CERULEANBALLDESIGNER_BALL_CUSTOMIZE
+	dba_const CeruleanBallDesignerSwitchBallMenu, TEXT_CERULEANBALLDESIGNER_BALL_SWITCH
+	dba_const _CeruleanBallDesignerDarkRoomSignText, TEXT_CERULEANBALLDESIGNER_DARK_ROOM_SIGN
+	dba_const _CeruleanBallDesignerBallDisplayText, TEXT_CERULEANBALLDESIGNER_BALL_DISPLAY1
+	dba_const _CeruleanBallDesignerBallDisplayText, TEXT_CERULEANBALLDESIGNER_BALL_DISPLAY2
+	dba_const _CeruleanBallDesignerPhotosText, TEXT_CERULEANBALLDESIGNER_PHOTOS1
+	dba_const _CeruleanBallDesignerPhotosText, TEXT_CERULEANBALLDESIGNER_PHOTOS2
+	dba_const _CeruleanBallDesignerSinkText, TEXT_CERULEANBALLDESIGNER_SINK1
+	dba_const _CeruleanBallDesignerSinkText, TEXT_CERULEANBALLDESIGNER_SINK2
+	dba_const _CeruleanBallDesignerPosterText, TEXT_CERULEANBALLDESIGNER_POSTER
+	dba_const _CeruleanBallDesignerBookshelfText, TEXT_CERULEANBALLDESIGNER_BOOKSHELF
+	dba_const CeruleanBallDesignerPCText, TEXT_CERULEANBALLDESIGNER_PC
 
 CeruleanBallDesignerCameraText:
 	text_asm
@@ -80,51 +71,21 @@ CeruleanBallDesignerCameraText:
 	call GiveItem
 	ld hl, .noMoreRoom
 	jr nc, .printDone
-	ld a, TOGGLE_CERULEAN_BALL_DESIGNER_CAMERA
-	ld [wToggleableObjectIndex], a
-	predef HideExtraObject
-	ld a, TOGGLE_CERULEAN_BALL_DESIGNER_CLIPBOARD
-	ld [wToggleableObjectIndex], a
-	predef ShowExtraObject
+	ld c, TOGGLE_CERULEAN_BALL_DESIGNER_CAMERA
+	call HideExtraObject
+	ld c, TOGGLE_CERULEAN_BALL_DESIGNER_CLIPBOARD
+	call ShowExtraObject
 	SetEvent EVENT_CERULEAN_BALL_DESIGNER_GOT_CAMERA
 	ld hl, CeruleanBallDesignerDesignerText.received
 .printDone
 	rst _PrintText
 	rst TextScriptEnd
 .camera
-	text_far _CeruleanBallDesignerCameraText
-	text_end
+	text_far_end _CeruleanBallDesignerCameraText
 .cameraphotos
-	text_far _CeruleanBallDesignerCamera2Text
-	text_end
+	text_far_end _CeruleanBallDesignerCamera2Text
 .noMoreRoom
-	text_far _NoMoreRoomForItemText
-	text_end
-
-
-CeruleanBallDesignerDarkRoomSignText:
-	text_far _CeruleanBallDesignerDarkRoomSignText
-	text_end
-
-CeruleanBallDesignerBallDisplayText:
-	text_far _CeruleanBallDesignerBallDisplayText
-	text_end
-
-CeruleanBallDesignerPhotosText:
-	text_far _CeruleanBallDesignerPhotosText
-	text_end
-
-CeruleanBallDesignerSinkText:
-	text_far _CeruleanBallDesignerSinkText
-	text_end
-
-CeruleanBallDesignerPosterText:
-	text_far _CeruleanBallDesignerPosterText
-	text_end
-
-CeruleanBallDesignerBookshelfText: 
-	text_far _CeruleanBallDesignerBookshelfText
-	text_end
+	text_far_end _NoMoreRoomForItemText
 
 
 CeruleanBallDesignerClipboardText:
@@ -133,7 +94,9 @@ CeruleanBallDesignerClipboardText:
 	jp TextScriptEndNoButtonPress
 
 CeruleanBallDesignerPCText:
-	script_pokecenter_pc
+	text_asm
+	callfar OpenPokemonCenterPC
+	rst TextScriptEnd
 
 CeruleanBallDesignerDesignerText:
 	text_asm
@@ -205,9 +168,8 @@ CeruleanBallDesignerDesignerText:
 	ld a, CAMERA
 	ldh [hItemToRemoveID], a
 	farcall RemoveItemByID
-	ld a, TOGGLE_CERULEAN_BALL_DESIGNER_CAMERA
-	ld [wToggleableObjectIndex], a
-	predef ShowExtraObject
+	ld c, TOGGLE_CERULEAN_BALL_DESIGNER_CAMERA
+	call ShowExtraObject
 	ld hl, .thanksBorrowCameraAgain
 	rst _PrintText
 	rst TextScriptEnd
@@ -229,7 +191,7 @@ CeruleanBallDesignerDesignerText:
 	pop af
 	push af
 	ld hl, BallDesignerPictureReactions
-	ld bc, 5
+	ld bc, TEXT_FAR_TABLE_ENTRY_SIZE
 	call AddNTimes
 	rst _PrintText
 	; reload from image
@@ -250,15 +212,14 @@ CeruleanBallDesignerDesignerText:
 	callfar CopyFullCustomBallNameToStringBuffer
 	ld hl, .designedBall
 	rst _PrintText
-	ld a, TOGGLE_CERULEAN_BALL_DESIGNER_CLIPBOARD2
-	ld [wToggleableObjectIndex], a
-	predef ShowExtraObject
+	ld c, TOGGLE_CERULEAN_BALL_DESIGNER_CLIPBOARD2
+	call ShowExtraObject
 	SetEvent EVENT_UNLOCKED_AT_LEAST_ONE_CUSTOM_BALL
 	pop af
 	ld b, FLAG_SET
 	ld c, a
 	ld hl, wCustomBallUnlockFlags
-	predef FlagActionPredef
+	call FlagAction
 	rst TextScriptEnd
 .checkForBallUnlockEvent
 	; compare unlocked custom balls to snapped pictures, if we've snapped one but not unlocked it, do the associated unlock event
@@ -267,16 +228,12 @@ CeruleanBallDesignerDesignerText:
 .loopTestBallUnlocks
 	push bc
 	ld hl, wCustomBallPhotoSnappedFlags
-	predef FlagActionPredef
-	ld a, c
-	and a
+	call FlagAction
 	pop bc
 	jr z, .goToNextBall
 	push bc
 	ld hl, wCustomBallUnlockFlags
-	predef FlagActionPredef
-	ld a, c
-	and a
+	call FlagAction
 	pop bc
 	jr z, .foundNotUnlockedBall
 .goToNextBall
@@ -291,55 +248,41 @@ CeruleanBallDesignerDesignerText:
 	scf
 	ret
 .firstGreeting
-	text_far _CeruleanBallDesignerDesignerGreeting
-	text_end
+	text_far_end _CeruleanBallDesignerDesignerGreeting
 .noRoom
-	text_far _LastTwoGurusTextBagFull
-	text_end
+	text_far_end _LastTwoGurusTextBagFull
 .received
 	text_far _GenericReceivedItemA
 	sound_get_item_1
 	text_end
 .brainstorming
-	text_far _CeruleanBallDesignerDesignerSecondTime
-	text_end
+	text_far_end _CeruleanBallDesignerDesignerSecondTime
 .becameAssistant
 	text_far _CeruleanBallDesignerDesignerBecameAssistant
 .goGetCamera
-	text_far _CeruleanBallDesignerGoGetCamera
-	text_end
+	text_far_end _CeruleanBallDesignerGoGetCamera
 .gotCamera
-	text_far _CeruleanBallDesignerDesignerGotCamera
-	text_end
+	text_far_end _CeruleanBallDesignerDesignerGotCamera
 .byTheWayChangeBall
-	text_far _CeruleanBallDesignerDesignerWaitingForPhotos
-	text_end
+	text_far_end _CeruleanBallDesignerDesignerWaitingForPhotos
 .aNewPhoto
-	text_far _CeruleanBallDesignerNewPhoto
-	text_end
+	text_far_end _CeruleanBallDesignerNewPhoto
 .wait
-	text_far _CeruleanBallDesignerWait
-	text_end
+	text_far_end _CeruleanBallDesignerWait
 .eureka
-	text_far _CeruleanBallDesignerEureka
-	text_end
+	text_far_end _CeruleanBallDesignerEureka
 .designedBall
 	text_far _CeruleanBallDesignerDesigned
 	sound_get_item_2
-	text_far _CeruleanBallDesignerDesigned2
-	text_end
+	text_far_end _CeruleanBallDesignerDesigned2
 .thanksForHelpMakeYourOwn
-	text_far _CeruleanBallDesignerThanksForHelp
-	text_end
+	text_far_end _CeruleanBallDesignerThanksForHelp
 .cameraBack
-	text_far _BallDesignerCameraBack
-	text_end
+	text_far_end _BallDesignerCameraBack
 .cameraInPC
-	text_far _BallDesignerCameraBackPC
-	text_end
+	text_far_end _BallDesignerCameraBackPC
 .thanksBorrowCameraAgain
-	text_far _BallDesignerCameraBorrowAgain
-	text_end
+	text_far_end _BallDesignerCameraBorrowAgain
 
 CeruleanBallDesignerGetsAnIdeaAnimation:
 	ld a, CERULEANBALLDESIGNER_DESIGNER
@@ -365,14 +308,14 @@ CeruleanBallDesignerGetsAnIdeaAnimation:
 	add b
 	ld [hl], a
 	ld c, 10
-	rst _DelayFrames
+	rst DelayFrames
 	pop bc
 	dec b
 	jr nz, .loopWriting
 	ld [hl], d
 	rst _DelayFrame
 	ld c, 60
-	rst _DelayFrames
+	rst DelayFrames
 	ld a, CERULEANBALLDESIGNER_DESIGNER
 	call SetSpriteFacingUp
 	call UpdateSprites
@@ -467,12 +410,12 @@ CeruleanBallDesignerZoomsAwayAnimation:
 	and %11
 	add 4 ; between 4 and 8 frames delay
 	ld c, a
-	rst _DelayFrames
+	rst DelayFrames
 	pop af
 	dec a
 	jr nz, .loopPlayRandomSounds
 	ld c, 30
-	rst _DelayFrames
+	rst DelayFrames
 	ld a, SFX_GET_ITEM_1
 	rst _PlaySound
 	call WaitForSoundToFinish
@@ -520,7 +463,7 @@ CeruleanBallDesignerClipboard2Text:
 	jp nz, TextScriptEndNoButtonPress
 	call PlaceUnfilledArrowMenuCursor
 	ld a, [wCurrentMenuItem]
-	ld bc, 5
+	ld bc, 4
 	ld hl, WorkbenchInfoBasic
 	call AddNTimes
 	rst _PrintText
@@ -534,16 +477,13 @@ WorkbenchInfoText:
 
 ;;;; keep these 3 text references in the same order with nothing in between
 WorkbenchInfoBasic::
-	text_far _WorkbenchInfoBasic
-	text_end
+	text_far_end _WorkbenchInfoBasic
 
 WorkbenchInfoChangingBalls:
-	text_far _WorkbenchInfoChangingBalls
-	text_end
+	text_far_end _WorkbenchInfoChangingBalls
 
 WorkbenchInfoCustomizingBalls:
-	text_far _WorkbenchInfoCustomizingBalls
-	text_end
+	text_far_end _WorkbenchInfoCustomizingBalls
 ;;;;
 
 CeruleanBallDesignerSwitchBallMenu:
@@ -917,29 +857,21 @@ CeruleanBallDesignerSwitchBallMenu:
 	call EnableTextDelay
 	jp TextScriptEndNoButtonPress
 .noBallsToSwitch
-	text_far _NoBallsToSwitch
-	text_end
+	text_far_end _NoBallsToSwitch
 .currentlyInA
-	text_far _CurrentlyInABall
-	text_end
+	text_far_end _CurrentlyInABall
 .already
-	text_far _AlreadyInThatBall
-	text_end
+	text_far_end _AlreadyInThatBall
 .noRoomText
-	text_far _NoRoomForBall
-	text_end
+	text_far_end _NoRoomForBall
 .changed
-	text_far _ChangedBallText1
-	text_end
+	text_far_end _ChangedBallText1
 .changed2
-	text_far _ChangedBallText2
-	text_end
+	text_far_end _ChangedBallText2
 .warningSourceBallText
-	text_far _ChangeOutOfWarning
-	text_end
+	text_far_end _ChangeOutOfWarning
 .targetBallWarningText
-	text_far _ChangeIntoWarning
-	text_end
+	text_far_end _ChangeIntoWarning
 .chooseNewBall
 	db "Choose a BALL!@"
 .customBallOptionText
@@ -992,11 +924,9 @@ CeruleanBallDesignerCustomizeBallMenu:
 .done
 	jp TextScriptEndNoButtonPress
 .customize
-	text_far _CeruleanBallDesignerCustomizeBallMenuStart
-	text_end
+	text_far_end _CeruleanBallDesignerCustomizeBallMenuStart
 .doodads
-	text_far _CeruleanBallDesignerBenchCustomizeNoPermission
-	text_end
+	text_far_end _CeruleanBallDesignerBenchCustomizeNoPermission
 
 InitializeCustomPokeballData::
 	; initialize the custom pokeball names in the sram save data. We cannot permanently store them in wram due to their size.
@@ -1038,68 +968,52 @@ InitializeCustomPokeballData::
 
 BallDesignerPictureReactions:
 BallDesignerPokemonBreederReaction:
-	text_far _BallDesignerPokemonBreederReaction
-	text_end
+	text_far_end _BallDesignerPokemonBreederReaction
 
 BallDesignerPsyduckReaction::
-	text_far _BallDesignerPsyduckReaction
-	text_end
+	text_far_end _BallDesignerPsyduckReaction
 
 BallDesignerFlareonReaction::
-	text_far _BallDesignerFlareonReaction
-	text_end
+	text_far_end _BallDesignerFlareonReaction
 
 BallDesignerJigglypuffReaction::
-	text_far _BallDesignerJigglypuffReaction
-	text_end
+	text_far_end _BallDesignerJigglypuffReaction
 
 BallDesignerJolteonReaction::
-	text_far _BallDesignerJolteonReaction
-	text_end
+	text_far_end _BallDesignerJolteonReaction
 
 BallDesignerPorygonReaction::
-	text_far _BallDesignerPorygonReaction
-	text_end
+	text_far_end _BallDesignerPorygonReaction
 
 BallDesignerFossilReaction::
-	text_far _BallDesignerFossilReaction
-	text_end
+	text_far_end _BallDesignerFossilReaction
 
 BallDesignerArticunoReaction::
-	text_far _BallDesignerArticunoReaction
-	text_end
+	text_far_end _BallDesignerArticunoReaction
 
 BallDesignerAbraReaction::
-	text_far _BallDesignerAbraReaction
-	text_end
+	text_far_end _BallDesignerAbraReaction
 
 BallDesignerPidgeotReaction::
-	text_far _BallDesignerPidgeotReaction
-	text_end
+	text_far_end _BallDesignerPidgeotReaction
 
 BallDesignerGrimerReaction::
-	text_far _BallDesignerGrimerReaction
-	text_end
+	text_far_end _BallDesignerGrimerReaction
 
 BallDesignerGastlyReaction::
-	text_far _BallDesignerGastlyReaction
-	text_end
+	text_far_end _BallDesignerGastlyReaction
 
 BallDesignerScytherReaction::
-	text_far _BallDesignerScytherReaction
-	text_end
+	text_far_end _BallDesignerScytherReaction
 
 BallDesignerLassReaction::
-	text_far _BallDesignerLassReaction
-	text_end
+	text_far_end _BallDesignerLassReaction
 
 BallDesignerMankeyReaction::
-	text_far _BallDesignerMankeyReaction
-	text_end
+	text_far_end _BallDesignerMankeyReaction
 
 BallDesignerGamblerReaction::
-	text_far _BallDesignerGamblerReaction
-	text_end
+	text_far_end _BallDesignerGamblerReaction
 
 InitialCustomBallNames::
 	db "FOREST@" 
@@ -1184,9 +1098,7 @@ IsBallPropertyUnlocked::
 	ld c, b
 	ld b, FLAG_TEST
 	ld hl, wCustomBallUnlockFlags
-	predef FlagActionPredef
-	ld a, c
-	and a
+	call FlagAction
 	pop bc
 	pop hl
 	jr z, .continue

@@ -5,16 +5,14 @@ FuchsiaTreeDeleterHouse_Script:
 
 FuchsiaTreeDeleterHouse_TextPointers:
 	def_text_pointers
-	dw_const TreeDeleterText,             TEXT_FUCHSIATREEDELETERHOUSE_TREE_DELETER
-	dw_const TreeDeleterSnorlaxText,      TEXT_FUCHSIATREEDELETERHOUSE_SNORLAX
+	dba_const TreeDeleterText,             TEXT_FUCHSIATREEDELETERHOUSE_TREE_DELETER
+	dba_const TreeDeleterSnorlaxText,      TEXT_FUCHSIATREEDELETERHOUSE_SNORLAX
 
 FuchsiaTreeDeleterHouseText1:
-	text_far _FuchsiaTreeDeleterText1
-	text_end
+	text_far_end _FuchsiaTreeDeleterText1
 
 FuchsiaTreeDeleterHouseText2:
-	text_far _FuchsiaTreeDeleterText2
-	text_end
+	text_far_end _FuchsiaTreeDeleterText2
 
 TreeDeleterSnorlaxText:
 	text_far _FuchsiaTreeDeleterSnorlax
@@ -35,11 +33,9 @@ TreeDeleterSnorlaxText:
 .done
 	rst TextScriptEnd
 .couchPotato
-	text_far _FuchsiaTreeDeleterSnorlax2
-	text_end
+	text_far_end _FuchsiaTreeDeleterSnorlax2
 .thatsMy
-	text_far _FuchsiaTreeDeleterSnorlax3
-	text_end
+	text_far_end _FuchsiaTreeDeleterSnorlax3
 
 CheckAllTreesDeleted:
 	CheckBothEventsSet EVENT_DELETED_ROUTE2_TREES, EVENT_DELETED_CERULEAN_TREE
@@ -102,16 +98,13 @@ TreeDeleterName:
 	db "TREE DELETER@"
 
 FuchsiaTreeDeleterDoneText:
-	text_far _FuchsiaTreeDeleterDoneText
-	text_end
+	text_far_end _FuchsiaTreeDeleterDoneText
 
 FuchsiaTreeDeleterFinalText:
-	text_far _FuchsiaTreeDeleterFinalText
-	text_end
+	text_far_end _FuchsiaTreeDeleterFinalText
 
 FuchsiaTreeDeleterFinalText2:
-	text_far _FuchsiaTreeDeleterFinalText2
-	text_end
+	text_far_end _FuchsiaTreeDeleterFinalText2
 
 TextPointers_TreeDelete:
 	dw FuchsiaTreeDeleterRoute2
@@ -120,7 +113,10 @@ TextPointers_TreeDelete:
 	dw FuchsiaTreeDeleterFuchsiaCity
 
 PurchasedTreeDeletion:  
-	call IsThereEnoughMoneyTreeDeleter
+	ld de, wPlayerMoney
+	ld hl, hMoney
+	ld c, 3 ; length of money in bytes
+	call StringCmp
 	jr c, .notEnoughMoneyTreeDeleter
 	call SubtractAmountPaidFromMoney
 	ld a, SFX_PURCHASE
@@ -133,134 +129,91 @@ PurchasedTreeDeletion:
 .notEnoughMoneyTreeDeleter
 	ld hl, NotEnoughMoneyTreeDeleterText
 	rst _PrintText
+	and a
 	ret
 
-IsThereEnoughMoneyTreeDeleter:
-	ld de, wPlayerMoney
-	ld hl, hMoney
-	ld c, 3 ; length of money in bytes
-	jp StringCmp
-
 NotEnoughMoneyTreeDeleterText:
-	text_far _PokemartNotEnoughMoneyText
-	text_end
+	text_far_end _PokemartNotEnoughMoneyText
 
 FuchsiaTreeDeleterAlreadyDeletedText:
-	text_far _FuchsiaTreeDeleterAlreadyDeletedText
-	text_end
+	text_far_end _FuchsiaTreeDeleterAlreadyDeletedText
 
 FuchsiaTreeDeleterTreeDelete:
-	text_far _FuchsiaTreeDeleterTreeDelete
-	text_end
+	text_far_end _FuchsiaTreeDeleterTreeDelete
 
 FuchsiaTreeDeleterRoute2:
 	text_asm
-	CheckEvent EVENT_DELETED_ROUTE2_TREES
-	jr nz, .alreadyDeleted
+	lb bc, 0, $80
 	ld hl, FuchsiaTreeDeleterRoute2Text
+	CheckEvent EVENT_DELETED_ROUTE2_TREES
+	call TreeDeleterTextScript
+	jr nc, .done
+	SetEvent EVENT_DELETED_ROUTE2_TREES
+.done
+	rst TextScriptEnd
+
+TreeDeleterTextScript:
+	jr nz, .alreadyDeleted
+	push bc
 	rst _PrintText
 	call YesNoChoice
+	pop bc
 	jr nz, .done
-	xor a
+	ld a, b
 	ldh [hMoney], a 
+	xor a
 	ldh [hMoney + 2], a
-	ld a, $80
-	ldh [hMoney + 1], a ; loads 5000 into the cost
-	call PurchasedTreeDeletion
-	jr nc, .done
-.setEvent	
-	SetEvent EVENT_DELETED_ROUTE2_TREES
-	jr .done
+	ld a, c
+	ldh [hMoney + 1], a
+	jp PurchasedTreeDeletion
 .alreadyDeleted
 	ld hl, FuchsiaTreeDeleterAlreadyDeletedText
 	rst _PrintText
 .done
-	rst TextScriptEnd
+	and a
+	ret
 
 FuchsiaTreeDeleterRoute2Text:
-	text_far _FuchsiaTreeDeleterRoute2
-	text_end
+	text_far_end _FuchsiaTreeDeleterRoute2
 
 FuchsiaTreeDeleterCeruleanCity:
 	text_asm
-	CheckEvent EVENT_DELETED_CERULEAN_TREE
-	jr nz, .alreadyDeleted
+	lb bc, 0, $40
 	ld hl, FuchsiaTreeDeleterCeruleanCityText
-	rst _PrintText
-	call YesNoChoice
-	jr nz, .done
-	xor a
-	ldh [hMoney], a 
-	ldh [hMoney + 2], a
-	ld a, $40
-	ldh [hMoney + 1], a ; loads 5000 into the cost
-	call PurchasedTreeDeletion
+	CheckEvent EVENT_DELETED_CERULEAN_TREE
+	call TreeDeleterTextScript
 	jr nc, .done
-.setEvent	
 	SetEvent EVENT_DELETED_CERULEAN_TREE
-	jr .done
-.alreadyDeleted
-	ld hl, FuchsiaTreeDeleterAlreadyDeletedText
-	rst _PrintText
 .done
 	rst TextScriptEnd
 
 FuchsiaTreeDeleterCeruleanCityText:
-	text_far _FuchsiaTreeDeleterCerulean
-	text_end
+	text_far_end _FuchsiaTreeDeleterCerulean
 
 FuchsiaTreeDeleterRoute9:
 	text_asm
-	CheckEvent EVENT_DELETED_ROUTE9_TREE
-	jr nz, .alreadyDeleted
+	lb bc, 0, $40
 	ld hl, FuchsiaTreeDeleterRoute9Text
-	rst _PrintText
-	call YesNoChoice
-	jr nz, .done
-	xor a
-	ldh [hMoney], a 
-	ldh [hMoney + 2], a
-	ld a, $40
-	ldh [hMoney + 1], a ; loads 5000 into the cost
-	call PurchasedTreeDeletion
+	CheckEvent EVENT_DELETED_ROUTE9_TREE
+	call TreeDeleterTextScript
 	jr nc, .done
-.setEvent	
 	SetEvent EVENT_DELETED_ROUTE9_TREE
-	jr .done
-.alreadyDeleted
-	ld hl, FuchsiaTreeDeleterAlreadyDeletedText
-	rst _PrintText
 .done
 	rst TextScriptEnd
 
 FuchsiaTreeDeleterRoute9Text:
-	text_far _FuchsiaTreeDeleterRoute9
-	text_end
+	text_far_end _FuchsiaTreeDeleterRoute9
 
 FuchsiaTreeDeleterFuchsiaCity:
 	text_asm
-	CheckEvent EVENT_DELETED_FUCHSIA_TREES
-	jr nz, .alreadyDeleted
+	lb bc, 1, 0
 	ld hl, FuchsiaTreeDeleterFuchsiaCityText
-	rst _PrintText
-	call YesNoChoice
-	jr nz, .done
-	xor a
-	ldh [hMoney + 2], a
-	ldh [hMoney + 1], a
-	ld a, 1
-	ldh [hMoney], a ; loads 10000 into the cost
-	call PurchasedTreeDeletion
+	CheckEvent EVENT_DELETED_FUCHSIA_TREES
+	call TreeDeleterTextScript
 	jr nc, .done
-.setEvent	
 	SetEvent EVENT_DELETED_FUCHSIA_TREES
-	jr .done
-.alreadyDeleted
-	ld hl, FuchsiaTreeDeleterAlreadyDeletedText
-	rst _PrintText
 .done
 	rst TextScriptEnd
 
 FuchsiaTreeDeleterFuchsiaCityText:
-	text_far _FuchsiaTreeDeleterFuchsiaCity
-	text_end
+	text_far_end _FuchsiaTreeDeleterFuchsiaCity

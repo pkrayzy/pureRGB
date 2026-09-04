@@ -3,10 +3,9 @@ PalletTown_Script:
 	jr z, .next
 	SetEvent EVENT_PALLET_AFTER_GETTING_POKEBALLS
 .next
-	call EnableAutoTextBoxDrawing
 	ld hl, PalletTown_ScriptPointers
-	ld a, [wPalletTownCurScript]
-	jp CallFunctionInTable
+	ld de, wPalletTownCurScript
+	jp CallMapScriptInTable
 
 PalletTown_ScriptPointers:
 	def_script_pointers
@@ -53,11 +52,9 @@ PalletTownOakHeyWaitScript:
 	ld a, TEXT_PALLETTOWN_OAK
 	ldh [hTextID], a
 	call DisplayTextID
-	ld a, PAD_BUTTONS | PAD_CTRL_PAD
-	ld [wJoyIgnore], a
-	ld a, TOGGLE_PALLET_TOWN_OAK
-	ld [wToggleableObjectIndex], a
-	predef ShowObject
+	call DisableAllJoypad
+	ld c, TOGGLE_PALLET_TOWN_OAK
+	call ShowObject
 
 	; trigger the next script
 	ld a, SCRIPT_PALLETTOWN_OAK_WALKS_TO_PLAYER
@@ -78,16 +75,15 @@ PalletTownOakWalksToPlayerScript:
 	ld a, 1
 	swap a
 	ldh [hNPCSpriteOffset], a
-	predef CalcPositionOfPlayerRelativeToNPC
+	callfar CalcPositionOfPlayerRelativeToNPC
 	ld hl, hNPCPlayerYDistance
 	dec [hl]
-	predef FindPathToPlayer ; load Oak's movement into wNPCMovementDirections2
+	callfar FindPathToPlayer ; load Oak's movement into wNPCMovementDirections2
 	ld de, wNPCMovementDirections2
 	ld a, PALLETTOWN_OAK
 	ldh [hSpriteIndex], a
 	call MoveSprite
-	ld a, PAD_BUTTONS | PAD_CTRL_PAD
-	ld [wJoyIgnore], a
+	call DisableAllJoypad
 
 	; trigger the next script
 	ld a, SCRIPT_PALLETTOWN_OAK_NOT_SAFE_COME_WITH_ME
@@ -95,10 +91,9 @@ PalletTownOakWalksToPlayerScript:
 	ret
 
 PalletTownOakNotSafeComeWithMeScript:
-	ld a, [wStatusFlags5]
-	bit BIT_SCRIPTED_NPC_MOVEMENT, a
+	call IsNPCAutoMoving
 	ret nz
-	xor a ; ld a, SPRITE_FACING_DOWN
+	xor a ; SPRITE_FACING_DOWN
 	ld [wSpritePlayerStateData1FacingDirection], a
 	ld a, TRUE
 	ld [wOakWalkedToPlayer], a
@@ -108,8 +103,7 @@ PalletTownOakNotSafeComeWithMeScript:
 	ldh [hTextID], a
 	call DisplayTextID
 ; set up movement script that causes the player to follow Oak to his lab
-	ld a, PAD_BUTTONS | PAD_CTRL_PAD
-	ld [wJoyIgnore], a
+	call DisableAllJoypad
 	ld a, PALLETTOWN_OAK
 	ld [wSpriteIndex], a
 	xor a
@@ -136,43 +130,34 @@ PalletTownPlayerFollowsOakScript:
 
 PalletTownDaisyScript:
 	CheckEvent EVENT_DAISY_WALKING
-	jr nz, .next
+	ret nz
 	CheckBothEventsSet EVENT_GOT_TOWN_MAP, EVENT_ENTERED_BLUES_HOUSE, 1
-	jr nz, .next
+	ret nz
 	SetEvent EVENT_DAISY_WALKING
-	ld a, TOGGLE_DAISY_SITTING
-	ld [wToggleableObjectIndex], a
-	predef HideObject
-	ld a, TOGGLE_DAISY_WALKING
-	ld [wToggleableObjectIndex], a
-	predef_jump ShowObject
-.next
-	CheckEvent EVENT_GOT_POKEBALLS_FROM_OAK
-	ret z
-	SetEvent EVENT_PALLET_AFTER_GETTING_POKEBALLS_2
-	ret
+	ld c, TOGGLE_DAISY_SITTING
+	call HideObject
+	ld c, TOGGLE_DAISY_WALKING
+	jp ShowObject
 
 PalletTown_TextPointers:
 	def_text_pointers
-	dw_const PalletTownOakText,              TEXT_PALLETTOWN_OAK
-	dw_const PalletTownGirlText,             TEXT_PALLETTOWN_GIRL
-	dw_const PalletTownFisherText,           TEXT_PALLETTOWN_FISHER
-	dw_const PalletTownOaksLabSignText,      TEXT_PALLETTOWN_OAKSLAB_SIGN
-	dw_const PalletTownSignText,             TEXT_PALLETTOWN_SIGN
-	dw_const PalletTownPlayersHouseSignText, TEXT_PALLETTOWN_PLAYERSHOUSE_SIGN
-	dw_const PalletTownRivalsHouseSignText,  TEXT_PALLETTOWN_RIVALSHOUSE_SIGN
+	dba_const PalletTownOakText,              TEXT_PALLETTOWN_OAK
+	dba_const _PalletTownGirlText,             TEXT_PALLETTOWN_GIRL
+	dba_const _PalletTownFisherText,           TEXT_PALLETTOWN_FISHER
+	dba_const _PalletTownOaksLabSignText,      TEXT_PALLETTOWN_OAKSLAB_SIGN
+	dba_const _PalletTownSignText,             TEXT_PALLETTOWN_SIGN
+	dba_const PalletTownPlayersHouseSignText, TEXT_PALLETTOWN_PLAYERSHOUSE_SIGN
+	dba_const _PalletTownRivalsHouseSignText,  TEXT_PALLETTOWN_RIVALSHOUSE_SIGN
 
 PalletTownOakText:
 	text_asm
 	ld a, [wOakWalkedToPlayer]
 	and a
-	jr nz, .next
+	ld hl, .ItsUnsafeText
+	jr nz, .done
 	ld a, 1
 	ld [wDoNotWaitForButtonPressAfterDisplayingText], a
 	ld hl, .HeyWaitDontGoOutText
-	jr .done
-.next
-	ld hl, .ItsUnsafeText
 .done
 	rst _PrintText
 	rst TextScriptEnd
@@ -181,46 +166,24 @@ PalletTownOakText:
 	text_far _PalletTownOakHeyWaitDontGoOutText
 	text_asm
 	ld c, 10
-	rst _DelayFrames
+	rst DelayFrames
 	xor a
 	ld [wEmotionBubbleSpriteIndex], a ; player's sprite
 	ld [wWhichEmotionBubble], a ; EXCLAMATION_BUBBLE
-	predef EmotionBubble
+	callfar EmotionBubble
 	ld a, PLAYER_DIR_DOWN
 	ld [wPlayerMovingDirection], a
 	rst TextScriptEnd
 
 .ItsUnsafeText:
-	text_far _PalletTownOakItsUnsafeText
-	text_end
-
-PalletTownGirlText:
-	text_far _PalletTownGirlText
-	text_end
-
-PalletTownFisherText:
-	text_far _PalletTownFisherText
-	text_end
-
-PalletTownOaksLabSignText:
-	text_far _PalletTownOaksLabSignText
-	text_end
-
-PalletTownSignText:
-	text_far _PalletTownSignText
-	text_end
+	text_far_end _PalletTownOakItsUnsafeText
 
 PalletTownPlayersHouseSignText:
 IF DEF(_DEBUG)
 	text_asm
 	callfar GBCSetCPU1xSpeed
-	predef HallOfFamePC
+	callfar HallOfFamePC
 	jp SoftReset
 ELSE
-	text_far _PalletTownPlayersHouseSignText
-	text_end
+	text_far_end _PalletTownPlayersHouseSignText
 ENDC
-
-PalletTownRivalsHouseSignText:
-	text_far _PalletTownRivalsHouseSignText
-	text_end

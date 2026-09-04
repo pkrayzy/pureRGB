@@ -3,7 +3,19 @@
 ; Control characters (see home/text.asm)
 
 	charmap "<NULL>",    $00
-	DEF FIRST_TEXT_SHORCUT_ID EQU $3F
+	DEF FIRST_TEXT_SHORTCUT_ID EQU $33
+	charmap "like",      $33
+	charmap "an",        $34
+	charmap "You",       $35
+	charmap "er",        $36
+	charmap "with",      $37
+	charmap "at",        $38
+	charmap "ight",      $39
+	charmap "have",      $3A ; PureRGBnote: Added: single byte verion of have
+	charmap " a ",       $3B ; PureRGBnote: Added: single byte verion of " a "
+	charmap "here",      $3C ; PureRGBnote: Added: single byte verion of here
+	charmap "to ",       $3D ; PureRGBnote: Added: single byte verion of "to "
+	charmap " to",       $3E ; PureRGBnote: Added: single byte verion of " to"
 	charmap "or",        $3F ; PureRGBnote: ADDED: single byte version of or
 	charmap "ing",       $40 ; PureRGBnote: ADDED: single byte version of ing
 	charmap "the",       $41 ; PureRGBnote: ADDED: single byte version of the
@@ -57,11 +69,11 @@
 	charmap "<COLON>",   $6d ; colon with tinier dots than ":"
 	charmap "ぃ",         $6e ; hiragana small i, unused
 	charmap "ぅ",         $6f ; hiragana small u, unused
-	charmap "‘",         $70 ; opening single quote
-	charmap "’",         $71 ; closing single quote
-	charmap "<EXTRAOPENQUOTE>",         $72 ; opening quote ; PureRGBnote: CHANGED: crappier quotation mark
-	charmap "<EXTRACLOSEQUOTE>",         $73 ; closing quote ; PureRGBnote: CHANGED: crappier quotation mark 2
-	charmap "·",         $74 ; middle dot, unused
+	charmap "‘",         $70 ; opening single quote ; unused?
+	charmap "’",         $71 ; closing single quote ; unused?
+	charmap "<EXTRAOPENQUOTE>",         $72 ; opening quote ; PureRGBnote: CHANGED: crappier quotation mark (unused)
+	charmap "<EXTRACLOSEQUOTE>",         $73 ; closing quote ; PureRGBnote: CHANGED: crappier quotation mark 2 (unused)
+	charmap "·",         $74 ; middle dot
 	charmap "…",         $75 ; ellipsis
 	charmap "ぁ",         $76 ; hiragana small a, unused
 	charmap "ぇ",         $77 ; hiragana small e, unused

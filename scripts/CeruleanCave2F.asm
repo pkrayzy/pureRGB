@@ -1,10 +1,9 @@
 ; PureRGBnote: ADDED: code was added pertaining to battling professor oak on this floor.
 
 CeruleanCave2F_Script:
-	call EnableAutoTextBoxDrawing
 	ld hl, CeruleanCave2F_ScriptPointers
-	ld a, [wCeruleanCave2FCurScript]
-	jp CallFunctionInTable
+	ld de, wCeruleanCave2FCurScript
+	jp CallMapScriptInTable
 
 CeruleanCave2F_ScriptPointers:
 	def_script_pointers
@@ -21,7 +20,6 @@ CeruleanCave2FAfterOakBattleScript:
 	ld a, [wOptions2]
 	bit BIT_ALT_PKMN_PALETTES, a ; do we have alt palettes enabled
 	jr z, .done ; don't do anything if alt palettes are turned off
-
 	ld d, CERULEANCAVE2F_OAK
 	callfar MakeSpriteFacePlayer
 	ld a, TEXT_CERULEANCAVE2F_OAK_FIRST_DEFEAT
@@ -37,11 +35,11 @@ CeruleanCave2FAfterOakBattleScript:
 
 CeruleanCave2F_TextPointers:
 	def_text_pointers
-	dw_const OakCeruleanCaveText, TEXT_CERULEANCAVE2F_OAK
-	dw_const PickUpItemText, TEXT_CERULEANCAVE2F_ITEM1
-	dw_const PickUpItemText, TEXT_CERULEANCAVE2F_ITEM2
-	dw_const PickUpItemText, TEXT_CERULEANCAVE2F_ITEM3
-	dw_const OakCeruleanCaveFirstDefeatText, TEXT_CERULEANCAVE2F_OAK_FIRST_DEFEAT
+	dba_const OakCeruleanCaveText, TEXT_CERULEANCAVE2F_OAK
+	dba_const PickUpItemText, TEXT_CERULEANCAVE2F_ITEM1
+	dba_const PickUpItemText, TEXT_CERULEANCAVE2F_ITEM2
+	dba_const PickUpItemText, TEXT_CERULEANCAVE2F_ITEM3
+	dba_const OakCeruleanCaveFirstDefeatText, TEXT_CERULEANCAVE2F_OAK_FIRST_DEFEAT
 
 OakCeruleanCaveText:
 	text_asm
@@ -49,18 +47,13 @@ OakCeruleanCaveText:
 	jr z, .challengeOak
 	ld hl, OakBeatenText
 	rst _PrintText
-	jr .done
+	rst TextScriptEnd
 .challengeOak
 	ld c, BANK(Music_MeetProfOak)
 	ld a, MUSIC_MEET_PROF_OAK
 	call PlayMusic
 	ld hl, OakBattleStartText
 	rst _PrintText
-	call OakBattle
-.done
-	rst TextScriptEnd
-
-OakBattle:
 	ld hl, OakBattleWinText
 	ld de, OakBattleLoseText
 	call SaveEndBattleTextPointers
@@ -69,14 +62,13 @@ OakBattle:
 	set BIT_PRINT_END_BATTLE_TEXT, [hl]
 	ld a, OPP_PROF_OAK
 	ld [wCurOpponent], a
-
 	; select which team to use during the encounter
 	ld a, [wPlayerStarter]
 	call StarterToPartyID
 	ld [wTrainerNo], a
 	ld a, SCRIPT_CERULEANCAVE2F_AFTER_OAK_BATTLE
 	ld [wCeruleanCave2FCurScript], a
-	ret
+	rst TextScriptEnd
 
 OakCeruleanCaveFirstDefeatText:
 	text_asm
@@ -85,23 +77,16 @@ OakCeruleanCaveFirstDefeatText:
 	rst TextScriptEnd
 
 OakBattleStartText:
-	text_far _OakBattleStartText
-	text_end
+	text_far_end _OakBattleStartText
 
 OakBattleWinText:
-	text_far _OakBattleWinText
-	text_end
+	text_far_end _OakBattleWinText
 
 OakBattleLoseText:
-	text_far _OakBattleLoseText
-	text_end
+	text_far_end _OakBattleLoseText
 
 OakBeatenText:
-	text_far _OakBeatenText
-	text_end
+	text_far_end _OakBeatenText
 
 OakFirstLoseText:
-	text_far _OakFirstLoseText
-	sound_pokedex_rating
-	text_end
-	
+	text_far_end _OakFirstLoseText	

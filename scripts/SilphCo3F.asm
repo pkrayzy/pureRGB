@@ -2,68 +2,19 @@
 
 SilphCo3F_Script:
 	call SilphCo3FGateCallbackScript
-	call EnableAutoTextBoxDrawing
 	ld hl, SilphCo3TrainerHeaders
 	ld de, SilphCo3F_ScriptPointers
-	ld a, [wSilphCo3FCurScript]
-	call ExecuteCurMapScriptInTable
-	ld [wSilphCo3FCurScript], a
-	ret
+	ld bc, wSilphCo3FCurScript
+	jp ExecuteCustomMapScriptInTable
 
 SilphCo3FGateCallbackScript::
-	ld hl, wCurrentMapScriptFlags
-	bit BIT_CUR_MAP_LOADED_1, [hl]
-	res BIT_CUR_MAP_LOADED_1, [hl]
+	call WasMapJustLoaded
 	ret z
-	ld hl, .GateCoordinates
-	call SilphCo2F_SetCardKeyDoorYScript
-	call SilphCo3F_UnlockedDoorEventScript
+	ld hl, SilphCo3FGateCoords
 	CheckEvent EVENT_SILPH_CO_3_UNLOCKED_DOOR1
-	jr nz, .unlock_door1
-	push af
-	ld a, $5f
-	ld [wNewTileBlockID], a
-	lb bc, 4, 4
-	predef ReplaceTileBlock
-	pop af
-.unlock_door1
-	CheckEventAfterBranchReuseA EVENT_SILPH_CO_3_UNLOCKED_DOOR2, EVENT_SILPH_CO_3_UNLOCKED_DOOR1
-	ret nz
-	ld a, $5f
-	ld [wNewTileBlockID], a
-	lb bc, 4, 8
-	predef_jump ReplaceTileBlock
-
-.GateCoordinates:
-	dbmapcoord  4,  4
-	dbmapcoord  8,  4
-	db -1 ; end
-
-SilphCo3F_UnlockedDoorEventScript:
-	EventFlagAddress hl, EVENT_SILPH_CO_3_UNLOCKED_DOOR1
-	ldh a, [hUnlockedSilphCoDoors]
-	and a
-	ret z
-	cp $1
-	jr nz, .unlock_door1
-	SetEventReuseHL EVENT_SILPH_CO_3_UNLOCKED_DOOR1
-	callfar CheckAllCardKeyEvents
-	jp Load3FCheckCardKeyText
-.unlock_door1
-	SetEventAfterBranchReuseHL EVENT_SILPH_CO_3_UNLOCKED_DOOR2, EVENT_SILPH_CO_3_UNLOCKED_DOOR1
-	callfar CheckAllCardKeyEvents
-	; fall through
-Load3FCheckCardKeyText:
-	CheckEvent EVENT_ALL_CARD_KEY_DOORS_OPENED
-	ret z
-	ld a, TEXT_SILPHCO3F_CARD_KEY_DONE
-	ldh [hTextID], a
-	jp DisplayTextID
-
-SilphCo3Text5:
-	text_asm
-	callfar PrintCardKeyDoneText
-	rst TextScriptEnd
+	call UnlockSilphCoDoor
+	CheckEvent EVENT_SILPH_CO_3_UNLOCKED_DOOR2
+	jp UnlockSilphCoDoor
 
 SilphCo3F_ScriptPointers:
 	def_script_pointers
@@ -73,18 +24,17 @@ SilphCo3F_ScriptPointers:
 
 SilphCo3F_TextPointers:
 	def_text_pointers
-	dw_const SilphCo3FSilphWorkerMText, TEXT_SILPHCO3F_SILPH_WORKER_M
-	dw_const SilphCo3FRocketText,       TEXT_SILPHCO3F_ROCKET
-	dw_const SilphCo3FScientistText,    TEXT_SILPHCO3F_SCIENTIST
-	dw_const PickUp3ItemText,           TEXT_SILPHCO3F_ITEM1
-	dw_const SilphCo3Text5,             TEXT_SILPHCO3F_CARD_KEY_DONE
+	dba_const SilphCo3FSilphWorkerMText, TEXT_SILPHCO3F_SILPH_WORKER_M
+	dba_const SilphCo3FRocketText,       TEXT_SILPHCO3F_ROCKET
+	dba_const SilphCo3FScientistText,    TEXT_SILPHCO3F_SCIENTIST
+	dba_const PickUp3ItemText,           TEXT_SILPHCO3F_ITEM1
 
 SilphCo3TrainerHeaders:
 	def_trainers 2
 SilphCo3TrainerHeader0:
-	trainer EVENT_BEAT_SILPH_CO_3F_TRAINER_0, 2, SilphCo3FRocketBattleText, SilphCo3FRocketEndBattleText, SilphCo3FRocketAfterBattleText
+	trainer EVENT_BEAT_SILPH_CO_3F_TRAINER_0, 2, _SilphCo3FRocketBattleText, _SilphCo3FRocketEndBattleText, _SilphCo3FRocketAfterBattleText
 SilphCo3TrainerHeader1:
-	trainer EVENT_BEAT_SILPH_CO_3F_TRAINER_1, 3, SilphCo3FScientistBattleText, SilphCo3FScientistEndBattleText, SilphCo3FScientistAfterBattleText
+	trainer EVENT_BEAT_SILPH_CO_3F_TRAINER_1, 3, _SilphCo3FScientistBattleText, _SilphCo3FScientistEndBattleText, _SilphCo3FScientistAfterBattleText
 	db -1 ; end
 
 SilphCo3FSilphWorkerMText:
@@ -98,45 +48,13 @@ SilphCo3FSilphWorkerMText:
 	rst TextScriptEnd
 
 .WhatShouldIDoText:
-	text_far _SilphCo3FSilphWorkerMWhatShouldIDoText
-	text_end
+	text_far_end _SilphCo3FSilphWorkerMWhatShouldIDoText
 
 .YouSavedUsText:
-	text_far _SilphCo3FSilphWorkerMYouSavedUsText
-	text_end
+	text_far_end _SilphCo3FSilphWorkerMYouSavedUsText
 
 SilphCo3FRocketText:
-	text_asm
-	ld hl, SilphCo3TrainerHeader0
-	call TalkToTrainer
-	rst TextScriptEnd
-
-SilphCo3FRocketBattleText:
-	text_far _SilphCo3FRocketBattleText
-	text_end
-
-SilphCo3FRocketEndBattleText:
-	text_far _SilphCo3FRocketEndBattleText
-	text_end
-
-SilphCo3FRocketAfterBattleText:
-	text_far _SilphCo3FRocketAfterBattleText
-	text_end
+	script_trainer SilphCo3TrainerHeader0
 
 SilphCo3FScientistText:
-	text_asm
-	ld hl, SilphCo3TrainerHeader1
-	call TalkToTrainer
-	rst TextScriptEnd
-
-SilphCo3FScientistBattleText:
-	text_far _SilphCo3FScientistBattleText
-	text_end
-
-SilphCo3FScientistEndBattleText:
-	text_far _SilphCo3FScientistEndBattleText
-	text_end
-
-SilphCo3FScientistAfterBattleText:
-	text_far _SilphCo3FScientistAfterBattleText
-	text_end
+	script_trainer SilphCo3TrainerHeader1

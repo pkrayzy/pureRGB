@@ -1,19 +1,14 @@
 Route25_Script:
 	call Route25ToggleBillsScript
 	call Route25CheckHideCutTree
-	call EnableAutoTextBoxDrawing
 	ld hl, Route25TrainerHeaders
 	ld de, Route25_ScriptPointers
-	ld a, [wRoute25CurScript]
-	call ExecuteCurMapScriptInTable
-	ld [wRoute25CurScript], a
-	ret
+	ld bc, wRoute25CurScript
+	jp ExecuteCustomMapScriptInTable
 
 ; PureRGBnote: ADDED: code that keeps the cut tree cut down if we're in its alcove. Prevents getting softlocked if you delete cut.
 Route25CheckHideCutTree:
-	ld hl, wCurrentMapScriptFlags
-	bit BIT_CUR_MAP_LOADED_1, [hl] ; did we load the map from a save/warp/door/battle, etc?
-	res BIT_CUR_MAP_LOADED_1, [hl]
+	call WasMapJustLoaded
 	ret z ; map wasn't just loaded
 	ld a, [wSprite03StateData2MapY] ; guy who can move to not block us leaving the cut alcove
 	cp 12 ; guy is blocking us if his Y value is lower than this
@@ -27,7 +22,7 @@ Route25CheckHideCutTree:
 	lb bc, 2, 13
 	ld a, $6E
 	ld [wNewTileBlockID], a
-	predef_jump ReplaceTileBlock
+	jp ReplaceTileBlock
 
 Route25ToggleBillsScript:
 	ld hl, wCurrentMapScriptFlags
@@ -40,20 +35,17 @@ Route25ToggleBillsScript:
 	jr nz, .met_bill
 	; if we left bills house before helping him with the cell separator, reset pokemon version of him to being shown
 	ResetEventReuseHL EVENT_BILL_SAID_USE_CELL_SEPARATOR
-	ld a, TOGGLE_BILL_POKEMON
-	ld [wToggleableObjectIndex], a
-	predef_jump ShowObject
+	ld c, TOGGLE_BILL_POKEMON
+	jp ShowObject
 .met_bill
 	CheckEventAfterBranchReuseHL EVENT_GOT_SS_TICKET, EVENT_MET_BILL_2
 	ret z
 	; if we got the SS ticket and finished his event, show the other version of bill that says slightly different things
 	SetEventReuseHL EVENT_LEFT_BILLS_HOUSE_AFTER_HELPING
-	ld a, TOGGLE_BILL_1
-	ld [wToggleableObjectIndex], a
-	predef HideObject
-	ld a, TOGGLE_BILL_2
-	ld [wToggleableObjectIndex], a
-	predef_jump ShowObject
+	ld c, TOGGLE_BILL_1
+	call HideObject
+	ld c, TOGGLE_BILL_2
+	jp ShowObject
 
 Route25_ScriptPointers:
 	def_script_pointers
@@ -63,198 +55,67 @@ Route25_ScriptPointers:
 
 Route25_TextPointers:
 	def_text_pointers
-	dw_const Route25Youngster1Text,    TEXT_ROUTE25_YOUNGSTER1
-	dw_const Route25Youngster2Text,    TEXT_ROUTE25_YOUNGSTER2
-	dw_const Route25CooltrainerMText,  TEXT_ROUTE25_COOLTRAINER_M
-	dw_const Route25CooltrainerF1Text, TEXT_ROUTE25_COOLTRAINER_F1
-	dw_const Route25Youngster3Text,    TEXT_ROUTE25_YOUNGSTER3
-	dw_const Route25CooltrainerF2Text, TEXT_ROUTE25_COOLTRAINER_F2
-	dw_const Route25Hiker1Text,        TEXT_ROUTE25_HIKER1
-	dw_const Route25Hiker2Text,        TEXT_ROUTE25_HIKER2
-	dw_const Route25Hiker3Text,        TEXT_ROUTE25_HIKER3
-	dw_const PickUpItemText,           TEXT_ROUTE25_ITEM1
-	dw_const Route25BillSignText,      TEXT_ROUTE25_BILL_SIGN
-	dw_const Route25Text12,            TEXT_ROUTE25_TRAINER_TIPS ; PureRGBnote: ADDED: new trainer tips sign on this route.
+	dba_const Route25Youngster1Text,    TEXT_ROUTE25_YOUNGSTER1
+	dba_const Route25Youngster2Text,    TEXT_ROUTE25_YOUNGSTER2
+	dba_const Route25CooltrainerMText,  TEXT_ROUTE25_COOLTRAINER_M
+	dba_const Route25CooltrainerF1Text, TEXT_ROUTE25_COOLTRAINER_F1
+	dba_const Route25Youngster3Text,    TEXT_ROUTE25_YOUNGSTER3
+	dba_const Route25CooltrainerF2Text, TEXT_ROUTE25_COOLTRAINER_F2
+	dba_const Route25Hiker1Text,        TEXT_ROUTE25_HIKER1
+	dba_const Route25Hiker2Text,        TEXT_ROUTE25_HIKER2
+	dba_const Route25Hiker3Text,        TEXT_ROUTE25_HIKER3
+	dba_const PickUpItemText,           TEXT_ROUTE25_ITEM1
+	dba_const _Route25BillSignText,      TEXT_ROUTE25_BILL_SIGN
+	dba_const _Route25Text12,            TEXT_ROUTE25_TRAINER_TIPS ; PureRGBnote: ADDED: new trainer tips sign on this route.
 
 Route25TrainerHeaders:
 	def_trainers
 Route25TrainerHeader0:
-	trainer EVENT_BEAT_ROUTE_25_TRAINER_0, 2, Route25Youngster1BattleText, Route25Youngster1EndBattleText, Route25Youngster1AfterBattleText
+	trainer EVENT_BEAT_ROUTE_25_TRAINER_0, 2, _Route25Youngster1BattleText, _Route25Youngster1EndBattleText, _Route25Youngster1AfterBattleText
 Route25TrainerHeader1:
-	trainer EVENT_BEAT_ROUTE_25_TRAINER_1, 3, Route25Youngster2BattleText, Route25Youngster2EndBattleText, Route25Youngster2AfterBattleText
+	trainer EVENT_BEAT_ROUTE_25_TRAINER_1, 3, _Route25Youngster2BattleText, _Route25Youngster2EndBattleText, _Route25Youngster2AfterBattleText
 Route25TrainerHeader2:
-	trainer EVENT_BEAT_ROUTE_25_TRAINER_2, 3, Route25CooltrainerMBattleText, Route25CooltrainerMEndBattleText, Route25CooltrainerMAfterBattleText
+	trainer EVENT_BEAT_ROUTE_25_TRAINER_2, 3, _Route25CooltrainerMBattleText, _Route25CooltrainerMEndBattleText, _Route25CooltrainerMAfterBattleText
 Route25TrainerHeader3:
-	trainer EVENT_BEAT_ROUTE_25_TRAINER_3, 2, Route25CooltrainerF1BattleText, Route25CooltrainerF1EndBattleText, Route25CooltrainerF1AfterBattleText
+	trainer EVENT_BEAT_ROUTE_25_TRAINER_3, 2, _Route25CooltrainerF1BattleText, _Route25CooltrainerF1EndBattleText, _Route25CooltrainerF1AfterBattleText
 Route25TrainerHeader4:
-	trainer EVENT_BEAT_ROUTE_25_TRAINER_4, 4, Route25Youngster3BattleText, Route25Youngster3EndBattleText, Route25Youngster3AfterBattleText
+	trainer EVENT_BEAT_ROUTE_25_TRAINER_4, 4, _Route25Youngster3BattleText, _Route25Youngster3EndBattleText, _Route25Youngster3AfterBattleText
 Route25TrainerHeader5:
-	trainer EVENT_BEAT_ROUTE_25_TRAINER_5, 4, Route25CooltrainerF2BattleText, Route25CooltrainerF2EndBattleText, Route25CooltrainerF2AfterBattleText
+	trainer EVENT_BEAT_ROUTE_25_TRAINER_5, 4, _Route25CooltrainerF2BattleText, _Route25CooltrainerF2EndBattleText, _Route25CooltrainerF2AfterBattleText
 Route25TrainerHeader6:
-	trainer EVENT_BEAT_ROUTE_25_TRAINER_6, 3, Route25Hiker1BattleText, Route25Hiker1EndBattleText, Route25Hiker1AfterBattleText
+	trainer EVENT_BEAT_ROUTE_25_TRAINER_6, 3, _Route25Hiker1BattleText, _Route25Hiker1EndBattleText, _Route25Hiker1AfterBattleText
 Route25TrainerHeader7:
-	trainer EVENT_BEAT_ROUTE_25_TRAINER_7, 2, Route25Hiker2BattleText, Route25Hiker2EndBattleText, Route25Hiker2AfterBattleText
+	trainer EVENT_BEAT_ROUTE_25_TRAINER_7, 2, _Route25Hiker2BattleText, _Route25Hiker2EndBattleText, _Route25Hiker2AfterBattleText
 Route25TrainerHeader8:
-	trainer EVENT_BEAT_ROUTE_25_TRAINER_8, 2, Route25Hiker3BattleText, Route25Hiker3EndBattleText, Route25Hiker3AfterBattleText
+	trainer EVENT_BEAT_ROUTE_25_TRAINER_8, 2, _Route25Hiker3BattleText, _Route25Hiker3EndBattleText, Route25Hiker3AfterBattleText
 	db -1 ; end
 
 Route25Youngster1Text:
-	text_asm
-	ld hl, Route25TrainerHeader0
-	call TalkToTrainer
-	rst TextScriptEnd
+	script_trainer Route25TrainerHeader0
 
 Route25Youngster2Text:
-	text_asm
-	ld hl, Route25TrainerHeader1
-	call TalkToTrainer
-	rst TextScriptEnd
+	script_trainer Route25TrainerHeader1
 
 Route25CooltrainerMText:
-	text_asm
-	ld hl, Route25TrainerHeader2
-	call TalkToTrainer
-	rst TextScriptEnd
+	script_trainer Route25TrainerHeader2
 
 Route25CooltrainerF1Text:
-	text_asm
-	ld hl, Route25TrainerHeader3
-	call TalkToTrainer
-	rst TextScriptEnd
+	script_trainer Route25TrainerHeader3
 
 Route25Youngster3Text:
-	text_asm
-	ld hl, Route25TrainerHeader4
-	call TalkToTrainer
-	rst TextScriptEnd
+	script_trainer Route25TrainerHeader4
 
 Route25CooltrainerF2Text:
-	text_asm
-	ld hl, Route25TrainerHeader5
-	call TalkToTrainer
-	rst TextScriptEnd
+	script_trainer Route25TrainerHeader5
 
 Route25Hiker1Text:
-	text_asm
-	ld hl, Route25TrainerHeader6
-	call TalkToTrainer
-	rst TextScriptEnd
+	script_trainer Route25TrainerHeader6
 
 Route25Hiker2Text:
-	text_asm
-	ld hl, Route25TrainerHeader7
-	call TalkToTrainer
-	rst TextScriptEnd
+	script_trainer Route25TrainerHeader7
 
 Route25Hiker3Text:
-	text_asm
-	ld hl, Route25TrainerHeader8
-	call TalkToTrainer
-	rst TextScriptEnd
-
-Route25Youngster1BattleText:
-	text_far _Route25Youngster1BattleText
-	text_end
-
-Route25Youngster1EndBattleText:
-	text_far _Route25Youngster1EndBattleText
-	text_end
-
-Route25Youngster1AfterBattleText:
-	text_far _Route25Youngster1AfterBattleText
-	text_end
-
-Route25Youngster2BattleText:
-	text_far _Route25Youngster2BattleText
-	text_end
-
-Route25Youngster2EndBattleText:
-	text_far _Route25Youngster2EndBattleText
-	text_end
-
-Route25Youngster2AfterBattleText:
-	text_far _Route25Youngster2AfterBattleText
-	text_end
-
-Route25CooltrainerMBattleText:
-	text_far _Route25CooltrainerMBattleText
-	text_end
-
-Route25CooltrainerMEndBattleText:
-	text_far _Route25CooltrainerMEndBattleText
-	text_end
-
-Route25CooltrainerMAfterBattleText:
-	text_far _Route25CooltrainerMAfterBattleText
-	text_end
-
-Route25CooltrainerF1BattleText:
-	text_far _Route25CooltrainerF1BattleText
-	text_end
-
-Route25CooltrainerF1EndBattleText:
-	text_far _Route25CooltrainerF1EndBattleText
-	text_end
-
-Route25CooltrainerF1AfterBattleText:
-	text_far _Route25CooltrainerF1AfterBattleText
-	text_end
-
-Route25Youngster3BattleText:
-	text_far _Route25Youngster3BattleText
-	text_end
-
-Route25Youngster3EndBattleText:
-	text_far _Route25Youngster3EndBattleText
-	text_end
-
-Route25Youngster3AfterBattleText:
-	text_far _Route25Youngster3AfterBattleText
-	text_end
-
-Route25CooltrainerF2BattleText:
-	text_far _Route25CooltrainerF2BattleText
-	text_end
-
-Route25CooltrainerF2EndBattleText:
-	text_far _Route25CooltrainerF2EndBattleText
-	text_end
-
-Route25CooltrainerF2AfterBattleText:
-	text_far _Route25CooltrainerF2AfterBattleText
-	text_end
-
-Route25Hiker1BattleText:
-	text_far _Route25Hiker1BattleText
-	text_end
-
-Route25Hiker1EndBattleText:
-	text_far _Route25Hiker1EndBattleText
-	text_end
-
-Route25Hiker1AfterBattleText:
-	text_far _Route25Hiker1AfterBattleText
-	text_end
-
-Route25Hiker2BattleText:
-	text_far _Route25Hiker2BattleText
-	text_end
-
-Route25Hiker2EndBattleText:
-	text_far _Route25Hiker2EndBattleText
-	text_end
-
-Route25Hiker2AfterBattleText:
-	text_far _Route25Hiker2AfterBattleText
-	text_end
-
-Route25Hiker3BattleText:
-	text_far _Route25Hiker3BattleText
-	text_end
-
-Route25Hiker3EndBattleText:
-	text_far _Route25Hiker3EndBattleText
-	text_end
+	script_trainer Route25TrainerHeader8
 
 Route25Hiker3AfterBattleText:
 	text_far _Route25Hiker3AfterBattleText
@@ -262,11 +123,3 @@ Route25Hiker3AfterBattleText:
 	lb hl, DEX_MANKEY, HIKER
 	ld de, MankeyLearnsetText
 	predef_jump LearnsetTrainerScript
-
-Route25BillSignText:
-	text_far _Route25BillSignText
-	text_end
-
-Route25Text12:
-	text_far _Route25Text12
-	text_end

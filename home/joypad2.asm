@@ -71,7 +71,7 @@ WaitForTextScrollButtonPress::
 	call HandleDownArrowBlinkTiming
 	pop hl
 	call JoypadLowSensitivity
-	predef CableClub_Run
+	callfar CableClub_Run
 	ldh a, [hJoy5]
 	and PAD_A | PAD_B
 	jr z, .loop
@@ -92,6 +92,6 @@ ManualTextScroll::
 	ret
 .inLinkBattle
 	ld c, 65
-	rst _DelayFrames
+	rst DelayFrames
 	ret
 	

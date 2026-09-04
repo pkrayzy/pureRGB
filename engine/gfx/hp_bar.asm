@@ -47,7 +47,6 @@ GetHPBarLength:
 
 ; predef $48
 UpdateHPBar:
-UpdateHPBar2:
 	push hl
 	ld hl, wHPBarOldHP
 	ld a, [hli]
@@ -152,7 +151,7 @@ UpdateHPBar_AnimateHPBar:
 	ldh [hAutoBGTransferEnabled], a
 ;;;;;;;;;;
 	ld c, 2 ; PureRGB: TODO: decides speed of HP bar animation
-	rst _DelayFrames
+	rst DelayFrames
 	pop de
 	ld a, [wHPBarDelta] ; +1 or -1
 	add e

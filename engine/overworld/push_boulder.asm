@@ -39,7 +39,7 @@ TryPushingBoulder::
 	ldh a, [hJoyHeld]
 	and PAD_CTRL_PAD
 	ret z
-	predef CheckForCollisionWhenPushingBoulder
+	callfar CheckForCollisionWhenPushingBoulder
 	ld a, [wTileInFrontOfBoulderAndBoulderCollisionResult]
 	and a ; was there a collision?
 	jp nz, ResetBoulderPushFlags
@@ -99,13 +99,18 @@ PushBoulderRightMovementData:
 	db NPC_MOVEMENT_RIGHT
 	db -1 ; end
 
+BoulderMapScript::
+	call TryPushingBoulder
+	ld a, [wMiscFlags]
+	bit BIT_BOULDER_DUST, a
+	ret z
+	; fall through
 DoBoulderDustAnimation::
-	ld a, [wStatusFlags5]
-	bit BIT_SCRIPTED_NPC_MOVEMENT, a
+	call IsNPCAutoMoving
 	ret nz
 	callfar AnimateBoulderDust
 	call DiscardButtonPresses
-	ld [wJoyIgnore], a
+	call EnableAllJoypad
 	call ResetBoulderPushFlags
 	set BIT_PUSHED_BOULDER, [hl]
 	ld a, [wBoulderSpriteIndex]

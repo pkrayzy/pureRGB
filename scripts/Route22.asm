@@ -1,8 +1,7 @@
 Route22_Script:
-	call EnableAutoTextBoxDrawing
 	ld hl, Route22_ScriptPointers
-	ld a, [wRoute22CurScript]
-	jp CallFunctionInTable
+	ld de, wRoute22CurScript
+	jp CallMapScriptInTable
 
 Route22_ScriptPointers:
 	def_script_pointers
@@ -14,12 +13,6 @@ Route22_ScriptPointers:
 	dw_const Route22Rival2AfterBattleScript, SCRIPT_ROUTE22_RIVAL2_AFTER_BATTLE
 	dw_const Route22Rival2ExitScript,        SCRIPT_ROUTE22_RIVAL2_EXIT
 	dw_const DoRet,                          SCRIPT_ROUTE22_NOOP
-
-Route22SetDefaultScript:
-	xor a ; SCRIPT_ROUTE22_DEFAULT
-	ld [wJoyIgnore], a
-	ld [wRoute22CurScript], a
-	ret
 
 Route22MoveRivalRightScript:
 	ld de, Route22RivalMovementData
@@ -50,8 +43,7 @@ Route22DefaultScript:
 	ld [wSavedCoordIndex], a
 	xor a
 	ldh [hJoyHeld], a
-	ld a, PAD_CTRL_PAD
-	ld [wJoyIgnore], a
+	call DisableDpad
 	ld a, PLAYER_DIR_LEFT
 	ld [wPlayerMovingDirection], a
 	CheckEvent EVENT_1ST_ROUTE22_RIVAL_BATTLE
@@ -70,7 +62,7 @@ Route22FirstRivalBattleScript:
 	ld [wEmotionBubbleSpriteIndex], a
 	xor a ; EXCLAMATION_BUBBLE
 	ld [wWhichEmotionBubble], a
-	predef EmotionBubble
+	callfar EmotionBubble
 	ld a, [wWalkBikeSurfState]
 	and a
 	jr z, .walking
@@ -89,8 +81,7 @@ Route22FirstRivalBattleScript:
 	ret
 
 Route22Rival1StartBattleScript:
-	ld a, [wStatusFlags5]
-	bit BIT_SCRIPTED_NPC_MOVEMENT, a
+	call IsNPCAutoMoving
 	ret nz
 	; reset rival's sprite behaviour bytes otherwise he can look around weirdly after battle for a moment
 	ld hl, wMapSpriteData + ((ROUTE22_RIVAL1 - 1) * 2)
@@ -103,20 +94,17 @@ Route22Rival1StartBattleScript:
 	ld [hl], a
 	ld a, [wSavedCoordIndex]
 	cp 1 ; index of second, lower entry in Route22DefaultScript.Route22RivalBattleCoords
-	jr nz, .set_rival_facing_right
+	ld a, SPRITE_FACING_RIGHT
+	jr nz, .set_rival_facing_direction
 	ld a, PLAYER_DIR_DOWN
 	ld [wPlayerMovingDirection], a
 	ld a, SPRITE_FACING_UP
-	jr .set_rival_facing_direction
-.set_rival_facing_right
-	ld a, SPRITE_FACING_RIGHT
 .set_rival_facing_direction
 	ldh [hSpriteFacingDirection], a
 	ld a, ROUTE22_RIVAL1
 	ldh [hSpriteIndex], a
 	call SetSpriteFacingDirectionAndDelay
-	xor a
-	ld [wJoyIgnore], a
+	call EnableAllJoypad
 	ld a, TEXT_ROUTE22_RIVAL1
 	ldh [hTextID], a
 	call DisplayTextID
@@ -136,14 +124,18 @@ Route22Rival1StartBattleScript:
 	ld [wRoute22CurScript], a
 	ret
 
+Route22SetDefaultScript:
+	call EnableAllJoypad
+	ld [wRoute22CurScript], a ; SCRIPT_ROUTE22_DEFAULT
+	ret
+
 Route22Rival1AfterBattleScript:
 	ld a, [wIsInBattle]
 	cp $ff
-	jp z, Route22SetDefaultScript
+	jr z, Route22SetDefaultScript
 	ld d, ROUTE22_RIVAL1
 	callfar MakeSpriteFacePlayer
-	ld a, PAD_CTRL_PAD
-	ld [wJoyIgnore], a
+	call DisableDpad
 	SetEvent EVENT_BEAT_ROUTE22_RIVAL_1ST_BATTLE
 	ld a, TEXT_ROUTE22_RIVAL1
 	ldh [hTextID], a
@@ -199,14 +191,11 @@ Route22Rival1ExitMovementData2:
 	db -1 ; end
 
 Route22Rival1ExitScript:
-	ld a, [wStatusFlags5]
-	bit BIT_SCRIPTED_NPC_MOVEMENT, a
+	call IsNPCAutoMoving
 	ret nz
-	xor a
-	ld [wJoyIgnore], a
-	ld a, TOGGLE_ROUTE_22_RIVAL_1
-	ld [wToggleableObjectIndex], a
-	predef HideObject
+	call EnableAllJoypad
+	ld c, TOGGLE_ROUTE_22_RIVAL_1
+	call HideObject
 	call PlayDefaultMusic
 	ResetEvents EVENT_1ST_ROUTE22_RIVAL_BATTLE, EVENT_ROUTE22_RIVAL_WANTS_BATTLE
 	ld a, SCRIPT_ROUTE22_DEFAULT
@@ -218,7 +207,7 @@ Route22SecondRivalBattleScript:
 	ld [wEmotionBubbleSpriteIndex], a
 	xor a ; EXCLAMATION_BUBBLE
 	ld [wWhichEmotionBubble], a
-	predef EmotionBubble
+	callfar EmotionBubble
 	ld a, [wWalkBikeSurfState]
 	and a
 	jr z, .walking
@@ -238,8 +227,7 @@ Route22SecondRivalBattleScript:
 	ret
 
 Route22Rival2StartBattleScript:
-	ld a, [wStatusFlags5]
-	bit BIT_SCRIPTED_NPC_MOVEMENT, a
+	call IsNPCAutoMoving
 	ret nz
 	; reset rival's sprite behaviour bytes otherwise he can look around weirdly after battle for a moment
 	ld hl, wMapSpriteData + ((ROUTE22_RIVAL2 - 1) * 2)
@@ -266,8 +254,7 @@ Route22Rival2StartBattleScript:
 .set_rival_facing_direction
 	ldh [hSpriteFacingDirection], a
 	call SetSpriteFacingDirectionAndDelay
-	xor a
-	ld [wJoyIgnore], a
+	call EnableAllJoypad
 	ld a, TEXT_ROUTE22_RIVAL2
 	ldh [hTextID], a
 	call DisplayTextID
@@ -300,8 +287,7 @@ Route22Rival2AfterBattleScript:
 	ld [wPlayerMovingDirection], a
 	ld d, ROUTE22_RIVAL1
 	callfar MakeSpriteFacePlayer
-	ld a, PAD_CTRL_PAD
-	ld [wJoyIgnore], a
+	call DisableDpad
 	SetEvent EVENT_BEAT_ROUTE22_RIVAL_2ND_BATTLE
 	ld a, TEXT_ROUTE22_RIVAL2
 	ldh [hTextID], a
@@ -342,14 +328,11 @@ Route22Rival2ExitMovementData2:
 	db -1 ; end
 
 Route22Rival2ExitScript:
-	ld a, [wStatusFlags5]
-	bit BIT_SCRIPTED_NPC_MOVEMENT, a
+	call IsNPCAutoMoving
 	ret nz
-	xor a
-	ld [wJoyIgnore], a
-	ld a, TOGGLE_ROUTE_22_RIVAL_2
-	ld [wToggleableObjectIndex], a
-	predef HideObject
+	call EnableAllJoypad
+	ld c, TOGGLE_ROUTE_22_RIVAL_2
+	call HideObject
 	call PlayDefaultMusic
 	ResetEvents EVENT_2ND_ROUTE22_RIVAL_BATTLE, EVENT_ROUTE22_RIVAL_WANTS_BATTLE
 	ld a, SCRIPT_ROUTE22_NOOP
@@ -358,75 +341,53 @@ Route22Rival2ExitScript:
 
 Route22_TextPointers:
 	def_text_pointers
-	dw_const Route22Rival1Text,            TEXT_ROUTE22_RIVAL1
-	dw_const Route22Rival2Text,            TEXT_ROUTE22_RIVAL2
-	dw_const PickUp3ItemText,              TEXT_ROUTE22_ITEM1 ; PureRGBnote: ADDED: new item on this route
-	dw_const PickUpItemText,               TEXT_ROUTE22_ITEM2 ; PureRGBnote: ADDED: new item on this route
-	dw_const Route22PokemonLeagueSignText, TEXT_ROUTE22_POKEMON_LEAGUE_SIGN
-	dw_const Route22TrainerTipsText,       TEXT_ROUTE22_TRAINER_TIPS_SIGN ; PureRGBnote: ADDED: new trainer tips sign on this route.
+	dba_const Route22Rival1Text,            TEXT_ROUTE22_RIVAL1
+	dba_const Route22Rival2Text,            TEXT_ROUTE22_RIVAL2
+	dba_const PickUp3ItemText,              TEXT_ROUTE22_ITEM1 ; PureRGBnote: ADDED: new item on this route
+	dba_const PickUpItemText,               TEXT_ROUTE22_ITEM2 ; PureRGBnote: ADDED: new item on this route
+	dba_const _Route22PokemonLeagueSignText, TEXT_ROUTE22_POKEMON_LEAGUE_SIGN
+	dba_const _Route22TrainerTipsText,       TEXT_ROUTE22_TRAINER_TIPS_SIGN ; PureRGBnote: ADDED: new trainer tips sign on this route.
 
 Route22Rival1Text:
 	text_asm
 	CheckEvent EVENT_BEAT_ROUTE22_RIVAL_1ST_BATTLE
-	jr z, .before_battle
-	ld hl, Route22RivalAfterBattleText1
-	rst _PrintText
-	jr .text_script_end
-.before_battle
 	ld hl, Route22RivalBeforeBattleText1
+	jr z, .printDone
+	ld hl, Route22RivalAfterBattleText1
+.printDone
 	rst _PrintText
-.text_script_end
 	rst TextScriptEnd
 
 Route22Rival2Text:
 	text_asm
 	CheckEvent EVENT_BEAT_ROUTE22_RIVAL_2ND_BATTLE
-	jr z, .before_battle
-	ld hl, Route22RivalAfterBattleText2
-	rst _PrintText
-	jr .text_script_end
-.before_battle
 	ld hl, Route22RivalBeforeBattleText2
+	jr z, .printDone
+	ld hl, Route22RivalAfterBattleText2
+.printDone
 	rst _PrintText
-.text_script_end
 	rst TextScriptEnd
 
 Route22RivalBeforeBattleText1:
-	text_far _Route22RivalBeforeBattleText1
-	text_end
+	text_far_end _Route22RivalBeforeBattleText1
 
 Route22RivalAfterBattleText1:
-	text_far _Route22RivalAfterBattleText1
-	text_end
+	text_far_end _Route22RivalAfterBattleText1
 
 Route22Rival1DefeatedText:
-	text_far _Route22Rival1DefeatedText
-	text_end
+	text_far_end _Route22Rival1DefeatedText
 
 Route22Rival1VictoryText:
-	text_far _Route22Rival1VictoryText
-	text_end
+	text_far_end _Route22Rival1VictoryText
 
 Route22RivalBeforeBattleText2:
-	text_far _Route22RivalBeforeBattleText2
-	text_end
+	text_far_end _Route22RivalBeforeBattleText2
 
 Route22RivalAfterBattleText2:
-	text_far _Route22RivalAfterBattleText2
-	text_end
+	text_far_end _Route22RivalAfterBattleText2
 
 Route22Rival2DefeatedText:
-	text_far _Route22Rival2DefeatedText
-	text_end
+	text_far_end _Route22Rival2DefeatedText
 
 Route22Rival2VictoryText:
-	text_far _Route22Rival2VictoryText
-	text_end
-
-Route22PokemonLeagueSignText:
-	text_far _Route22PokemonLeagueSignText
-	text_end
-
-Route22TrainerTipsText:
-	text_far _Route22TrainerTipsText
-	text_end
+	text_far_end _Route22Rival2VictoryText

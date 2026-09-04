@@ -1,21 +1,7 @@
 ViridianMart_Script:
-	call ViridianMartCheckParcelDeliveredScript
-	call EnableAutoTextBoxDrawing
 	ld hl, ViridianMart_ScriptPointers
-	ld a, [wViridianMartCurScript]
-	jp CallFunctionInTable
-
-ViridianMartCheckParcelDeliveredScript:
-	CheckEvent EVENT_OAK_GOT_PARCEL
-	ld hl, ViridianMart_TextPointers2
-	jr nz, .delivered_parcel
-	ld hl, ViridianMart_TextPointers
-.delivered_parcel
-	ld a, l
-	ld [wCurMapTextPtr], a
-	ld a, h
-	ld [wCurMapTextPtr+1], a
-	ret
+	ld de, wViridianMartCurScript
+	jp CallMapScriptInTable
 
 ViridianMart_ScriptPointers:
 	def_script_pointers
@@ -59,84 +45,60 @@ ViridianMartOaksParcelScript:
 	ret
 
 ViridianMart_TextPointers:
-	dw ViridianMartClerkSayHiToOakText
-	dw ViridianMartYoungsterText
-	dw ViridianMartCooltrainerMText
-	dw ViridianMartTMKid
-	const_def 5
-	dw_const ViridianMartClerkYouCameFromPalletTownText, TEXT_VIRIDIANMART_CLERK_YOU_CAME_FROM_PALLET_TOWN
-	dw_const ViridianMartClerkParcelQuestText,           TEXT_VIRIDIANMART_CLERK_PARCEL_QUEST
-
-ViridianMart_TextPointers2:
-	; This becomes the primary text pointers table when Oak's parcel has been delivered.
 	def_text_pointers
-	dw_const ViridianMartClerkText,        TEXT_VIRIDIANMART_CLERK
-	dw_const ViridianMartYoungsterText,    TEXT_VIRIDIANMART_YOUNGSTER
-	dw_const ViridianMartCooltrainerMText, TEXT_VIRIDIANMART_COOLTRAINER_M
-	dw_const ViridianMartTMKid,            TEXT_VIRIDIANMART_TM_KID
-
-ViridianMartClerkSayHiToOakText:
-	text_far _ViridianMartClerkSayHiToOakText
-	text_end
-
-ViridianMartClerkYouCameFromPalletTownText:
-	text_far _ViridianMartClerkYouCameFromPalletTownText
-	text_end
-
-ViridianMartClerkParcelQuestText:
-	text_far _ViridianMartClerkParcelQuestText
-	sound_get_key_item
-	text_end
-
-ViridianMartYoungsterText:
-	text_far _ViridianMartYoungsterText
-	text_end
-
-ViridianMartCooltrainerMText:
-	text_far _ViridianMartCooltrainerMText
-	text_end
+	dba_const ViridianMartClerkChoiceText,                TEXT_VIRIDIANMART_CLERK
+	dba_const _ViridianMartYoungsterText,                  TEXT_VIRIDIANMART_YOUNGSTER
+	dba_const _ViridianMartCooltrainerMText,               TEXT_VIRIDIANMART_COOLTRAINER_M
+	dba_const ViridianMartTMKid,                          TEXT_VIRIDIANMART_TM_KID
+	dba_const _ViridianMartClerkYouCameFromPalletTownText, TEXT_VIRIDIANMART_CLERK_YOU_CAME_FROM_PALLET_TOWN
+	dba_const _ViridianMartClerkParcelQuestText,           TEXT_VIRIDIANMART_CLERK_PARCEL_QUEST
 
 ViridianMartTMKid: ; PureRGBnote: ADDED: new NPC who will talk about TMs
 	text_asm
-	CheckEvent EVENT_BEAT_BLAINE
-	jr nz, .beforeGiovanni
+	; if we haven't beat misty yet, tm kid is yet to start selling anything
 	CheckEvent EVENT_BEAT_MISTY
-	jr nz, .afterMisty
-.beforeMisty
 	ld hl, ViridianMartTMKidBefore
-	rst _PrintText
-	rst TextScriptEnd
-.tmkidgreet
+	jr z, .printDone
+	; if we have, they will greet the player as the tm kid
 	ld hl, TMKidGreet8
 	rst _PrintText
-	ret
-.afterMisty
-	call .tmkidgreet
 	ld hl, TMKidStockingUp
-	rst _PrintText
-	rst TextScriptEnd
-.beforeGiovanni
+	; if we haven't beat blaine yet, or have encountered the tm kid at indigo plateau, he'll say a generic line about restocking tms
 	CheckEvent EVENT_MET_GYM_GUIDE_SON
-	jr nz, .afterMisty
-	call .tmkidgreet
+	jr nz, .printDone
+	CheckEvent EVENT_BEAT_BLAINE
+	jr z, .printDone
+	; if we beat blaine and haven't met the tm kid at indigo plateau yet, the tm kid will say he's stocking up for indigo plateau
 	ld hl, TMKidBigStockIndigo
+.printDone
 	rst _PrintText
 	rst TextScriptEnd
 
 TMKidGreet8:
-	text_far _TMKidGreet
-	text_end
+	text_far_end _TMKidGreet
 
 TMKidStockingUp:
-	text_far _TMKidStockingUp
-	text_end
+	text_far_end _TMKidStockingUp
 
 TMKidBigStockIndigo:
-	text_far _TMKidBigStockIndigo
-	text_end
+	text_far_end _TMKidBigStockIndigo
 
 ViridianMartTMKidBefore:
-	text_far _ViridianMartTMKid
-	text_end
+	text_far_end _ViridianMartTMKid
+
+ViridianMartClerkChoiceText:
+	text_asm
+	CheckEvent EVENT_GOT_POKEDEX
+	ld hl, .sayHiToOak
+	jr z, .printDone
+	ld hl, ViridianMartClerkText
+	call DisplayPokemartDialogue
+	rst TextScriptEnd
+.printDone
+	rst _PrintText
+	rst TextScriptEnd
+
+.sayHiToOak
+	text_far_end _ViridianMartClerkSayHiToOakText
 
 INCLUDE "data/items/marts/viridian.asm"

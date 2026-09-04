@@ -3,7 +3,7 @@ AlreadyOnThatFloor:
 	rst _PrintText
 	jr DisplayElevatorFloorMenu.menuDisplayLoop
 
-DisplayElevatorFloorMenu:
+DisplayElevatorFloorMenu::
 	ld a, [wListScrollOffset]
 	push af ; preserve the list scroll offset so our item list offset is remembered
 	xor a
@@ -121,12 +121,10 @@ DisplayElevatorFloorMenu:
 
 
 WhichFloorText:
-	text_far _WhichFloorText
-	text_end
+	text_far_end _WhichFloorText
 
 AlreadyOnThatFloorText:
-	text_far _AlreadyOnThatFloor
-	text_end
+	text_far_end _AlreadyOnThatFloor
 
 CurrentFloorText:
 	db "Current: @"

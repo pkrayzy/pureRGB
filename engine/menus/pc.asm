@@ -1,3 +1,10 @@
+PokemonCenterPCText::
+	text_asm
+	xor a
+	ld [wLetterPrintingDelayFlags], a
+	call ActivatePC
+	jp TextScriptEndNoButtonPress
+
 ActivatePC::
 	call SaveScreenTilesToBuffer2
 	ld a, SFX_TURN_ON_PC
@@ -73,6 +80,8 @@ BillsPC:
 	farcall BillsPC_
 ReloadMainMenu:
 	xor a
+	ldh [hAutoBGTransferEnabled], a
+	xor a
 	ld [wDoNotWaitForButtonPressAfterDisplayingText], a
 	call ReloadMapData
 	call UpdateSprites
@@ -84,23 +93,21 @@ LogOff:
 	ld hl, wMiscFlags
 	res BIT_USING_GENERIC_PC, [hl]
 	res BIT_NO_MENU_BUTTON_SOUND, [hl]
+	ld a, 1
+	ld [wDoNotWaitForButtonPressAfterDisplayingText], a
 	ret
 
 TurnedOnPC1Text:
-	text_far _TurnedOnPC1Text
-	text_end
+	text_far_end _TurnedOnPC1Text
 
 AccessedBillsPCText:
-	text_far _AccessedBillsPCText
-	text_end
+	text_far_end _AccessedBillsPCText
 
 AccessedSomeonesPCText:
-	text_far _AccessedSomeonesPCText
-	text_end
+	text_far_end _AccessedSomeonesPCText
 
 AccessedMyPCText:
-	text_far _AccessedMyPCText
-	text_end
+	text_far_end _AccessedMyPCText
 
 ; PureRGBnote: ADDED: can remove X items from inventory instead of always just 1
 ; d = how many to remove

@@ -7,9 +7,7 @@ PowerPlantRoof_Script:
 	jp EnableAutoTextBoxDrawing
 
 PowerPlantRoofOnMapLoad:
-	ld hl, wCurrentMapScriptFlags
-	bit BIT_CUR_MAP_LOADED_1, [hl]
-	res BIT_CUR_MAP_LOADED_1, [hl]
+	call WasMapJustLoaded
 	ret z
 	; if the player is standing in a specific area, make the palette darker as if dark clouds
 	CheckEvent EVENT_BEAT_ZAPDOS
@@ -36,11 +34,11 @@ CheckLoadPowerPlantRoofTiles::
 	ld de, PowerPlantRoofTiles
 	ld hl, vTileset tile $44
 	lb bc, BANK(PowerPlantRoofTiles), 4
-	call CopyVideoData
+	call CopyVideoDataHBlank
 	ld de, PowerPlantRoofTiles tile 4
 	ld hl, vTileset tile $16
 	lb bc, BANK(PowerPlantRoofTiles), 2
-	jp CopyVideoData
+	jp CopyVideoDataHBlank
 
 CheckShowDarkClouds::
 	CheckEvent EVENT_BEAT_ZAPDOS
@@ -83,14 +81,9 @@ PlayThunderRumbleSound::
 
 PowerPlantRoof_TextPointers:
 	def_text_pointers
-	dw_const PowerPlantRoofZapdosText,  TEXT_POWER_PLANT_ROOF_ZAPDOS
-	dw_const PowerPlantRoofSignText, TEXT_POWER_PLANT_ROOF_SIGN
-	dw_const PowerPlantRoofDarkCloudsText,  TEXT_POWER_PLANT_ROOF_DARK_CLOUDS
-
-
-PowerPlantRoofDarkCloudsText:
-	text_far _PowerPlantRoofDarkCloudsText
-	text_end
+	dba_const PowerPlantRoofZapdosText,  TEXT_POWER_PLANT_ROOF_ZAPDOS
+	dba_const _PowerPlantRoofSignText, TEXT_POWER_PLANT_ROOF_SIGN
+	dba_const _PowerPlantRoofDarkCloudsText,  TEXT_POWER_PLANT_ROOF_DARK_CLOUDS
 
 PowerPlantRoofZapdosText:
 	text_far _PowerPlantZapdosBattleText
@@ -106,12 +99,12 @@ CheckDoZapdosLightningAnimation:
 	ret z
 	ld a, POWER_PLANT_ROOF_ZAPDOS
 	call SetSpriteFacingDown
-	call UpdateSprites
+	call UpdateSpritesAndDelay3
 	; load storm tiles for this animation
 	ld hl, vNPCSprites2 tile $40
 	ld de, PowerPlantStormTiles
 	lb bc, BANK(PowerPlantStormTiles), 5
-	call CopyVideoData
+	call CopyVideoDataHBlank
 	; zapdos lightning animation
 	; disable sprite update routine so we can manipulate some rain sprites directly without map sprite code running
 	call DisableSpriteUpdates
@@ -178,7 +171,7 @@ CheckDoZapdosLightningAnimation:
 	ld a, $01
 	ldh [hAutoBGTransferEnabled], a ; enable continuous WRAM to VRAM transfer each V-blank
 	ld c, 10
-	rst _DelayFrames
+	rst DelayFrames
 	ld de, vNPCSprites tile $0C
 	callfar FarOpenBirdSpriteWings
 	call GBPalNormal
@@ -261,7 +254,7 @@ CheckDoZapdosLightningAnimation:
 	callfar PlayDefaultTrainerMusic ; TODO: adjust if making special rare pokemon encounter music
 	call ResumeMusic
 	ld c, 90
-	rst _DelayFrames
+	rst DelayFrames
 	ld a, POWER_PLANT_ROOF_ZAPDOS
 	ldh [hSpriteIndex], a ; makes zapdos stay on screen during battle transition
 	SetEvent EVENT_FIGHTING_ZAPDOS
@@ -373,10 +366,5 @@ ZapdosEndBattleScript:
 	cp $ff ; do nothing if you lost the battle
 	ret z
 	SetEvent EVENT_BEAT_ZAPDOS
-	ld a, TOGGLE_POWER_PLANT_ROOF_ZAPDOS
-	ld [wToggleableObjectIndex], a
-	predef_jump HideExtraObject
-	
-PowerPlantRoofSignText::
-	text_far _PowerPlantRoofSignText
-	text_end
+	ld c, TOGGLE_POWER_PLANT_ROOF_ZAPDOS
+	jp HideExtraObject

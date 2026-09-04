@@ -2,16 +2,13 @@
 ; before you fight ARTICUNO, and some events/text when SARA and ERIK come here to research the DRAGONAIR in the lake.
 
 SeafoamIslandsB4F_Script:
-	call EnableAutoTextBoxDrawing
 	call SeafoamIslandsB4FOnMapLoad
-	ld a, [wSeafoamIslandsB4FCurScript]
 	ld hl, SeafoamIslandsB4F_ScriptPointers
-	jp CallFunctionInTable
+	ld de, wSeafoamIslandsB4FCurScript
+	jp CallMapScriptInTable
 
 SeafoamIslandsB4FOnMapLoad::
-	ld hl, wCurrentMapScriptFlags
-	bit BIT_CUR_MAP_LOADED_1, [hl]
-	res BIT_CUR_MAP_LOADED_1, [hl]
+	call WasMapJustLoaded
 	ret z
 	SetFlag FLAG_MAP_HAS_OVERWORLD_ANIMATION
 	CheckEvent EVENT_SEAFOAM_DRAGONAIR_PRESENT
@@ -40,13 +37,7 @@ SeafoamB4FReplaceEastCurrentBlock:
 	lb bc, 8, 10
 SeafoamReplaceTileBlockEntry:
 	ld [wNewTileBlockID], a
-	predef_jump ReplaceTileBlock
-
-SeafoamIslandsB4FResetScript:
-	xor a
-	ld [wSeafoamIslandsB4FCurScript], a
-	ld [wJoyIgnore], a
-	ret
+	jp ReplaceTileBlock
 
 SeafoamIslandsB4F_ScriptPointers:
 	def_script_pointers
@@ -56,14 +47,18 @@ SeafoamIslandsB4F_ScriptPointers:
 	dw_const SeafoamIslandsB4FEndArticunoBattleScript, SCRIPT_SEAFOAMISLANDSB4F_ARTICUNO_BATTLE_END
 	dw_const SeafoamIslandsB4FDragonairEventStartScript, SCRIPT_SEAFOAMISLANDSB4F_DRAGONAIR_EVENT_START
 
+SeafoamIslandsB4FResetScript:
+	call EnableAllJoypad
+	ld [wSeafoamIslandsB4FCurScript], a
+	ret
+
 SeafoamIslandsB4FEndArticunoBattleScript:
 	ld a, [wIsInBattle]
 	cp $ff ; do nothing if you lost the battle
 	jr z, SeafoamIslandsB4FResetScript
 	SetEvent EVENT_BEAT_ARTICUNO
-	ld a, TOGGLE_ARTICUNO
-	ld [wToggleableObjectIndex], a
-	predef HideObject
+	ld c, TOGGLE_ARTICUNO
+	call HideObject
 SeafoamB4FDefaultScript:
 	ld a, SCRIPT_SEAFOAMISLANDSB4F_DEFAULT
 	ld [wSeafoamIslandsB4FCurScript], a
@@ -89,8 +84,7 @@ SeafoamIslandsB4FObjectMoving1Script:
 	ld a, [wSimulatedJoypadStatesIndex]
 	and a
 	ret nz
-	xor a
-	ld [wJoyIgnore], a
+	call EnableAllJoypad
 	ld a, [wYCoord]
 	cp 12
 	jr nz, SeafoamB4FDefaultScript
@@ -102,21 +96,20 @@ SeafoamIslandsB4FObjectMoving1Script:
 SeafoamDoneForcedSurfMovementLeft:
 	xor a
 	ld [wWalkBikeSurfState], a
-	ld [wWalkBikeSurfStateCopy], a
 	jp ForceBikeOrSurf
 
 SeafoamIslandsB4F_TextPointers:
 	def_text_pointers
-	dw_const BoulderBlockingWaterB4F,              TEXT_SEAFOAMISLANDSB4F_BOULDER1
-	dw_const BoulderBlockingWaterB4F,              TEXT_SEAFOAMISLANDSB4F_BOULDER2
-	dw_const SeafoamIslandsB4FArticunoText,     TEXT_SEAFOAMISLANDSB4F_ARTICUNO
-	dw_const PickUpItemText,                    TEXT_SEAFOAMISLANDSB4F_ITEM1 ; PureRGBnote: ADDED: new item located here.
-	dw_const SeafoamIslandsB4FDragonairEventStartText, TEXT_SEAFOAMISLANDSB4F_SCUBA1 
-	dw_const DoRet,                             TEXT_SEAFOAMISLANDSB4F_SCUBA2
-	dw_const SeafoamIslandsB4FDragonairText,    TEXT_SEAFOAMISLANDSB4F_DRAGONAIR
-	dw_const SeafoamIslandsB4FBouldersSignText, TEXT_SEAFOAMISLANDSB4F_BOULDERS_SIGN
-	dw_const SeafoamIslandsB4FDangerSignText,   TEXT_SEAFOAMISLANDSB4F_DANGER_SIGN
-	dw_const SeafoamIslandsB4FFastCurrentText,  TEXT_SEAFOAMISLANDSB4F_FAST_CURRENT
+	dba_const _BoulderBlockingCurrent,              TEXT_SEAFOAMISLANDSB4F_BOULDER1
+	dba_const _BoulderBlockingCurrent,              TEXT_SEAFOAMISLANDSB4F_BOULDER2
+	dba_const SeafoamIslandsB4FArticunoText,     TEXT_SEAFOAMISLANDSB4F_ARTICUNO
+	dba_const PickUpItemText,                    TEXT_SEAFOAMISLANDSB4F_ITEM1 ; PureRGBnote: ADDED: new item located here.
+	dba_const SeafoamIslandsB4FDragonairEventStartText, TEXT_SEAFOAMISLANDSB4F_SCUBA1 
+	dba_const DoRet,                             TEXT_SEAFOAMISLANDSB4F_SCUBA2
+	dba_const SeafoamIslandsB4FDragonairText,    TEXT_SEAFOAMISLANDSB4F_DRAGONAIR
+	dba_const _SeafoamIslandsB4FBouldersSignText, TEXT_SEAFOAMISLANDSB4F_BOULDERS_SIGN
+	dba_const _SeafoamIslandsB4FDangerSignText,   TEXT_SEAFOAMISLANDSB4F_DANGER_SIGN
+	dba_const _CurrentTooFastText2,               TEXT_SEAFOAMISLANDSB4F_FAST_CURRENT
 
 SeafoamIslandsB4FArticunoText:
 	text_far _SeafoamIslandsB4FArticunoBattleText
@@ -146,7 +139,7 @@ SeafoamIslandsB4FArticunoIntroAnimation:
 	ld de, IceCrystalSprite
 	lb bc, BANK(IceCrystalSprite), 4
 	ld hl, vNPCSprites tile $18
-	call CopyVideoData
+	call CopyVideoDataHBlank
 	call DisableSpriteUpdates
 	call .copyCrystalTileIDs
 	rst _DelayFrame
@@ -155,7 +148,7 @@ SeafoamIslandsB4FArticunoIntroAnimation:
 .loopSetSpriteStartingCoords
 	push de
 	push bc
-	lb de, $3C, $48
+	call .getInitialCoords
 	callfar LoadSpecificOAMSpriteCoords
 	pop bc
 	pop de
@@ -279,7 +272,7 @@ SeafoamIslandsB4FArticunoIntroAnimation:
 	ld de, ArticunoFreezesEverythingCh8
 	call PlayNewSoundChannel8
 	ld c, 60
-	rst _DelayFrames
+	rst DelayFrames
 	call EnableSpriteUpdates
 	; articuno shows an animation when you fight it now
 	ld a, ARTICUNO
@@ -289,7 +282,7 @@ SeafoamIslandsB4FArticunoIntroAnimation:
 	call InitBattleEnemyParameters
 	callfar PlayDefaultTrainerMusic
 	ld c, 100
-	rst _DelayFrames
+	rst DelayFrames
 	ld a, SCRIPT_SEAFOAMISLANDSB4F_ARTICUNO_BATTLE_END
 	ld [wSeafoamIslandsB4FCurScript], a
 	ret
@@ -309,19 +302,20 @@ SeafoamIslandsB4FArticunoIntroAnimation:
 	dec e
 	jr nz, .copyOAMTileIDsOuter
 	ret
-
-
-SeafoamIslandsB4FBouldersSignText:
-	text_far _SeafoamIslandsB4FBouldersSignText
-	text_end
-
-SeafoamIslandsB4FDangerSignText:
-	text_far _SeafoamIslandsB4FDangerSignText
-	text_end
-
-BoulderBlockingWaterB4F:
-	text_far _BoulderBlockingCurrent
-	text_end
+.getInitialCoords
+	ld a, [wSpritePlayerStateData1FacingDirection]
+	cp SPRITE_FACING_UP
+	lb de, $3C, $48
+	ret z
+	cp SPRITE_FACING_LEFT
+	lb de, $4C, $38
+	ret z
+	cp SPRITE_FACING_RIGHT
+	lb de, $4C, $58
+	ret z
+	; down
+	lb de, $5C, $48
+	ret
 
 FarOpenBirdSpriteWings::
 	ld h, d
@@ -359,18 +353,16 @@ SeafoamIslandsB4FDragonairEventOnMapLoad:
 	jp UpdateSprites
 
 SeafoamIslandsB4FDragonairEventStartScript:
-	ld a, [wStatusFlags5] ; is the player moving?
-	bit BIT_SCRIPTED_NPC_MOVEMENT, a
+	call IsNPCAutoMoving
 	ret nz
-	bit BIT_SCRIPTED_MOVEMENT_STATE, a
+	bit BIT_SCRIPTED_MOVEMENT_STATE, a ; wStatusFlags5 still loaded from IsNPCAutoMoving
 	ret nz
 	ld a, [wYCoord]
 	cp 5
 	jr z, .initialText
-	xor a
-	ld [wJoyIgnore], a
+	call EnableAllJoypad
 	ld c, 60
-	rst _DelayFrames
+	rst DelayFrames
 	; play a splash sound
 	ld a, SFX_INTRO_RAISE
 	rst _PlaySound
@@ -385,7 +377,7 @@ SeafoamIslandsB4FDragonairEventStartScript:
 	lb bc, BANK(NothingSprite), 4
 	call .copyPlayerSprite
 	ld c, 60
-	rst _DelayFrames
+	rst DelayFrames
   	; load scripted warp to seafoam islands 1f
   	ld a, 7 ; 8th warp
 	ld [wDestinationWarpID], a
@@ -436,7 +428,7 @@ SeafoamIslandsB4FDragonairEventStartText:
 	ld a, SFX_TRADE_MACHINE
 	rst _PlaySound
 	ld c, 60
-	rst _DelayFrames
+	rst DelayFrames
 	ld a, $14 ; water tile
 	ld [wTileInFrontOfPlayer], a ; this isn't loaded correctly sometimes, just force it because we're facing water for sure
 	ld a, SURFBOARD
@@ -447,11 +439,9 @@ SeafoamIslandsB4FDragonairEventStartText:
 	ld [wDoNotWaitForButtonPressAfterDisplayingText], a
 	rst TextScriptEnd
 .initialText
-	text_far _SeafoamIslandsB4FDragonairEventStartText
-	text_end
+	text_far_end _SeafoamIslandsB4FDragonairEventStartText
 .initialText2
-	text_far _SeafoamIslandsB4FDragonairEventStartText2
-	text_end
+	text_far_end _SeafoamIslandsB4FDragonairEventStartText2
 
 SeafoamIslandsB4FFastCurrent::
 	ld a, [wSpritePlayerStateData1FacingDirection]
@@ -462,10 +452,6 @@ SeafoamIslandsB4FFastCurrent::
 	ld a, TEXT_SEAFOAMISLANDSB4F_FAST_CURRENT
 	ldh [hTextID], a
 	jp DisplayTextID
-
-SeafoamIslandsB4FFastCurrentText::
-	text_far _CurrentTooFastText2
-	text_end
 
 SeafoamWaveSFXB4F::
 	ld hl, wAudioFlags
@@ -529,5 +515,4 @@ SeafoamIslandsB4FDragonairText::
 	rst _PrintText
 	rst TextScriptEnd
 .couldItBeInvestigating
-	text_far _SeafoamIslandsB4FDragonairText2
-	text_end
+	text_far_end _SeafoamIslandsB4FDragonairText2

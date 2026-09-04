@@ -108,7 +108,7 @@ SlidePlayerAndEnemySilhouettesOnScreen:
 	ld a, $31
 	ldh [hStartTileID], a
 	hlcoord 1, 5
-	predef CopyUncompressedPicToTilemap
+	call CopyUncompressedPicToTilemap
 
 	xor a
 	ldh [hWY], a
@@ -128,7 +128,7 @@ SlidePlayerAndEnemySilhouettesOnScreen:
 ;;;;;;;;;;
 
 	call Delay3
-	ld b, SET_PAL_BATTLE
+	ld d, SET_PAL_BATTLE
 	call RunPaletteCommand
 	call HideSprites
 	jpfar PrintBeginningBattleText
@@ -184,7 +184,7 @@ StartBattle:
 	dec a ; is it a trainer battle?
 	call nz, EnemySendOutFirstMon ; if it is a trainer battle, send out enemy mon
 	ld c, 40
-	rst _DelayFrames
+	rst DelayFrames
 	call SaveScreenTilesToBuffer1
 .checkAnyPartyAlive
 	call AnyPartyAlive
@@ -239,8 +239,7 @@ StartBattle:
 	jr EnemyRan ; if b was greater than the random value, the enemy runs
 
 .outOfSafariBallsText
-	text_far _OutOfSafariBallsText
-	text_end
+	text_far_end _OutOfSafariBallsText
 
 .playerSendOutFirstMon
 	xor a
@@ -273,10 +272,10 @@ StartBattle:
 	ld b, FLAG_SET
 	push bc
 	ld hl, wPartyGainExpFlags
-	predef FlagActionPredef
+	call FlagAction
 	ld hl, wPartyFoughtCurrentEnemyFlags
 	pop bc
-	predef FlagActionPredef
+	call FlagAction
 	call LoadBattleMonFromParty
 	call LoadScreenTilesFromBuffer1
 	call SendOutMon
@@ -302,12 +301,10 @@ EnemyRan:
 	jpfar AnimationSlideEnemyMonOff
 
 WildRanText:
-	text_far _WildRanText
-	text_end
+	text_far_end _WildRanText
 
 EnemyRanText:
-	text_far _EnemyRanText
-	text_end
+	text_far_end _EnemyRanText
 
 MainInBattleLoop:
 ;;;;;; PureRGBnote: ADDED: code that makes SonicBoom work as expected - only can flinch the first turn a mon is out.
@@ -585,21 +582,18 @@ HandlePoisonBurnLeechSeed:
 	ret nz          ; test if fainted
 	call DrawHUDsAndHPBars
 	ld c, 20
-	rst _DelayFrames
+	rst DelayFrames
 	xor a
 	ret
 
 HurtByPoisonText:
-	text_far _HurtByPoisonText
-	text_end
+	text_far_end _HurtByPoisonText
 
 HurtByBurnText:
-	text_far _HurtByBurnText
-	text_end
+	text_far_end _HurtByBurnText
 
 HurtByLeechSeedText:
-	text_far _HurtByLeechSeedText
-	text_end
+	text_far_end _HurtByLeechSeedText
 
 ; decreases the mon's current HP by 1/16 of the Max HP (multiplied by number of toxic ticks if active)
 ; note that the toxic ticks are considered even if the damage is not poison (hence the Leech Seed glitch)
@@ -775,7 +769,7 @@ UpdateCurMonHPBar::
 	xor 1
 	push bc
 	ld [wHPBarType], a
-	predef UpdateHPBar2
+	predef UpdateHPBar
 	pop bc
 	ret
 
@@ -962,12 +956,10 @@ FaintEnemyPokemon:
 ;	jpfar GainExperience
 
 EnemyMonFaintedText:
-	text_far _EnemyMonFaintedText
-	text_end
+	text_far_end _EnemyMonFaintedText
 
 EnemyMonWasDefeatedText:
-	text_far _EnemyMonWasDefeatedText
-	text_end
+	text_far_end _EnemyMonWasDefeatedText
 
 EndLowHealthAlarm:
 ; This function is called when the player has the won the battle. It turns off
@@ -1027,7 +1019,7 @@ ReplaceFaintedEnemyMon:
 	inc a ; reset Z flag
 	ret
 
-; TODO: below music-related functions could be moved into another bank probably
+; TODO: Need more battle core space? below music-related functions could be moved into another bank probably
 
 TrainerBattleVictory:
 	call EndLowHealthAlarm
@@ -1076,7 +1068,7 @@ TrainerBattleVictory:
 	ret z
 	call ScrollTrainerPicAfterBattle
 	ld c, 40
-	rst _DelayFrames
+	rst DelayFrames
 	call PrintEndBattleText
 	CheckEvent EVENT_IN_FITNESS_BATTLE
 	ret nz ; no money earnings in fitness battles
@@ -1100,12 +1092,10 @@ TrainerBattleVictory:
 	jr .skipDefaultMusic
 
 MoneyForWinningText:
-	text_far _MoneyForWinningText
-	text_end
+	text_far_end _MoneyForWinningText
 
 TrainerDefeatedText:
-	text_far _TrainerDefeatedText
-	text_end
+	text_far_end _TrainerDefeatedText
 
 StopAllMusicWait:
 	ld a, SFX_STOP_ALL_MUSIC
@@ -1162,7 +1152,7 @@ RemoveFaintedPlayerMon:
 	ld c, a
 	ld hl, wPartyGainExpFlags
 	ld b, FLAG_RESET
-	predef FlagActionPredef ; clear gain exp flag for fainted mon
+	call FlagAction ; clear gain exp flag for fainted mon
 	ld hl, wEnemyBattleStatus1
 	res ATTACKING_MULTIPLE_TIMES, [hl]
 	ld a, [wLowHealthAlarm]
@@ -1205,8 +1195,7 @@ RemoveFaintedPlayerMon:
 	ret
 
 PlayerMonFaintedText:
-	text_far _PlayerMonFaintedText
-	text_end
+	text_far_end _PlayerMonFaintedText
 
 ; asks if you want to use next mon
 ; stores whether you ran in C flag
@@ -1244,8 +1233,7 @@ DoUseNextMonDialogue:
 	jp TryRunningFromBattle
 
 UseNextMonText:
-	text_far _UseNextMonText
-	text_end
+	text_far_end _UseNextMonText
 
 ; choose next player mon to send out when your current one fainted
 ; stores whether enemy mon has no HP left in Z flag
@@ -1291,10 +1279,10 @@ ChooseNextMon:
 	ld hl, wPartyGainExpFlags
 	ld b, FLAG_SET
 	push bc
-	predef FlagActionPredef
+	call FlagAction
 	pop bc
 	ld hl, wPartyFoughtCurrentEnemyFlags
-	predef FlagActionPredef
+	call FlagAction
 	call LoadBattleMonFromParty
 	call GBPalWhiteOut
 	call LoadHudTilePatterns
@@ -1332,13 +1320,13 @@ HandlePlayerBlackOut:
 	call ClearScreenArea
 	call ScrollTrainerPicAfterBattle
 	ld c, 40
-	rst _DelayFrames
+	rst DelayFrames
 	call PrintEndBattleText ; in this case the end battle text is the "loss" text
 	ld a, [wCurMap]
 	cp OAKS_LAB
 	ret z            ; starter battle in oak's lab: don't black out
 .noLossText
-	ld b, SET_PAL_BATTLE_BLACK
+	ld d, SET_PAL_BATTLE_BLACK
 	call RunPaletteCommand
 	ld hl, PlayerBlackedOutText2
 	ld a, [wLinkState]
@@ -1356,12 +1344,10 @@ HandlePlayerBlackOut:
 ;;;;;;;;;;
 
 PlayerBlackedOutText2:
-	text_far _PlayerBlackedOutText2
-	text_end
+	text_far_end _PlayerBlackedOutText2
 
 LinkBattleLostText:
-	text_far _LinkBattleLostText
-	text_end
+	text_far_end _LinkBattleLostText
 
 ; slides pic of fainted mon downwards until it disappears
 ; bug: when this is called, [hAutoBGTransferEnabled] is non-zero, so there is screen tearing
@@ -1401,7 +1387,7 @@ SlideDownFaintedMonPic:
 	ld de, SevenSpacesText
 	call PlaceString
 	ld c, 2
-	rst _DelayFrames
+	rst DelayFrames
 	pop hl
 	pop de
 	pop bc
@@ -1452,7 +1438,7 @@ SlideTrainerPicOffScreen:
 	dec b
 	jr nz, .rowLoop
 	ld c, 2
-	rst _DelayFrames
+	rst DelayFrames
 	pop hl
 	pop bc
 	dec c
@@ -1468,12 +1454,12 @@ EnemySendOut:
 	ld c, a
 	ld b, FLAG_SET
 	push bc
-	predef FlagActionPredef
+	call FlagAction
 	ld hl, wPartyFoughtCurrentEnemyFlags
 	xor a
 	ld [hl], a
 	pop bc
-	predef FlagActionPredef
+	call FlagAction
 
 ; don't change wPartyGainExpFlags or wPartyFoughtCurrentEnemyFlags
 EnemySendOutFirstMon:
@@ -1606,7 +1592,7 @@ EnemySendOutFirstMon:
 	hlcoord 0, 0
 	lb bc, 4, 11
 	call ClearScreenArea
-	ld b, SET_PAL_BATTLE
+	ld d, SET_PAL_BATTLE
 	call RunPaletteCommand
 	call GBPalNormal
 	ld hl, TrainerSentOutText
@@ -1620,7 +1606,7 @@ EnemySendOutFirstMon:
 	ld a, -$31
 	ldh [hStartTileID], a
 	hlcoord 15, 6
-	predef AnimateSendingOutMon
+	call AnimateSendingOutMon
 	ld a, [wEnemyMonSpecies2]
 	call PlayCry
 	call DrawEnemyHUDAndHPBar
@@ -1635,12 +1621,10 @@ EnemySendOutFirstMon:
 	jp SwitchPlayerMon
 
 TrainerAboutToUseText:
-	text_far _TrainerAboutToUseText
-	text_end
+	text_far_end _TrainerAboutToUseText
 
 TrainerSentOutText:
-	text_far _TrainerSentOutText
-	text_end
+	text_far_end _TrainerSentOutText
 
 ; tests if the player has any pokemon that are not fainted
 ; sets d = 0 if all fainted, d != 0 if some mons are still alive
@@ -1681,8 +1665,7 @@ HasMonFainted:
 	ret
 
 NoWillText:
-	text_far _NoWillText
-	text_end
+	text_far_end _NoWillText
 
 ; try to run from battle (hl = player speed, de = enemy speed)
 ; stores whether the attempt was successful in carry flag
@@ -1817,16 +1800,13 @@ TryRunningFromBattle:
 	ret
 
 CantEscapeText:
-	text_far _CantEscapeText
-	text_end
+	text_far_end _CantEscapeText
 
 NoRunningText:
-	text_far _NoRunningText
-	text_end
+	text_far_end _NoRunningText
 
 GotAwayText:
-	text_far _GotAwayText
-	text_end
+	text_far_end _GotAwayText
 
 ; copies from party data to battle mon data when sending out a new player mon
 LoadBattleMonFromParty:
@@ -1939,7 +1919,7 @@ SendOutMon:
 	or [hl] ; is enemy mon HP zero?
 	call nz, DrawEnemyHUDAndHPBar ; if HP is zero, skip drawing the HUD and HP bar
 	call DrawPlayerHUDAndHPBar
-	predef LoadMonBackPic
+	call LoadMonBackPic
 	xor a
 	ldh [hStartTileID], a
 	ld hl, wBattleAndStartSavedMenuItem
@@ -1976,14 +1956,14 @@ SendOutMon:
 	and a
 	call z, .palette
 	hlcoord 4, 11
-	predef AnimateSendingOutMon
+	call AnimateSendingOutMon
 	ld a, [wCurPartySpecies]
 	call PlayCry
 	call PrintEmptyString
 	call SaveScreenTilesToBuffer1
 	jpfar CheckOnSendOutSpecialEffect
 .palette
-	ld b, SET_PAL_BATTLE
+	ld d, SET_PAL_BATTLE
 	jp RunPaletteCommand
 
 ; show 2 stages of the player mon getting smaller before disappearing
@@ -1998,7 +1978,7 @@ AnimateRetreatingPlayerMon:
 	ldh [hBaseTileID], a
 	predef CopyDownscaledMonTiles
 	ld c, 4
-	rst _DelayFrames
+	rst DelayFrames
 	call .clearScreenArea
 	hlcoord 4, 9
 	lb bc, 3, 3
@@ -2078,8 +2058,9 @@ DrawPlayerHUDAndHPBar::
 	call z, PrintLevel
 	ld a, [wLoadedMonSpecies]
 	ld [wCurPartySpecies], a
-	hlcoord 10, 9
-	predef DrawHP
+	decoord 10, 9
+	ld c, 1
+	callfar DrawHP
 	ld a, $1
 	ldh [hAutoBGTransferEnabled], a
 	ld hl, wPlayerHPBarColor
@@ -2206,7 +2187,7 @@ GetBattleHealthBarColor:
 	ld a, [hl]
 	cp b
 	ret z
-	ld b, SET_PAL_BATTLE
+	ld d, SET_PAL_BATTLE
 	jp RunPaletteCommand
 
 ; center's mon's name on the battle screen
@@ -2276,12 +2257,12 @@ DisplayBattleMenu::
 	hlcoord 9, 14
 	ld [hl], '▶'
 	ld c, 80
-	rst _DelayFrames
+	rst DelayFrames
 	ld [hl], ' '
 	hlcoord 9, 16
 	ld [hl], '▶'
 	ld c, 50
-	rst _DelayFrames
+	rst DelayFrames
 	ld [hl], '▷'
 	ld a, $2 ; select the "ITEM" menu
 	jp .upperLeftMenuItemWasNotSelected
@@ -2529,13 +2510,11 @@ UseBagItem:
 	ret
 
 ItemsCantBeUsedHereText:
-	text_far _ItemsCantBeUsedHereText
-	text_end
+	text_far_end _ItemsCantBeUsedHereText
 
 ;;;;; PureRGBnote: ADDED: When fighting CLOYSTER with your dragonair in the dragonair event, you cannot change pokemon.
 NoPartyMenuAllowedText:
-	text_far _DragonairEventNoPartyMenuText
-	text_end
+	text_far_end _DragonairEventNoPartyMenuText
 
 NoPartyMenuAllowed:
 	ld hl, NoPartyMenuAllowedText
@@ -2616,7 +2595,7 @@ PartyMenuOrRockOrRun:
 	ld hl, wPartyMon1
 	call ClearSprites
 ; display the two status screens
-	predef StatusScreenLoop
+	callfar StatusScreenLoop
 ; now we need to reload the enemy mon pic
 	callfar ReloadEnemyMonPicAfterStatusScreen
 	jp .partyMenuWasSelected
@@ -2664,7 +2643,7 @@ SwitchPlayerMon:
 	call ResetDisableAndPlayerMovedFlag
 	;;;;;;;;;
 	ld c, 50
-	rst _DelayFrames
+	rst DelayFrames
 	call AnimateRetreatingPlayerMon
 	ld a, [wWhichPokemon]
 	ld [wPlayerMonNumber], a
@@ -2672,10 +2651,10 @@ SwitchPlayerMon:
 	ld b, FLAG_SET
 	push bc
 	ld hl, wPartyGainExpFlags
-	predef FlagActionPredef
+	call FlagAction
 	pop bc
 	ld hl, wPartyFoughtCurrentEnemyFlags
-	predef FlagActionPredef
+	call FlagAction
 	call LoadBattleMonFromParty
 	call SendOutMon
 	call SaveScreenTilesToBuffer1
@@ -2684,8 +2663,7 @@ SwitchPlayerMon:
 	ret
 
 AlreadyOutText:
-	text_far _AlreadyOutText
-	text_end
+	text_far_end _AlreadyOutText
 
 BattleMenu_RunWasSelected:
 	call LoadScreenTilesFromBuffer1
@@ -2938,12 +2916,10 @@ SelectMenuItem:
 ;;;;;
 
 MoveNoPPText:
-	text_far _MoveNoPPText
-	text_end
+	text_far_end _MoveNoPPText
 
 MoveDisabledText:
-	text_far _MoveDisabledText
-	text_end
+	text_far_end _MoveDisabledText
 
 WhichTechniqueString:
 	db "WHICH TECHNIQUE?@"
@@ -3010,13 +2986,12 @@ AnyMoveToSelect:
 	ld hl, NoMovesLeftText
 	rst _PrintText
 	ld c, 60
-	rst _DelayFrames
+	rst DelayFrames
 	xor a
 	ret
 
 NoMovesLeftText:
-	text_far _NoMovesLeftText
-	text_end
+	text_far_end _NoMovesLeftText
 
 SwapMovesInMenu:
 ;;;;; PureRGBnote: FIXED: can't swap moves when transformed (fixes a crash bug)
@@ -3162,8 +3137,8 @@ PrintMenuItem:
 	lb bc, 1, 2
 	call PrintNumber
 	call GetCurrentMove
-	hlcoord 2, 10
-	predef PrintMoveType
+	decoord 2, 10
+	callfar PrintMoveType
 .moveDisabled
 	ld a, $1
 	ldh [hAutoBGTransferEnabled], a
@@ -3411,7 +3386,7 @@ PlayerCanExecuteChargingMove:
 	                    ; resulting in the Pokemon being invulnerable for the whole battle
 	res INVULNERABLE, [hl]
 PlayerCanExecuteMove:
-	call DisplayUsedMoveText ; TODOsync: PrintMonName1Text
+	call DisplayUsedMoveText
 	callfar CheckRemapMoveData
 	callfar CheckSpecialBattleMoveModifiersPlayer
 	ld hl, DecrementPP
@@ -3487,7 +3462,7 @@ PlayPlayerMoveAnimation:
 	jr MirrorMoveCheck
 PlayerCheckIfFlyOrChargeEffect:
 	ld c, 30
-	rst _DelayFrames
+	rst DelayFrames
 	ld a, [wPlayerMoveEffect]
 	cp FLY_EFFECT
 	jr z, .playAnim
@@ -3575,8 +3550,7 @@ MirrorMoveCheck:
 	jp ExecutePlayerMoveDone
 
 MultiHitText:
-	text_far _MultiHitText
-	text_end
+	text_far_end _MultiHitText
 
 ExecutePlayerMoveDone:
 	xor a
@@ -3605,12 +3579,10 @@ PrintGhostText:
 	ret
 
 ScaredText:
-	text_far _ScaredText
-	text_end
+	text_far_end _ScaredText
 
 GetOutText:
-	text_far _GetOutText
-	text_end
+	text_far_end _GetOutText
 
 IsGhostBattle:
 	ld a, [wIsInBattle]
@@ -3835,8 +3807,7 @@ CheckPlayerStatusConditions:
 	ret
 
 FastAsleepText:
-	text_far _FastAsleepText
-	text_end
+	text_far_end _FastAsleepText
 
 PrintMonWokeUp::
 	ld hl, WokeUpText
@@ -3844,52 +3815,40 @@ PrintMonWokeUp::
 	ret
 	
 WokeUpText:
-	text_far _WokeUpText
-	text_end
+	text_far_end _WokeUpText
 
 IsFrozenText:
-	text_far _IsFrozenText
-	text_end
+	text_far_end _IsFrozenText
 
 FullyParalyzedText:
-	text_far _FullyParalyzedText
-	text_end
+	text_far_end _FullyParalyzedText
 
 FlinchedText:
-	text_far _FlinchedText
-	text_end
+	text_far_end _FlinchedText
 
 MustRechargeText:
-	text_far _MustRechargeText
-	text_end
+	text_far_end _MustRechargeText
 
 DisabledNoMoreText:
-	text_far _DisabledNoMoreText
-	text_end
+	text_far_end _DisabledNoMoreText
 
 IsConfusedText:
-	text_far _IsConfusedText
-	text_end
+	text_far_end _IsConfusedText
 
 HurtItselfText:
-	text_far _HurtItselfText
-	text_end
+	text_far_end _HurtItselfText
 
 ConfusedNoMoreText:
-	text_far _ConfusedNoMoreText
-	text_end
+	text_far_end _ConfusedNoMoreText
 
 ThrashingAboutText:
-	text_far _ThrashingAboutText
-	text_end
+	text_far_end _ThrashingAboutText
 
 AttackContinuesText:
-	text_far _AttackContinuesText
-	text_end
+	text_far_end _AttackContinuesText
 
 CantMoveText:
-	text_far _CantMoveText
-	text_end
+	text_far_end _CantMoveText
 
 PrintMoveIsDisabledText:
 	ld hl, wPlayerSelectedMove
@@ -3911,8 +3870,7 @@ PrintMoveIsDisabledText:
 	ret
 
 MoveIsDisabledText:
-	text_far _MoveIsDisabledText
-	text_end
+	text_far_end _MoveIsDisabledText
 
 HandleSelfConfusionDamage:
 	ld hl, HurtItselfText
@@ -3980,8 +3938,7 @@ InsteadText:
 	text_far _UsedInsteadText
 PrintMoveName:
 	text_far _MoveNameText
-	text_far _ExclamationPointText
-	text_end
+	text_far_end _ExclamationPointText
 
 ;;;;;;;;;;
 
@@ -4036,8 +3993,8 @@ PrintMoveFailureText:
 .applyRecoil
 	ld hl, KeptGoingAndCrashedText
 	rst _PrintText
-	ld b, $4
-	predef PredefShakeScreenHorizontally
+	ld d, 4
+	callfar PredefShakeScreenHorizontally
 	ldh a, [hWhoseTurn]
 	and a
 	jp z, ApplyDamageToPlayerPokemon
@@ -4045,16 +4002,13 @@ PrintMoveFailureText:
 	jp ApplyDamageToEnemyPokemon
 
 AttackMissedText:
-	text_far _AttackMissedText
-	text_end
+	text_far_end _AttackMissedText
 
 KeptGoingAndCrashedText:
-	text_far _KeptGoingAndCrashedText
-	text_end
+	text_far_end _KeptGoingAndCrashedText
 
 UnaffectedText:
-	text_far _UnaffectedText
-	text_end
+	text_far_end _UnaffectedText
 
 PrintDoesntAffectText:
 	ld hl, DoesntAffectMonText
@@ -4062,8 +4016,7 @@ PrintDoesntAffectText:
 	ret
 
 DoesntAffectMonText:
-	text_far _DoesntAffectMonText
-	text_end
+	text_far_end _DoesntAffectMonText
 
 ; if there was a critical hit or an OHKO was successful, print the corresponding text
 PrintCriticalOHKOText:
@@ -4084,7 +4037,7 @@ PrintCriticalOHKOText:
 	ld [wCriticalHitOrOHKO], a
 .done
 	ld c, 20
-	rst _DelayFrames
+	rst DelayFrames
 	ret
 
 CriticalOHKOTextPointers:
@@ -4092,12 +4045,10 @@ CriticalOHKOTextPointers:
 	dw OHKOText
 
 CriticalHitText:
-	text_far _CriticalHitText
-	text_end
+	text_far_end _CriticalHitText
 
 OHKOText:
-	text_far _OHKOText
-	text_end
+	text_far_end _OHKOText
 
 ; checks if a traded mon will disobey due to lack of badges
 ; stores whether the mon will use a move in Z flag
@@ -4292,24 +4243,19 @@ CheckForDisobedience:
 	ret
 
 LoafingAroundText:
-	text_far _LoafingAroundText
-	text_end
+	text_far_end _LoafingAroundText
 
 BeganToNapText:
-	text_far _BeganToNapText
-	text_end
+	text_far_end _BeganToNapText
 
 WontObeyText:
-	text_far _WontObeyText
-	text_end
+	text_far_end _WontObeyText
 
 TurnedAwayText:
-	text_far _TurnedAwayText
-	text_end
+	text_far_end _TurnedAwayText
 
 IgnoredOrdersText:
-	text_far _IgnoredOrdersText
-	text_end
+	text_far_end _IgnoredOrdersText
 
 ; PureRGBnote: CHANGED: ghost type is a dynamic type, can be special damage if your special base stat is higher than physical attack,
 ; otherwise it will be physical damage
@@ -4973,7 +4919,7 @@ ApplyDamageToEnemyPokemon:
 	hlcoord 2, 2
 	xor a
 	ld [wHPBarType], a
-	predef UpdateHPBar2 ; animate the HP bar shortening
+	predef UpdateHPBar ; animate the HP bar shortening
 ApplyAttackToEnemyPokemonDone:
 	jp DrawHUDsAndHPBars
 
@@ -5077,7 +5023,7 @@ ApplyDamageToPlayerPokemon:
 	hlcoord 10, 9
 	ld a, $01
 	ld [wHPBarType], a
-	predef UpdateHPBar2 ; animate the HP bar shortening
+	predef UpdateHPBar ; animate the HP bar shortening
 ApplyAttackToPlayerPokemonDone:
 	jp DrawHUDsAndHPBars
 
@@ -5137,12 +5083,10 @@ AttackSubstitute:
 	jp DrawHUDsAndHPBars
 
 SubstituteTookDamageText:
-	text_far _SubstituteTookDamageText
-	text_end
+	text_far_end _SubstituteTookDamageText
 
 SubstituteBrokeText:
-	text_far _SubstituteBrokeText
-	text_end
+	text_far_end _SubstituteBrokeText
 
 ; PureRGBnote: CHANGED: rage's effect was changed so don't need code for it here.
 
@@ -5208,8 +5152,7 @@ MirrorMoveCopyMove:
 ;;;;;;;;;;
 
 MirrorMoveFailedText:
-	text_far _MirrorMoveFailedText
-	text_end
+	text_far_end _MirrorMoveFailedText
 
 FarReloadMoveData::
 	ld a, [wNamedObjectIndex]
@@ -5670,7 +5613,8 @@ MoveHitTest::
 	ret z ; Swift never misses
 	call CheckTargetSubstitute
 	jr z, .checkForDigOrFlyStatus
-	; TODO: should the bug be fixed here or leave it?
+	; TODO: should the bug where draining moves should miss on substituted pokemon be fixed here or leave it?
+	; currently fixed
 	ld a, [de]
 	cp DRAIN_HP_EFFECT
 	jp z, .moveMissed
@@ -5999,7 +5943,7 @@ PlayEnemyMoveAnimation:
 EnemyCheckIfFlyOrChargeEffect:
 	call SwapPlayerAndEnemyLevels
 	ld c, 30
-	rst _DelayFrames
+	rst DelayFrames
 	ld a, [wEnemyMoveEffect]
 	cp FLY_EFFECT
 	jr z, .playAnim
@@ -6081,8 +6025,7 @@ EnemyCheckIfMirrorMoveEffect:
 	jr ExecuteEnemyMoveDone
 
 HitXTimesText:
-	text_far _HitXTimesText
-	text_end
+	text_far_end _HitXTimesText
 
 ExecuteEnemyMoveDone:
 	ld b, $1
@@ -6592,7 +6535,7 @@ ENDC
 	rst _CopyData
 	ld a, [wEnemyMonSpecies2]
 	ld [wPokedexNum], a
-	predef IndexToPokedex
+	call IndexToPokedex
 	ld a, [wPokedexNum]
 ;;;;;;;;;; PureRGBnote: FIXED: missingno addition code
 	and a
@@ -6602,7 +6545,7 @@ ENDC
 	ld c, a
 	ld b, FLAG_SET
 	ld hl, wPokedexSeen
-	predef FlagActionPredef ; mark this mon as seen in the pokedex
+	call FlagAction ; mark this mon as seen in the pokedex
 .missingnoSkip
 	ld hl, wEnemyMonLevel
 	ld de, wEnemyMonUnmodifiedLevel
@@ -6644,7 +6587,7 @@ DoBattleTransitionAndInitBattleVariables:
 	call ClearScreen
 .next
 	rst _DelayFrame
-	predef BattleTransition
+	callfar BattleTransition
 	callfar LoadHudAndHpBarAndStatusTilePatterns
 	ld a, $1
 	ldh [hAutoBGTransferEnabled], a
@@ -6961,11 +6904,11 @@ LoadHudTilePatterns:
 	ld de, BattleHudTiles1
 	ld hl, vChars2 tile $6d
 	lb bc, BANK(BattleHudTiles1), (BattleHudTiles1End - BattleHudTiles1) / TILE_1BPP_SIZE
-	call CopyVideoDataDouble
+	call CopyVideoDataHBlankDouble
 	ld de, BattleHudTiles2
 	ld hl, vChars2 tile $73
 	lb bc, BANK(BattleHudTiles2), (BattleHudTiles3End - BattleHudTiles2) / TILE_1BPP_SIZE
-	jp CopyVideoDataDouble
+	jp CopyVideoDataHBlankDouble
 
 PrintEmptyString:
 	ld hl, .emptyString
@@ -7083,7 +7026,7 @@ InitBattle::
 	and a
 	jr z, DetermineWildOpponent
 
-InitOpponent:
+InitOpponent::
 	ld a, [wCurOpponent]
 	ld [wCurPartySpecies], a
 	ld [wEnemyMonSpecies2], a
@@ -7128,7 +7071,7 @@ InitBattleCommon:
 	dec a
 	ld [wAICount], a
 	hlcoord 12, 0
-	predef CopyUncompressedPicToTilemap
+	call CopyUncompressedPicToTilemap
 	ld a, $ff
 	ld [wEnemyMonPartyPos], a
 	ld a, $2
@@ -7166,12 +7109,12 @@ InitWildBattle:
 	ld [wTrainerClass], a
 	ldh [hStartTileID], a
 	hlcoord 12, 0
-	predef CopyUncompressedPicToTilemap
+	call CopyUncompressedPicToTilemap
 
 ; common code that executes after init battle code specific to trainer or wild battles
 _InitBattleCommon:
 	callfar GBCSetCPU1xSpeed	; shinpokerednote: ADDED: deactivate gbc 2x cpu speed during battle as it causes visual bugs
-	ld b, SET_PAL_BATTLE_BLACK
+	ld d, SET_PAL_BATTLE_BLACK
 	call RunPaletteCommand
 	call SlidePlayerAndEnemySilhouettesOnScreen
 	xor a
@@ -7243,9 +7186,11 @@ _LoadTrainerPic:
 ;	ld [wTempoModifier], a
 ;	jp PlaySound
 
+FarAnimateSendingOutMon::
+	ld h, d
+	ld l, e
 ; animates the mon "growing" out of the pokeball
 AnimateSendingOutMon:
-	hl_deref_reverse wPredefHL
 	ldh a, [hStartTileID]
 	ldh [hBaseTileID], a
 	ld b, $4c
@@ -7262,7 +7207,7 @@ AnimateSendingOutMon:
 	lb bc, 3, 3
 	predef CopyDownscaledMonTiles
 	ld c, 4
-	rst _DelayFrames
+	rst DelayFrames
 	ld bc, -(SCREEN_WIDTH * 2 + 1)
 	add hl, bc
 	xor a
@@ -7270,7 +7215,7 @@ AnimateSendingOutMon:
 	lb bc, 5, 5
 	predef CopyDownscaledMonTiles
 	ld c, 5
-	rst _DelayFrames
+	rst DelayFrames
 	ld bc, -(SCREEN_WIDTH * 2 + 1)
 	jr .next
 .notInBattle
@@ -7281,8 +7226,10 @@ AnimateSendingOutMon:
 	add $31
 	jr CopyUncompressedPicToHL
 
+FarCopyUncompressedPicToTilemap::
+	ld h, d
+	ld l, e
 CopyUncompressedPicToTilemap:
-	hl_deref_reverse wPredefHL
 	ldh a, [hStartTileID]
 CopyUncompressedPicToHL::
 	lb bc, 7, 7
@@ -7331,7 +7278,7 @@ CopyUncompressedPicToHL::
 	jr nz, .flippedLoop
 	ret
 
-LoadMonBackPic:
+LoadMonBackPic::
 ; Assumes the monster's attributes have
 ; been loaded with GetMonHeader.
 	ld a, [wBattleMonSpecies2]
@@ -7344,13 +7291,11 @@ LoadMonBackPicCommon:
 ;;;;;;;;;; PureRGBnote: ADDED: code to switch between original and larged back sprites
 	ld a, [wSpriteOptions2]
 	bit BIT_BACK_SPRITES, a
+	ld hl,  wMonHBackSprite - wMonHeader
 	jr nz, .swSpriteHeader
 .ogSpriteHeader
 	ld hl,  wMonHAltBackSprite - wMonHeader
-	jr .next
 .swSpriteHeader
-	ld hl,  wMonHBackSprite - wMonHeader
-.next
 	call UncompressMonBackSprite
 	ld a, [wSpriteOptions2]
 	bit BIT_BACK_SPRITES, a
@@ -7368,11 +7313,11 @@ LoadMonBackPicCommon:
 	ld c, (2 * SPRITEBUFFERSIZE) / TILE_SIZE ; count of 16-byte chunks to be copied
 	ldh a, [hLoadedROMBank]
 	ld b, a
-	jp CopyVideoData
+	jp CopyVideoDataHBlankAnySource
 
 ;;;;;;;;;; PureRGBnote: ADDED: code to switch between original and larger back sprites
 LoadBackSpriteZoomed:
-	predef ScaleSpriteByTwo
+	callfar ScaleSpriteByTwo
 	call GetBackSpriteTarget
 	jp InterlaceMergeSpriteBuffers ; combine the two buffers to a single 2bpp sprite
 
@@ -7442,9 +7387,7 @@ AISentOutFlagAction:
 	inc a
 	ld c, a
 	ld hl, wAIWhichPokemonSentOutAlready
-	predef FlagActionPredef
-	ld a, c
-	and a
+	call FlagAction
 	pop hl
 	pop de
 	pop bc
@@ -7486,7 +7429,7 @@ OldManListMenuInit::
 	ld a, '▶'
 	ldcoord_a 5, 4 ; place menu cursor in front of first menu entry
 	ld c, 80
-	rst _DelayFrames
+	rst DelayFrames
 	xor a
 	ld [wCurrentMenuItem], a
 	hlcoord 5, 4

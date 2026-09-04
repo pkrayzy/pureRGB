@@ -6,21 +6,17 @@ OpenOaksPC:
 	rst _PrintText
 	call YesNoChoice
 	jr nz, .closePC
-	predef DisplayDexRating
+	callfar DisplayDexRating
 .closePC
 	ld hl, ClosedOaksPCText
 	rst _PrintText
 	jp LoadScreenTilesFromBuffer2
 
 GetDexRatedText:
-	text_far _GetDexRatedText
-	text_end
+	text_far_end _GetDexRatedText
 
 ClosedOaksPCText:
-	text_far _ClosedOaksPCText
-	text_waitbutton
-	text_end
+	text_far_end _ClosedOaksPCText
 
 AccessedOaksPCText:
-	text_far _AccessedOaksPCText
-	text_end
+	text_far_end _AccessedOaksPCText

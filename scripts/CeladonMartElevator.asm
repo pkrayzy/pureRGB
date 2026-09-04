@@ -1,16 +1,13 @@
 CeladonMartElevator_Script:
-	ld hl, wCurrentMapScriptFlags
-	bit BIT_CUR_MAP_LOADED_1, [hl]
-	res BIT_CUR_MAP_LOADED_1, [hl]
-	push hl
+	call WasMapJustLoaded
+	push hl ; wCurrentMapScriptFlags
 	call nz, CeladonMartElevatorStoreWarpEntriesScript
 	pop hl
 	bit BIT_CUR_MAP_USED_ELEVATOR, [hl]
 	res BIT_CUR_MAP_USED_ELEVATOR, [hl]
 	call nz, CeladonMartElevatorShakeScript
-	xor a
-	ld [wAutoTextBoxDrawingControl], a
-	inc a
+	call EnableAutoTextBoxDrawing
+	inc a ; a = 0 prior to this from EnableAutoTextBoxDrawing
 	ld [wDoNotWaitForButtonPressAfterDisplayingText], a
 	ret
 
@@ -64,11 +61,10 @@ CeladonMartElevatorShakeScript:
 
 CeladonMartElevator_TextPointers:
 	def_text_pointers
-	dw_const CeladonMartElevatorText, TEXT_CELADONMARTELEVATOR
+	dba_const CeladonMartElevatorText, TEXT_CELADONMARTELEVATOR
 
 CeladonMartElevatorText:
 	text_asm
 	call CeladonMartElevatorCopyWarpMapsScript
-	ld hl, CeladonMartElevatorWarpMaps
-	predef DisplayElevatorFloorMenu
+	callfar DisplayElevatorFloorMenu
 	rst TextScriptEnd

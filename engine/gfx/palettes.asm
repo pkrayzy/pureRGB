@@ -1,6 +1,5 @@
-_RunPaletteCommand:
-	call GetPredefRegisters
-	ld a, b
+_RunPaletteCommand::
+	ld a, d
 	cp SET_PAL_DEFAULT
 	jr nz, .not_default
 	ld a, [wDefaultPaletteCommand]
@@ -10,15 +9,15 @@ _RunPaletteCommand:
 	ld l, a
 	ld h, 0
 	add hl, hl
+	push de
 	ld de, SetPalFunctions
 	add hl, de
 	ld a, [hli]
 	ld h, [hl]
 	ld l, a
-	; call hl then jp to SendSGBPackets
-	ld de, SendSGBPackets
-	push de
-	jp hl
+	pop de ; e = optional argument to function
+	call hl_caller
+	jp SendSGBPackets
 
 SetPal_BattleBlack:
 	ld hl, PalPacket_Black
@@ -428,17 +427,17 @@ SetPal_PokemonWholeScreen:
 	and 1 ; only the 1st bit of the flags determines alt palette, zero the other ones
 	ld [wIsAltPalettePkmn], a
 SetPal_PokemonWholeScreenTrade:
-	push bc
+	push de
 	ld hl, PalPacket_Empty
 	ld de, wPalPacket
 	ld bc, $10
 	rst _CopyData
-	pop bc
-	ld a, c
-	and a
+	pop de
+	ld a, e
+	cp $FF
 	ld a, PAL_BLACK
-	jr nz, .next
-	ld a, [wWholeScreenPaletteMonSpecies]
+	jr z, .next
+	ld a, e
 	call DeterminePaletteIDOutOfBattle
 .next
 	ld [wPalPacket + 1], a
@@ -554,7 +553,7 @@ DeterminePaletteIDOutOfBattle:
 	ld de, 3
 	call IsInArray
 	jr c, .specialMonPalette
-	predef IndexToPokedex
+	call IndexToPokedex
 	ld a, [wPokedexNum]
 	; 0 = missingno is a valid value here
 .skipDexNumConversion
@@ -702,7 +701,7 @@ _SendSGBPacket:
 	jr .loop2
 
 ; shinpokerednote: gbcnote: run GBC color code if on GBC when running this function now
-LoadSGB:
+LoadSGB::
 	ldh a, [hGBC]
 	and a
 	ld a, 1
@@ -727,7 +726,10 @@ LoadSGB:
 	ld de, ChrTrnPacket
 	ld hl, SGBBorderGraphics
 	call CopyGfxToSuperNintendoVRAM
-	xor a
+;;;;;;;;;;; NarishmaGBnote: CHANGED: adjusted the SGB tilemap to not include the center gameboy window saving 900 bytes.
+	;xor a
+	ld a, 2
+;;;;;;;;;;;
 	ld [wCopyingSGBTileData], a
 	ld de, PctTrnPacket
 	ld hl, BorderPalettes
@@ -842,10 +844,21 @@ CopyGfxToSuperNintendoVRAM:
 	ld de, vChars1
 	ld a, [wCopyingSGBTileData]
 	and a
-	jr z, .notCopyingTileData
+;;;;;;;;;;; NarishmaGBnote: CHANGED: adjusted the SGB tilemap to not include the center gameboy window saving 900 bytes.
+	;jr z, .notCopyingTileData
+	
+	jr z, .standardCopy
+	dec a
+	jr z, .borderTiles
+    ; tilemap
+	call CopySGBTilemapPals
+	jr .next
+.borderTiles
 	call CopySGBBorderTiles
 	jr .next
-.notCopyingTileData
+;.notCopyingTileData
+.standardCopy
+;;;;;;;;;;
 	ld bc, 256 tiles
 	rst _CopyData
 .next
@@ -1373,6 +1386,43 @@ CopySGBBorderTiles:
 	dec b
 	jr nz, .tileLoop
 	ret
+
+;;;;;;;;;;; NarishmaGBnote: CHANGED: adjusted the SGB tilemap to not include the center gameboy window saving 900 bytes.
+CopySGBTilemapPals:
+	ld bc, (6 + SCREEN_WIDTH + 6) * 5 * 2
+	call CopyData
+	ld b, SCREEN_HEIGHT
+.loop
+	push bc
+	ld bc, 6 * 2
+	call CopyData
+	ld bc, SCREEN_WIDTH * 2
+	call ClearBytes
+	ld bc, 6 * 2
+	call CopyData
+	pop bc
+	dec b
+	jr nz, .loop
+	ld bc, (6 + SCREEN_WIDTH + 6) * 5 * 2
+	call CopyData
+	ld bc, $100
+	call ClearBytes
+	ld bc, 3 * 16 * COLOR_SIZE ; 3 SNES palettes
+	call CopyData
+	ret
+
+ClearBytes::
+; clear bc bytes of data starting from de
+.loop
+	xor a
+	ld [de], a
+	inc de
+	dec bc
+	ld a, c
+	or b
+	jr nz, .loop
+	ret
+;;;;;;;;;;
 
 ;shinpokerednote: gbcnote: This function loads the palette for a given pokemon index in wCurPartySpecies into a specified palette register on the GBC
 ;d = CONVERT_OBP0, CONVERT_OBP1, or CONVERT_BGP

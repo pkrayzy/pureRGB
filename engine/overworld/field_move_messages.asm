@@ -1,4 +1,4 @@
-PrintStrengthText:
+PrintStrengthText::
 	ld hl, wStatusFlags1
 	set BIT_STRENGTH_ACTIVE, [hl]
 	ld hl, UsedStrengthText
@@ -56,5 +56,4 @@ CurrentTooFastText:
 	text_end
 
 CyclingIsFunText:
-	text_far _CyclingIsFunText
-	text_end
+	text_far_end _CyclingIsFunText

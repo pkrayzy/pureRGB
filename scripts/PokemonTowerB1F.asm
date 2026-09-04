@@ -8,22 +8,20 @@ PokemonTowerB1F_Script:
 
 PokemonTowerB1F_TextPointers:
 	def_text_pointers
-	dw_const PokemonTowerB1FDarkChannelerText,  TEXT_POKEMONTOWERB1F_DARK_CHANNELER
-	dw_const PokemonTowerB1FDarkChannelerLowerText,  TEXT_POKEMONTOWERB1F_LOWER_DARK_CHANNELER
-	dw_const PokemonTowerB1FTheMawUsedHyperBeamText,  TEXT_POKEMONTOWERB1F_THE_MAW_HYPER_BEAM
-	dw_const PokemonTowerB1FCuboneText,  TEXT_POKEMONTOWERB1F_CUBONE 
-	dw_const PokemonTowerB1FMarowakBlockedHyperBeamText,  TEXT_POKEMONTOWERB1F_GHOST_MAROWAK
-	dw_const PokemonTowerB1FCatacombsIntroText, TEXT_POKEMONTOWERB1F_CATACOMBS_INFO 
-	dw_const PokemonTowerB1FTorchedGraveText,  TEXT_POKEMONTOWERB1F_TORCHED_GRAVE
-	dw_const PokemonTowerB1FChunkyGraveText,  TEXT_POKEMONTOWERB1F_CHUNKY_GRAVE
-	dw_const PokemonTowerB1FPainlessGraveText,  TEXT_POKEMONTOWERB1F_PAINLESS_GRAVE
-	dw_const PokemonTowerB1FIrradiatedGraveText,  TEXT_POKEMONTOWERB1F_IRRADIATED_GRAVE
-	dw_const PokemonTowerB1FTheMawGraveText, TEXT_POKEMONTOWERB1F_THE_MAW_GRAVE
+	dba_const PokemonTowerB1FDarkChannelerText,  TEXT_POKEMONTOWERB1F_DARK_CHANNELER
+	dba_const PokemonTowerB1FDarkChannelerLowerText,  TEXT_POKEMONTOWERB1F_LOWER_DARK_CHANNELER
+	dba_const _PokemonTowerB1FTheMawUsedHyperBeamText,  TEXT_POKEMONTOWERB1F_THE_MAW_HYPER_BEAM
+	dba_const PokemonTowerB1FCuboneText,  TEXT_POKEMONTOWERB1F_CUBONE 
+	dba_const PokemonTowerB1FMarowakBlockedHyperBeamText,  TEXT_POKEMONTOWERB1F_GHOST_MAROWAK
+	dba_const PokemonTowerB1FCatacombsIntroText, TEXT_POKEMONTOWERB1F_CATACOMBS_INFO 
+	dba_const PokemonTowerB1FTorchedGraveText,  TEXT_POKEMONTOWERB1F_TORCHED_GRAVE
+	dba_const PokemonTowerB1FChunkyGraveText,  TEXT_POKEMONTOWERB1F_CHUNKY_GRAVE
+	dba_const PokemonTowerB1FPainlessGraveText,  TEXT_POKEMONTOWERB1F_PAINLESS_GRAVE
+	dba_const PokemonTowerB1FIrradiatedGraveText,  TEXT_POKEMONTOWERB1F_IRRADIATED_GRAVE
+	dba_const PokemonTowerB1FTheMawGraveText, TEXT_POKEMONTOWERB1F_THE_MAW_GRAVE
 
 PokemonTowerB1FOnMapLoad:
-	ld hl, wCurrentMapScriptFlags
-	bit BIT_CUR_MAP_LOADED_1, [hl]
-	res BIT_CUR_MAP_LOADED_1, [hl]
+	call WasMapJustLoaded
 	ret z
 	ld a, [wYCoord]
 	cp 18
@@ -97,7 +95,7 @@ PokemonTowerB1FOnMapLoad:
 .afterBattleText
 	push af
 	ld c, 60
-	rst _DelayFrames
+	rst DelayFrames
 	; back up channeler sprite's current pixel position before moving it
 	ld hl, wSprite02StateData1YPixels
 	ld e, [hl]
@@ -114,7 +112,7 @@ PokemonTowerB1FOnMapLoad:
 	call DisplayTextID
 	call PokemonTowerB1FDisappearGhost
 	ld c, 30
-	rst _DelayFrames
+	rst DelayFrames
 	call DarkChannelerFliesAway
 	pop de
 	; move channeler sprite back to default position
@@ -144,7 +142,7 @@ PokemonTowerB1FOnMapLoad:
 .theMawAfterBattle
 	push af
 	ld c, 80
-	rst _DelayFrames
+	rst DelayFrames
 	call PokemonTowerB1FDisappearGhost
 	pop af
 	ld a, TEXT_POKEMONTOWERB1F_THE_MAW_GRAVE
@@ -177,12 +175,12 @@ PokemonTowerB1FOnMapLoad:
 	ld [hl], -1
 	ld a, 4
 	ld [wSimulatedJoypadStatesIndex], a
-	jp StartSimulatingJoypadStates
+	jp StartSimulatingJoypadStatesNoJoypad
 .replaceTileBlockEntryClosed
 	ld a, $38
 .replaceTileBlockEntry
 	ld [wNewTileBlockID], a
-	predef_jump ReplaceTileBlock
+	jp ReplaceTileBlock
 
 
 PokemonTowerB1FPlayMusic::
@@ -284,9 +282,8 @@ PokemonTowerB1FDarkChannelerText:
 	ld a, 1 ; second warp
 	call PrepareScriptedCatacombsWarp
 	; hide the cubone in lavender town since it will be in the catacombs
-	ld a, TOGGLE_LAVENDER_TOWN_CUBONE
-	ld [wToggleableObjectIndex], a
-	predef HideExtraObject
+	ld c, TOGGLE_LAVENDER_TOWN_CUBONE
+	call HideExtraObject
 	ld hl, PokemonTowerB1FDarkChannelerLowerText.yes
 .printDone1
 	rst _PrintText
@@ -346,14 +343,11 @@ PokemonTowerB1FDarkChannelerText:
 	ld d, GENGAR
 	jpfar FindPokemonInParty
 .goDown
-	text_far _DarkChannelerGoDownText
-	text_end
+	text_far_end _DarkChannelerGoDownText
 .goBackDown
-	text_far _PokemonTowerCatacombsGoBackDown
-	text_end
+	text_far_end _PokemonTowerCatacombsGoBackDown
 .backToMe
-	text_far _DarkChannelerBackToMyself
-	text_end
+	text_far_end _DarkChannelerBackToMyself
 
 GengarTransformation:
 	call LoadHaunterTiles
@@ -392,10 +386,10 @@ GengarTransformation:
 	call FillScreenWithTile
 	call GBPalNormal
 	ld c, 60
-	rst _DelayFrames
+	rst DelayFrames
 	call DrawHaunterFaces
 	ld c, 20
-	rst _DelayFrames
+	rst DelayFrames
 	call GBPalBlackOut
 	call LoadScreenTilesFromBuffer2
 	call Delay3
@@ -430,26 +424,19 @@ FillScreenWithTile::
 
 
 DarkChannelerGreeting:
-	text_far _DarkChannelerGreeting
-	text_end
+	text_far_end _DarkChannelerGreeting
 DarkChannelerGreeting2:
-	text_far _DarkChannelerGreeting2
-	text_end
+	text_far_end _DarkChannelerGreeting2
 DarkChannelerGreeting3:
-	text_far _DarkChannelerGreeting3
-	text_end
+	text_far_end _DarkChannelerGreeting3
 DarkChannelerGengar:
-	text_far _DarkChannelerGengar
-	text_end
+	text_far_end _DarkChannelerGengar
 DarkChannelerGengarFalseAlarm:
-	text_far _DarkChannelerGengarFalseAlarm
-	text_end
+	text_far_end _DarkChannelerGengarFalseAlarm
 DarkChannelerGengarCurseTime:
-	text_far _DarkChannelerGengarCurseTime
-	text_end
+	text_far_end _DarkChannelerGengarCurseTime
 DarkChannelerCurseComplete:
-	text_far _DarkChannelerCurseComplete
-	text_end
+	text_far_end _DarkChannelerCurseComplete
 
 
 DarkChannelerHandFiddling:
@@ -502,7 +489,7 @@ LoadHaunterTiles:
 	ld de, HaunterFace
 	lb bc, BANK(HaunterFace), 12
 	ld hl, vChars1 tile $40
-	jp CopyVideoData
+	jp CopyVideoDataHBlank
 
 ; draw a haunter face on the screen with top left tile at hlcoord
 DrawHaunterFace:
@@ -528,7 +515,7 @@ DrawHaunterFace:
 	ld a, SFX_CRY_23
 	rst _PlaySound
 	ld c, 2
-	rst _DelayFrames
+	rst DelayFrames
 	ret
 
 DrawHaunterFaces:
@@ -594,14 +581,11 @@ PokemonTowerB1FDarkChannelerLowerText:
 	rst _PrintText
 	rst TextScriptEnd
 .goBackQuestion
-	text_far _PokemonTowerCatacombsDarkChannelerText
-	text_end
+	text_far_end _PokemonTowerCatacombsDarkChannelerText
 .yes
-	text_far _PokemonTowerCatacombsDarkChannelerTextYes
-	text_end
+	text_far_end _PokemonTowerCatacombsDarkChannelerTextYes
 .no
-	text_far _FossilGuyDenied
-	text_end
+	text_far_end _FossilGuyDenied
 
 PokemonTowerB1FFirstGrave::
 	CheckEvent EVENT_BEAT_TORCHED
@@ -660,15 +644,12 @@ PokemonTowerB1FTorchedGraveText:
 	rst _PrintText
 	rst TextScriptEnd
 .intro 
-	text_far _PokemonTowerCatacombsTorchedGraveText
-	text_end
+	text_far_end _PokemonTowerCatacombsTorchedGraveText
 .afterFlash
-	text_far _PokemonTowerCatacombsTorchedGraveText2
-	text_end
+	text_far_end _PokemonTowerCatacombsTorchedGraveText2
 .after
 	text_far _PokemonTowerCatacombsMonSpeaksText
-	text_far _PokemonTowerCatacombsTorchedAfterText
-	text_end
+	text_far_end _PokemonTowerCatacombsTorchedAfterText
 
 PokemonTowerB1FChunkyGraveText:
 	text_asm
@@ -684,15 +665,12 @@ PokemonTowerB1FChunkyGraveText:
 	rst _PrintText
 	rst TextScriptEnd
 .intro 
-	text_far _PokemonTowerCatacombsChunkyGraveText
-	text_end
+	text_far_end _PokemonTowerCatacombsChunkyGraveText
 .afterFlash
-	text_far _PokemonTowerCatacombsChunkyGraveText2
-	text_end
+	text_far_end _PokemonTowerCatacombsChunkyGraveText2
 .after
 	text_far _PokemonTowerCatacombsMonSpeaksText
-	text_far _PokemonTowerCatacombsChunkyAfterText
-	text_end
+	text_far_end _PokemonTowerCatacombsChunkyAfterText
 
 PokemonTowerB1FPainlessGraveText:
 	text_asm
@@ -708,15 +686,12 @@ PokemonTowerB1FPainlessGraveText:
 	rst _PrintText
 	rst TextScriptEnd
 .intro 
-	text_far _PokemonTowerCatacombsPainlessGraveText
-	text_end
+	text_far_end _PokemonTowerCatacombsPainlessGraveText
 .afterFlash
-	text_far _PokemonTowerCatacombsPainlessGraveText2
-	text_end
+	text_far_end _PokemonTowerCatacombsPainlessGraveText2
 .after
 	text_far _PokemonTowerCatacombsMonSpeaksText
-	text_far _PokemonTowerCatacombsPainlessAfterText
-	text_end
+	text_far_end _PokemonTowerCatacombsPainlessAfterText
 
 PokemonTowerB1FIrradiatedGraveText:
 	text_asm
@@ -732,15 +707,12 @@ PokemonTowerB1FIrradiatedGraveText:
 	rst _PrintText
 	rst TextScriptEnd
 .intro 
-	text_far _PokemonTowerCatacombsIrradiatedGraveText
-	text_end
+	text_far_end _PokemonTowerCatacombsIrradiatedGraveText
 .afterFlash
-	text_far _PokemonTowerCatacombsIrradiatedGraveText2
-	text_end
+	text_far_end _PokemonTowerCatacombsIrradiatedGraveText2
 .after
 	text_far _PokemonTowerCatacombsMonSpeaksText
-	text_far _PokemonTowerCatacombsIrradiatedAfterText
-	text_end
+	text_far_end _PokemonTowerCatacombsIrradiatedAfterText
 
 PrintPlayMusicScreamEnd:
 	rst _PrintText
@@ -946,10 +918,9 @@ PokemonTowerB1FHideGhost:
 PokemonTowerB1FWaitForNPCWalk:
 	CheckEvent EVENT_CATACOMBS_SPRITE_WALKING
 	jr z, .checkStartPlayerWalk
-	ld a, [wStatusFlags5]
-	bit BIT_SCRIPTED_NPC_MOVEMENT, a
+	call IsNPCAutoMoving
 	ret nz
-	bit BIT_SCRIPTED_MOVEMENT_STATE, a
+	bit BIT_SCRIPTED_MOVEMENT_STATE, a ; wStatusFlags5 still loaded from IsNPCAutoMoving
 	ret nz
 	ld a, [wXCoord]
 	cp 5
@@ -960,8 +931,6 @@ PokemonTowerB1FWaitForNPCWalk:
 	cp 5 + 4
 	jr nz, .secondWalk
 	ResetEvent EVENT_CATACOMBS_SPRITE_WALKING
-	xor a
-	ld [wJoyIgnore], a
 	ld a, POKEMONTOWERB1F_CUBONE
 	call SetSpriteFacingUp
 	ld a, UP
@@ -978,8 +947,6 @@ PokemonTowerB1FWaitForNPCWalk:
 	ld de, GenericMoveRight
 	jp MoveSprite
 .firstWalk
-	xor a
-	ld [wJoyIgnore], a
 	ld a, PLAYER_DIR_LEFT
 	ld [wPlayerMovingDirection], a
 	ld a, TEXT_POKEMONTOWERB1F_CUBONE
@@ -991,7 +958,7 @@ PokemonTowerB1FWaitForNPCWalk:
 	ld [hl], -1
 	ld a, 1
 	ld [wSimulatedJoypadStatesIndex], a
-	jp StartSimulatingJoypadStates
+	jp StartSimulatingJoypadStatesNoJoypad
 .checkStartPlayerWalk
 	; check if the player should start walking up to Cubone
 	CheckEvent EVENT_BEAT_THE_MAW
@@ -1012,10 +979,8 @@ PokemonTowerB1FWaitForNPCWalk:
 	ld [hl], -1
 	ld a, 4
 	ld [wSimulatedJoypadStatesIndex], a
-	jp StartSimulatingJoypadStates
+	jp StartSimulatingJoypadStatesNoJoypad
 .lastWalk
-	xor a
-	ld [wJoyIgnore], a
 	ResetEvent EVENT_CATACOMBS_SPRITE_WALKING
 	ld a, TEXT_POKEMONTOWERB1F_GHOST_MAROWAK
 	ldh [hTextID], a
@@ -1025,6 +990,7 @@ PokemonTowerB1FWaitForNPCWalk:
 PokemonTowerB1FCuboneText:
 	text_far _CatacombsCuboneText
 	text_asm
+	call EnableAllJoypad
 	ld a, CUBONE
 	call PlayCry
 	call DisplayTextPromptButton
@@ -1049,11 +1015,9 @@ PokemonTowerB1FCuboneText:
 	call MoveSpriteOffscreen
 	rst TextScriptEnd
 .marowakTouched
-	text_far _CatacombsMarowakTouchedText
-	text_end
+	text_far_end _CatacombsMarowakTouchedText
 .darkChannelerTouchingReunion
-	text_far _DarkChannelerReunionText
-	text_end
+	text_far_end _DarkChannelerReunionText
 
 DarkChannelerAppears:
 	ld a, POKEMONTOWERB1F_DARK_CHANNELER_BASEMENT
@@ -1079,6 +1043,7 @@ DarkChannelerFliesAway:
 
 PokemonTowerB1FTheMawGraveText:
 	text_asm
+	call EnableAllJoypad
 	CheckEvent EVENT_BEAT_THE_MAW
 	ld hl, .after
 	jr nz, .printDone
@@ -1090,18 +1055,11 @@ PokemonTowerB1FTheMawGraveText:
 	rst _PrintText
 	rst TextScriptEnd
 .intro
-	text_far _PokemonTowerCatacombsTheMawGraveText
-	text_end
+	text_far_end _PokemonTowerCatacombsTheMawGraveText
 .second
-	text_far _PokemonTowerCatacombsTheMawGraveText2
-	text_end
+	text_far_end _PokemonTowerCatacombsTheMawGraveText2
 .after
-	text_far _TheMawMeltedIntoShadows
-	text_end
-
-PokemonTowerB1FTheMawUsedHyperBeamText:
-	text_far _PokemonTowerB1FTheMawUsedHyperBeamText
-	text_end
+	text_far_end _TheMawMeltedIntoShadows
 
 CuboneBlinks:
 	ld b, 4
@@ -1158,6 +1116,8 @@ PokemonTowerB1FMarowakBlockedHyperBeamText:
 	ld hl, .joinedParty
 	rst _PrintText
 	; copy marowak nickname to wTrainerName to be used in battle
+	call CheckIfGhostMarowakInParty ; sets wWhichMon according to ghost marowak's index in party
+	call GetPartyMonName2 ; wWhichMon decides what this will store
 	ld hl, wNameBuffer
 	ld de, wTrainerName
 	ld bc, NAME_LENGTH
@@ -1181,6 +1141,7 @@ PokemonTowerB1FMarowakBlockedHyperBeamText:
 	ld hl, .attacked
 	jp PrintPlayMusicScreamEnd
 .afterMaw
+	call EnableAllJoypad
 	ld hl, .oneLastTime
 	rst _PrintText
 	ld a, MAROWAK
@@ -1291,29 +1252,22 @@ PokemonTowerB1FMarowakBlockedHyperBeamText:
 .markOff
 	ld c, DEX_CUBONE - 1
 	ld b, FLAG_SET
-	predef_jump FlagActionPredef
+	jp FlagAction
 .joinedParty
-	text_far _PokemonTowerB1FMarowakBuffedCubone
-	text_end
+	text_far_end _PokemonTowerB1FMarowakBuffedCubone
 .attacked
-	text_far _PokemonTowerB1FTheMawAttacked
-	text_end
+	text_far_end _PokemonTowerB1FTheMawAttacked
 .oneLastTime
-	text_far _GhostMarowakOneLastTime
-	text_end
+	text_far_end _GhostMarowakOneLastTime
 .blockedHyperBeam
-	text_far _PokemonTowerB1FMarowakBlockedHyperBeamText
-	text_end
+	text_far_end _PokemonTowerB1FMarowakBlockedHyperBeamText
 .channelerSpeaks
 	text_far _PokemonTowerCatacombsMonSpeaksText
-	text_far _PokemonTowerGhostMarowakAfterText
-	text_end
+	text_far_end _PokemonTowerGhostMarowakAfterText
 .afterlife
-	text_far _PokemonTower2Text_toAfterlife
-	text_end
+	text_far_end _PokemonTower2Text_toAfterlife
 .backUpstairs
-	text_far _PokemonTowerCatacombsDoneText
-	text_end
+	text_far_end _PokemonTowerCatacombsDoneText
 
 
 ; a = which sprite
@@ -1402,7 +1356,7 @@ TheMawAnimation:
 	call MoveSpriteOffscreen
 	call LoadGhostSpriteNormal
 	ld c, 30
-	rst _DelayFrames
+	rst DelayFrames
 	; explosion sound
 	xor a
 	ld [wFrequencyModifier], a
@@ -1420,7 +1374,7 @@ TheMawAnimation:
 	ldh [hTextID], a
 	call DisplayTextID
 	ld c, 30
-	rst _DelayFrames
+	rst DelayFrames
 	ld d, POKEMONTOWERB1F_GHOST
 	callfar FarSlideSpriteDown
 	ld a, 27

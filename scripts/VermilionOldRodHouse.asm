@@ -5,40 +5,33 @@ VermilionOldRodHouse_Script:
 
 VermilionOldRodHouse_TextPointers:
 	def_text_pointers
-	dw_const VermilionGuruHouseText1, TEXT_VERMILIONOLDRODHOUSE_FISHING_GURU
+	dba_const VermilionGuruHouseText1, TEXT_VERMILIONOLDRODHOUSE_FISHING_GURU
 
 VermilionGuruHouseText1:
 	text_asm
 	ld a, [wStatusFlags1]
 	bit BIT_GOT_GOOD_ROD, a
-	jr nz, .got_item
+	ld hl, .HowAreTheFishBitingText
+	jr nz, .printDone
 	ld hl, .DoYouLikeToFishText
 	rst _PrintText
 	call YesNoChoice
-	jr nz, .refused
+	ld hl, .ThatsSoDisappointingText
+	jr nz, .printDone
 	lb bc, GOOD_ROD, 1
 	call GiveItem
-	jr nc, .bag_full
+	ld hl, .NoRoomText
+	jr nc, .printDone
 	ld hl, wStatusFlags1
 	set BIT_GOT_GOOD_ROD, [hl]
 	ld hl, .TakeThisText
-	jr .done
-.bag_full
-	ld hl, .NoRoomText
-	jr .done
-.refused
-	ld hl, .ThatsSoDisappointingText
-	jr .done
-.got_item
-	ld hl, .HowAreTheFishBitingText
-.done
+.printDone
 	rst _PrintText
 	rst TextScriptEnd
 
 .DoYouLikeToFishText:
 	text_far _VermilionOldRodHouseFishingGuruDoYouLikeToFishText
-	text_far _VermilionOldRodHouseISimplyLoveFishing
-	text_end
+	text_far_end _VermilionOldRodHouseISimplyLoveFishing
 
 .TakeThisText:
 	text_far _VermilionOldRodHouseFishingGuruTakeThisText
@@ -47,14 +40,11 @@ VermilionGuruHouseText1:
 	text_end
 
 .ThatsSoDisappointingText:
-	text_far _LastTwoGurusTextNo
-	text_end
+	text_far_end _LastTwoGurusTextNo
 
 .HowAreTheFishBitingText:
 	text_far _VermilionOldRodHouseFishingGuruHowAreTheFishBitingText
-	text_far _VermilionOldRodHouseGoodRodInfo
-	text_end
+	text_far_end _VermilionOldRodHouseGoodRodInfo
 
 .NoRoomText:
-	text_far _LastTwoGurusTextBagFull
-	text_end
+	text_far_end _LastTwoGurusTextBagFull

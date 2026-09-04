@@ -7,7 +7,6 @@ LoadLearnsetTiles:
 	ld [wCurSpecies], a
 	push af
 	call GetMonHeader
-	call DisableLCD
 	ld de, vChars1 tile $57
 	ld a, [wPokedexNum]
 	ld c, a
@@ -16,18 +15,17 @@ LoadLearnsetTiles:
 	ld de, wShadowOAM
 	ld bc, 32
 	rst _CopyData
-	call EnableLCD
 	pop af
 	ld [wPokedexNum], a
 	; load menu graphics
 	ld de, LearnsetMenuUI2BPP
 	ld hl, vChars1 tile $40
 	lb bc, BANK(LearnsetMenuUI2BPP), 23
-	call CopyVideoData
+	call CopyVideoDataHBlank
 	ld de, LearnsetMenuUI1BPP
 	ld hl, vChars2 tile $75
 	lb bc, BANK(LearnsetMenuUI1BPP), 6
-	call CopyVideoDataDouble
+	call CopyVideoDataHBlankDouble
 	; draw basic border tiles that will stay the same regardless of page
 	hlcoord 0, 4
 	lb bc, $CC, 7 
@@ -190,9 +188,9 @@ ShowLevelUpLearnset:
 	call PlaceString
 	ld a, PAL_CERULEAN
 	ld [wGenericPaletteOverride], a
-	ld b, SET_PAL_GENERIC
+	ld d, SET_PAL_GENERIC
 	call RunPaletteCommand
-	call Delay3
+	call Delay3IfNotGBC
 .loop
 	call PrepLearnsetList
 .printMoveEntryLoop
@@ -375,7 +373,7 @@ ShowTMLearnset:
 	call PlaceString
 	ld a, PAL_CINNABAR
 	ld [wGenericPaletteOverride], a
-	ld b, SET_PAL_GENERIC
+	ld d, SET_PAL_GENERIC
 	call RunPaletteCommand
 	callfar LoadTMLearnsetIntoWram
 	ld a, [wDexLearnsetListCount]
@@ -551,7 +549,7 @@ ShowEvolutions:
 	call .printEvolveText
 	ld a, PAL_LAVENDER
 	ld [wGenericPaletteOverride], a
-	ld b, SET_PAL_GENERIC
+	ld d, SET_PAL_GENERIC
 	call RunPaletteCommand
 	callfar LoadEvosIntoWram
 	ld a, [wDexLearnsetListCount]
@@ -785,7 +783,4 @@ LearnsetFlagAction:
 	ld a, [hl] ; a = pokedex family number
 	ld hl, wLearnsetFlags
 	ld c, a
-	predef FlagActionPredef
-	ld a, c
-	and a ; has pokemon learnset been unlocked?
-	ret
+	jp FlagAction

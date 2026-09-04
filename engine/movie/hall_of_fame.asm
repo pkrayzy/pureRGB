@@ -2,7 +2,7 @@ AnimateHallOfFame:
 	call HoFFadeOutScreenAndMusic
 	call ClearScreen
 	ld c, 100
-	rst _DelayFrames
+	rst DelayFrames
 	call LoadFontTilePatterns
 	call LoadTextBoxTilePatterns
 	call DisableLCD
@@ -58,7 +58,7 @@ AnimateHallOfFame:
 	call HoFShowMonOrPlayer
 	call HoFDisplayAndRecordMonInfo
 	ld c, 80
-	rst _DelayFrames
+	rst DelayFrames
 	hlcoord 2, 13
 	lb bc, 3, 14
 	call TextBoxBorder
@@ -66,7 +66,7 @@ AnimateHallOfFame:
 	ld de, HallOfFameText
 	call PlaceString
 	ld c, 180
-	rst _DelayFrames
+	rst DelayFrames
 	call GBFadeOutToWhite
 	pop bc
 	pop hl
@@ -107,7 +107,7 @@ StoreHoFAltPaletteFlag:
 	ld a, [wHoFPartyMonIndex]
 	ld c, a
 	ld hl, wHallOfFamePalettes
-	predef FlagActionPredef
+	call FlagAction
 	pop af
 	ret
 
@@ -126,7 +126,6 @@ HoFShowMonOrPlayer:
 	ld [wCurPartySpecies], a
 	ld [wCurSpecies], a
 	ld [wBattleMonSpecies2], a
-	ld [wWholeScreenPaletteMonSpecies], a
 	ld a, [wHoFMonOrPlayer]
 	and a
 	jr z, .showMon
@@ -138,9 +137,11 @@ HoFShowMonOrPlayer:
 	hlcoord 12, 5
 	call GetMonHeader
 	call LoadFrontSpriteByMonIndex
-	predef LoadMonBackPic
+	callfar LoadMonBackPic
 .next1
-	lb bc, SET_PAL_POKEMON_WHOLE_SCREEN_TRADE, 0
+	ld a, [wCurSpecies]
+	ld e, a
+	ld d, SET_PAL_POKEMON_WHOLE_SCREEN_TRADE
 	call RunPaletteCommand
 	ld a, %11100100
 	ldh [rBGP], a
@@ -192,8 +193,8 @@ HoFDisplayMonInfo:
 	call PrintLevelCommon
 	ld a, [wHoFMonSpecies]
 	ld [wCurSpecies], a
-	hlcoord 3, 9
-	predef PrintMonType
+	decoord 3, 9
+	callfar PrintMonType
 	ld a, [wHoFMonSpecies]
 	jp PlayCry
 
@@ -220,7 +221,7 @@ HoFLoadPlayerPics:
 	ld de, RedPicBack
 	ld a, BANK(RedPicBack)
 	call UncompressSpriteFromDE
-	predef ScaleSpriteByTwo
+	callfar ScaleSpriteByTwo
 	ld de, vBackPic
 	call InterlaceMergeSpriteBuffers
 	ld c, $1
@@ -239,7 +240,7 @@ HoFLoadMonPlayerPicTileIDs:
 
 HoFDisplayPlayerStats:
 	SetEvent EVENT_HALL_OF_FAME_DEX_RATING
-	predef DisplayDexRating
+	callfar DisplayDexRating
 	hlcoord 0, 4
 	lb bc, 6, 10
 	call TextBoxBorder
@@ -256,7 +257,7 @@ HoFDisplayPlayerStats:
 	ld de, wPlayTimeHours
 	lb bc, 2, 5
 	call PrintNumber
-	ld a, $6d
+	ld a, '<COLON>'
 	ld [hli], a
 	ld de, wPlayTimeMinutes
 	lb bc, LEADING_ZEROES | 1, 2
@@ -277,7 +278,7 @@ HoFDisplayPlayerStats:
 HoFPrintTextAndDelay:
 	rst _PrintText
 	ld c, 120
-	rst _DelayFrames
+	rst DelayFrames
 	ret
 
 HoFPlayTimeText:
@@ -287,12 +288,10 @@ HoFMoneyText:
 	db "MONEY@"
 
 DexSeenOwnedText:
-	text_far _DexSeenOwnedText
-	text_end
+	text_far_end _DexSeenOwnedText
 
 DexRatingText:
-	text_far _DexRatingText
-	text_end
+	text_far_end _DexRatingText
 
 HoFRecordMonInfo:
 	ld hl, wHallOfFame

@@ -30,7 +30,7 @@ ResetStatusAndHalveMoneyOnBlackout::
 	ldh [hDivideBCDDivisor + 1], a
 	ld a, 2
 	ldh [hDivideBCDDivisor + 2], a
-	predef DivideBCDPredef3
+	callfar DivideBCD
 	ldh a, [hDivideBCDQuotient]
 	ld [wPlayerMoney], a
 	ldh a, [hDivideBCDQuotient + 1]
@@ -48,6 +48,5 @@ ResetStatusAndHalveMoneyOnBlackout::
 	set BIT_FLY_OR_DUNGEON_WARP, [hl]
 	res BIT_FLY_WARP, [hl]
 	set BIT_ESCAPE_WARP, [hl]
-	ld a, PAD_BUTTONS | PAD_CTRL_PAD
-	ld [wJoyIgnore], a
+	call DisableAllJoypad
 	predef_jump HealParty

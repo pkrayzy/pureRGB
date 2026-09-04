@@ -9,7 +9,7 @@ HandleLedges::
 	jr z, .volcano
 	ret
 .overworld
-	predef GetTileAndCoordsInFrontOfPlayer
+	call GetTileAndCoordsInFrontOfPlayer
 	ld hl, LedgeTiles
 	ld a, [wSpritePlayerStateData1FacingDirection]
 	ld b, a
@@ -49,11 +49,9 @@ HandleLedges::
 	ldh a, [hJoyHeld]
 	and e
 	ret z
-	ld a, PAD_BUTTONS | PAD_CTRL_PAD
-	ld [wJoyIgnore], a
 	ld hl, wMovementFlags
 	set BIT_LEDGE_OR_FISHING, [hl]
-	call StartSimulatingJoypadStates
+	call StartSimulatingJoypadStatesNoJoypad
 	ld a, e
 	ld [wSimulatedJoypadStatesEnd], a
 	ld [wSimulatedJoypadStatesEnd + 1], a
@@ -108,7 +106,7 @@ LoadHoppingShadowOAM:
 	ld hl, vChars1 tile $7f
 	ld de, LedgeHoppingShadow
 	lb bc, BANK(LedgeHoppingShadow), (LedgeHoppingShadowEnd - LedgeHoppingShadow) / TILE_1BPP_SIZE
-	call CopyVideoDataDouble
+	call CopyVideoDataHBlankDouble
 	ld a, $9
 	lb bc, $54, $48 ; b, c = y, x coordinates of shadow
 	ld de, LedgeHoppingShadowOAMBlock

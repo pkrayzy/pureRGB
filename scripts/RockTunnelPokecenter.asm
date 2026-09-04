@@ -1,29 +1,15 @@
 RockTunnelPokecenter_Script:
 	call SetLastBlackoutMap ; PureRGBnote: ADDED: set blackout map on entering pokemon center
-	call Serial_TryEstablishingExternallyClockedConnection
-	jp EnableAutoTextBoxDrawing
-
+	jp Serial_TryEstablishingExternallyClockedConnection
+	
 RockTunnelPokecenter_TextPointers:
 	def_text_pointers
-	dw_const RockTunnelPokecenterNurseText,            TEXT_ROCKTUNNELPOKECENTER_NURSE
-	dw_const RockTunnelPokecenterGentlemanText,        TEXT_ROCKTUNNELPOKECENTER_GENTLEMAN
-	dw_const RockTunnelPokecenterFisherText,           TEXT_ROCKTUNNELPOKECENTER_FISHER
-	dw_const RockTunnelPokecenterLinkReceptionistText, TEXT_ROCKTUNNELPOKECENTER_LINK_RECEPTIONIST
-	dw_const RockTunnelCharityNurseText,               TEXT_ROCKTUNNELPOKECENTER_NURSE2
-
-RockTunnelPokecenterNurseText:
-	script_pokecenter_nurse
-
-RockTunnelPokecenterGentlemanText:
-	text_far _RockTunnelPokecenterGentlemanText
-	text_end
-
-RockTunnelPokecenterFisherText:
-	text_far _RockTunnelPokecenterFisherText
-	text_end
-
-RockTunnelPokecenterLinkReceptionistText:
-	script_cable_club_receptionist
+	dba_const GenericPokecenterNurseText,               TEXT_ROCKTUNNELPOKECENTER_NURSE
+	dba_const _RockTunnelPokecenterGentlemanText,       TEXT_ROCKTUNNELPOKECENTER_GENTLEMAN
+	dba_const _RockTunnelPokecenterFisherText,          TEXT_ROCKTUNNELPOKECENTER_FISHER
+	dba_const GenericLinkReceptionistText,              TEXT_ROCKTUNNELPOKECENTER_LINK_RECEPTIONIST
+	dba_const RockTunnelCharityNurseText,               TEXT_ROCKTUNNELPOKECENTER_NURSE2
+	dba_const _RockTunnelPokecenterBenchGuyText,        TEXT_ROCKTUNNELPOKECENTER_BENCH_GUY
 
 ; PureRGBnote: ADDED: by donating to this nurse you unlock the ability to speed up pokemon center healing by holding B before talking to the nurse
 RockTunnelCharityNurseText: 
@@ -34,17 +20,16 @@ RockTunnelCharityNurseText:
 	ld [wTextBoxID], a
 	call DisplayTextBoxID
 	call YesNoChoice
-	jr nz, .no
+	ld hl, RockTunnelCharityNurseFarewellText
+	jr nz, .printDone
 	xor a
 	ldh [hMoney], a
 	ldh [hMoney + 2], a
 	ld a, $30
 	ldh [hMoney + 1], a
 	call HasEnoughMoney
-	jr nc, .success
 	ld hl, RockTunnelCharityNurseNotEnoughMoneyText
-	rst _PrintText
-	jr .done
+	jr c, .printDone
 .success
 	SetEvent EVENT_DONATED_TO_POKECENTER_CHARITY
 	xor a
@@ -60,27 +45,18 @@ RockTunnelCharityNurseText:
 	ld [wTextBoxID], a
 	call DisplayTextBoxID
 	ld hl, RockTunnelCharityNurseText2
+.printDone
 	rst _PrintText
-	jr .done
-.no
-	ld hl, RockTunnelCharityNurseFarewellText
-	rst _PrintText
-.done		
 	rst TextScriptEnd
 
 RockTunnelCharityNurseText1:
-	text_far _RockTunnelCharityNurseText1
-	text_end
+	text_far_end _RockTunnelCharityNurseText1
 
 RockTunnelCharityNurseText2:
-	text_far _RockTunnelCharityNurseText2
-	text_end
+	text_far_end _RockTunnelCharityNurseText2
 
 RockTunnelCharityNurseFarewellText:
-	text_far _PokemonCenterFarewellText
-	text_end
+	text_far_end _PokemonCenterFarewellText
 
 RockTunnelCharityNurseNotEnoughMoneyText:
-	text_far _GenericNotEnoughMoneyText
-	text_end
-
+	text_far_end _GenericNotEnoughMoneyText

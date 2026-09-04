@@ -1,14 +1,7 @@
 SSAnne2F_Script:
-	call EnableAutoTextBoxDrawing
 	ld hl, SSAnne2F_ScriptPointers
-	ld a, [wSSAnne2FCurScript]
-	jp CallFunctionInTable
-
-SSAnne2FResetScripts:
-	xor a
-	ld [wJoyIgnore], a
-	ld [wSSAnne2FCurScript], a
-	ret
+	ld de, wSSAnne2FCurScript
+	jp CallMapScriptInTable
 
 SSAnne2F_ScriptPointers:
 	def_script_pointers
@@ -34,24 +27,20 @@ ENDC
 	call PlayMusic
 	ld a, [wCoordIndex]
 	ldh [hSavedCoordIndex], a
-	ld a, TOGGLE_SS_ANNE_2F_RIVAL
-	ld [wToggleableObjectIndex], a
-	predef ShowObject
+	ld c, TOGGLE_SS_ANNE_2F_RIVAL
+	call ShowObject
 	call Delay3
 	ld a, SSANNE2F_RIVAL
 	ldh [hSpriteIndex], a
 	call SetSpriteMovementBytesToFF
 	xor a
 	ldh [hJoyHeld], a
-	ld a, PAD_CTRL_PAD
-	ld [wJoyIgnore], a
+	call DisableDpad
 	ldh a, [hSavedCoordIndex]
 	cp $2
-	jr nz, .player_standing_right
-	ld de, .RivalDownFourMovement
-	jr .move_sprite
-.player_standing_right
 	ld de, .RivalDownThreeMovement
+	jr nz, .move_sprite
+	dec de ; .RivalDownFourMovement
 .move_sprite
 	call MoveSprite
 	ld a, SCRIPT_SSANNE2F_RIVAL_START_BATTLE
@@ -74,13 +63,11 @@ ENDC
 SSAnne2FSetFacingDirectionScript:
 	ld a, [wXCoord]
 	cp 37
-	jr nz, .player_standing_left
+	ld a, SPRITE_FACING_DOWN
+	jr nz, .set_facing_direction
 	ld a, PLAYER_DIR_LEFT
 	ld [wPlayerMovingDirection], a
 	ld a, SPRITE_FACING_RIGHT
-	jr .set_facing_direction
-.player_standing_left
-	xor a ; SPRITE_FACING_DOWN
 .set_facing_direction
 	ldh [hSpriteFacingDirection], a
 	ld a, SSANNE2F_RIVAL
@@ -88,12 +75,10 @@ SSAnne2FSetFacingDirectionScript:
 	jp SetSpriteFacingDirectionAndDelay
 
 SSAnne2FRivalStartBattleScript:
-	ld a, [wStatusFlags5]
-	bit BIT_SCRIPTED_NPC_MOVEMENT, a
+	call IsNPCAutoMoving
 	ret nz
 	call SSAnne2FSetFacingDirectionScript
-	xor a
-	ld [wJoyIgnore], a
+	call EnableAllJoypad
 	ld a, TEXT_SSANNE2F_RIVAL
 	ldh [hTextID], a
 	call DisplayTextID
@@ -111,13 +96,18 @@ SSAnne2FRivalStartBattleScript:
 	ld [wSSAnne2FCurScript], a
 	ret
 
+SSAnne2FResetScripts:
+	call EnableAllJoypad
+	; a = 0 from EnableAllJoypad
+	ld [wSSAnne2FCurScript], a ; SCRIPT_SSANNE2F_DEFAULT
+	ret
+
 SSAnne2FRivalAfterBattleScript:
 	ld a, [wIsInBattle]
 	cp $ff
-	jp z, SSAnne2FResetScripts
+	jr z, SSAnne2FResetScripts
 	call SSAnne2FSetFacingDirectionScript
-	ld a, PAD_CTRL_PAD
-	ld [wJoyIgnore], a
+	call DisableDpad
 	ld d, SSANNE2F_RIVAL
 	callfar MakeSpriteFacePlayer
 	ld a, TEXT_SSANNE2F_RIVAL_CUT_MASTER
@@ -156,14 +146,11 @@ SSAnne2FRivalAfterBattleScript:
 	db -1 ; end
 
 SSAnne2FRivalExitScript:
-	ld a, [wStatusFlags5]
-	bit BIT_SCRIPTED_NPC_MOVEMENT, a
+	call IsNPCAutoMoving
 	ret nz
-	xor a
-	ld [wJoyIgnore], a
-	ld a, TOGGLE_SS_ANNE_2F_RIVAL
-	ld [wToggleableObjectIndex], a
-	predef HideObject
+	call EnableAllJoypad
+	ld c, TOGGLE_SS_ANNE_2F_RIVAL
+	call HideObject
 	call PlayDefaultMusic
 	ld a, SCRIPT_SSANNE2F_NOOP
 	ld [wSSAnne2FCurScript], a
@@ -171,38 +158,24 @@ SSAnne2FRivalExitScript:
 
 SSAnne2F_TextPointers:
 	def_text_pointers
-	dw_const SSAnne2FWaiterText,         TEXT_SSANNE2F_WAITER
-	dw_const SSAnne2FRivalText,          TEXT_SSANNE2F_RIVAL
-	dw_const SSAnne2FRivalCutMasterText, TEXT_SSANNE2F_RIVAL_CUT_MASTER
-
-SSAnne2FWaiterText:
-	text_far _SSAnne2FWaiterText
-	text_end
+	dba_const _SSAnne2FWaiterText,         TEXT_SSANNE2F_WAITER
+	dba_const SSAnne2FRivalText,          TEXT_SSANNE2F_RIVAL
+	dba_const _SSAnne2FRivalCutMasterText, TEXT_SSANNE2F_RIVAL_CUT_MASTER
 
 SSAnne2FRivalText:
 	text_asm
-	ld hl, .Text
+	ld hl, .intro
 	rst _PrintText
 	ld hl, wStatusFlags3
 	set BIT_TALKED_TO_TRAINER, [hl]
 	set BIT_PRINT_END_BATTLE_TEXT, [hl]
-	ld hl, SSAnne2FRivalDefeatedText
-	ld de, SSAnne2FRivalVictoryText
+	ld hl, .defeated
+	ld de, .victory
 	call SaveEndBattleTextPointers
 	rst TextScriptEnd
-
-.Text:
-	text_far _SSAnne2FRivalText
-	text_end
-
-SSAnne2FRivalDefeatedText:
-	text_far _SSAnne2FRivalDefeatedText
-	text_end
-
-SSAnne2FRivalVictoryText:
-	text_far _SSAnne2FRivalVictoryText
-	text_end
-
-SSAnne2FRivalCutMasterText:
-	text_far _SSAnne2FRivalCutMasterText
-	text_end
+.intro:
+	text_far_end _SSAnne2FRivalText
+.defeated:
+	text_far_end _SSAnne2FRivalDefeatedText
+.victory:
+	text_far_end _SSAnne2FRivalVictoryText

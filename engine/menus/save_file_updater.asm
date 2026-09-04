@@ -4,28 +4,22 @@ DEF COIN_CASE EQU $45 ; constant was changed
 DEF TOWN_MAP EQU $05 ; constant was changed
 
 SaveFileUpdateText:
-	text_far _SaveFileUpdateText
-	text_end
+	text_far_end _SaveFileUpdateText
 
 SaveFileUpdateText2:
-	text_far _SaveFileUpdateText2
-	text_end
+	text_far_end _SaveFileUpdateText2
 
 PressStartToContinueText:
-	text_far _SaveFileUpdateTextConfirm
-	text_end
+	text_far_end _SaveFileUpdateTextConfirm
 
 SaveFileUpdateCompleteText:
-	text_far _SaveFileUpdateCompleteText
-	text_end
+	text_far_end _SaveFileUpdateCompleteText
 
 SaveFileUpdateWarpText:
-	text_far _SaveFileUpdateWarpText
-	text_end
+	text_far_end _SaveFileUpdateWarpText
 
 SaveFileUpdating:
-	text_far _SaveFileUpdating
-	text_end
+	text_far_end _SaveFileUpdating
 
 BeforeVersion2_7_0SaveFileUpdateScript::
 	call BeforeVersion2_7_0SaveFileUpdate
@@ -161,7 +155,16 @@ OriginalGameSaveFileUpdate:
 ResetMonFlagsFully:
 	; step 13: Update party pokemon to have their flags set to 0 (used to be catch rate, now it's for alt palette pokemon and pokeball type)
 	ld a, [wPartyCount]
+	and a
+	ret z ; if your party is empty, you are at the beginning of the game, so don't do anything
 	ld b, a
+	push bc
+	ld hl, wCurrentBoxNum
+	bit BIT_HAS_CHANGED_BOXES, [hl] ; is it the first time player is changing the box?
+	jr nz, .dontInitializeBoxes
+	callfar EmptyAllSRAMBoxes ; if so, empty all boxes in SRAM
+.dontInitializeBoxes
+	pop bc
 	ld hl, wPartyMon1Flags
 	ld de, wPartyMon2Flags - wPartyMon1Flags
 .loop
@@ -183,7 +186,9 @@ ResetMonFlagsFully:
 	pop bc
 	ld hl, wBoxMon1Flags
 	ld a, [wBoxCount]
-	and a
+	and a 
+	jr z, .nextBox
+	cp $FF ; box never used
 	jr z, .nextBox
 	ld b, a
 	ld de, wBoxMon2Flags - wBoxMon1Flags
@@ -243,11 +248,11 @@ EarlierVersionSaveFileUpdate:
 	call EarlierVersionEventConstantsUpdate
 	; step 6: update hide show variables based on events (if possible)
 	CheckEvent EVENT_MET_DAD
-	ld a, TOGGLE_REDS_HOUSE_1F_DAD
-	call z, HideExtraObjectEntry
+	ld c, TOGGLE_REDS_HOUSE_1F_DAD
+	call z, HideExtraObject
 	CheckEvent EVENT_DIAMOND_MINE_COMPLETED
-	ld a, TOGGLE_PROSPECTORS_HOUSE_PROSPECTOR
-	call z, HideExtraObjectEntry
+	ld c, TOGGLE_PROSPECTORS_HOUSE_PROSPECTOR
+	call z, HideExtraObject
 	callfar SetDetentionHideShows
 	ld hl, SaveFileUpdater2_6_0_Hides
 	call HideMultipleExtraObjects
@@ -260,12 +265,10 @@ HideMultipleExtraObjects:
 	cp -1
 	ret z
 	push hl
-	call HideExtraObjectEntry
+	ld c, a
+	call HideExtraObject
 	pop hl
 	jr HideMultipleExtraObjects
-HideExtraObjectEntry:
-	ld [wToggleableObjectIndex], a
-	predef_jump HideExtraObject
 
 SaveFileUpdater2_6_0_Hides:
 	; despite the champ arena having been introduced already before 2.6.0, we can reset the values to deal with even earlier versions
@@ -544,10 +547,8 @@ TransferMovedHideShowFlags:
 	ld c, a
 	ld b, FLAG_TEST
 	push de
-	predef FlagActionPredef
+	call FlagAction
 	pop de
-	ld a, c
-	and a
 	ld b, FLAG_SET
 	jr nz, .transferValue
 	ld b, FLAG_RESET
@@ -557,7 +558,7 @@ TransferMovedHideShowFlags:
 	ld c, a
 	ld hl, wExtraToggleableObjectFlags
 	push de
-	predef FlagActionPredef
+	call FlagAction
 	pop de
 	inc de
 	jr .loop
@@ -580,33 +581,31 @@ UpdateNewHideShowFlagsBasedOnGameProgression:
 	cp -1
 	jr z, .next
 	push hl
-	ld [wToggleableObjectIndex], a
-	predef ShowObject
+	ld c, a
+	call ShowObject
 	pop hl
 	jr .loop
 .next
-	ld a, TOGGLE_MEW_VERMILION_DOCK
-	call SaveFileUpdaterHideObjectEntry
+	ld c, TOGGLE_MEW_VERMILION_DOCK
+	call HideObject
 	CheckEvent EVENT_BEAT_CHAMPION_RIVAL
 	jr z, .dontHideRocketHouseGuy
-	ld a, TOGGLE_CERULEAN_ROCKET_HOUSE_1F_GUY
-	call SaveFileUpdaterHideObjectEntry
+	ld c, TOGGLE_CERULEAN_ROCKET_HOUSE_1F_GUY
+	call HideObject
 .dontHideRocketHouseGuy
 	ld a, [wStatusFlags4]
 	bit BIT_GOT_SILPH_CO_LAPRAS_OR_ITEM, a
 	jr z, .dontHideCeladonLaprasGuy
-	ld a, TOGGLE_LAPRAS_GUY_CELADON
-	call SaveFileUpdaterHideObjectEntry
+	ld c, TOGGLE_LAPRAS_GUY_CELADON
+	call HideObject
 .dontHideCeladonLaprasGuy
 	CheckEvent EVENT_GOT_DOME_FOSSIL
-	ld a, TOGGLE_SEAFOAM_ISLANDS_B3F_DOME_FOSSIL
-	call nz, SaveFileUpdaterHideObjectEntry
+	ld c, TOGGLE_SEAFOAM_ISLANDS_B3F_DOME_FOSSIL
+	call nz, HideObject
 	CheckEvent EVENT_GOT_HELIX_FOSSIL
 	ret z
-	ld a, TOGGLE_SEAFOAM_ISLANDS_B3F_HELIX_FOSSIL
-SaveFileUpdaterHideObjectEntry:
-	ld [wToggleableObjectIndex], a
-	predef_jump HideObject
+	ld c, TOGGLE_SEAFOAM_ISLANDS_B3F_HELIX_FOSSIL
+	jp HideObject
 
 
 	db -1

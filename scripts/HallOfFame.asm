@@ -1,14 +1,12 @@
 HallOfFame_Script:
-	call EnableAutoTextBoxDrawing
 	ld hl, HallOfFame_ScriptPointers
-	ld a, [wHallOfFameCurScript]
-	jp CallFunctionInTable
+	ld de, wHallOfFameCurScript
+	jp CallMapScriptInTable
 
-HallofFameRoomClearScripts: ; unreferenced
-	xor a
-	ld [wJoyIgnore], a
-	ld [wHallOfFameCurScript], a
-	ret
+;HallofFameRoomClearScripts: ; unreferenced
+;	call EnableAllJoypad
+;	ld [wHallOfFameCurScript], a
+;	ret
 
 HallOfFame_ScriptPointers:
 	def_script_pointers
@@ -22,9 +20,8 @@ HallOfFameResetEventsAndSaveScript:
 	call Delay3
 	ld a, [wLetterPrintingDelayFlags]
 	push af
-	xor a
-	ld [wJoyIgnore], a
-	predef HallOfFamePC
+	call EnableAllJoypad
+	callfar HallOfFamePC
 	pop af
 	ld [wLetterPrintingDelayFlags], a
 	ld hl, wStatusFlags7
@@ -50,21 +47,19 @@ HallOfFameResetEventsAndSaveScript:
 	ld b, 5
 .delayLoop
 	ld c, 600 / 5
-	rst _DelayFrames
+	rst DelayFrames
 	dec b
 	jr nz, .delayLoop
 	call WaitForTextScrollButtonPress
-	jp Init
+	jp SoftReset
 
 HallOfFameDefaultScript:
-	ld a, PAD_BUTTONS | PAD_CTRL_PAD
-	ld [wJoyIgnore], a
 	ld hl, wSimulatedJoypadStatesEnd
 	ld de, HallOfFameEntryMovement
 	call DecodeRLEList
 	dec a
 	ld [wSimulatedJoypadStatesIndex], a
-	call StartSimulatingJoypadStates
+	call StartSimulatingJoypadStatesNoJoypad
 	ld a, SCRIPT_HALLOFFAME_OAK_CONGRATULATIONS
 	ld [wHallOfFameCurScript], a
 	ret
@@ -86,39 +81,30 @@ HallOfFameOakCongratulationsScript:
 	ldh [hSpriteFacingDirection], a
 	call SetSpriteFacingDirectionAndDelay
 	call Delay3
-	xor a
-	ld [wJoyIgnore], a
+	call EnableAllJoypad
 	inc a ; PLAYER_DIR_RIGHT
 	ld [wPlayerMovingDirection], a
 	ld a, TEXT_HALLOFFAME_OAK
 	ldh [hTextID], a
 	call DisplayTextID
-	ld a, PAD_BUTTONS | PAD_CTRL_PAD
-	ld [wJoyIgnore], a
+	call DisableAllJoypad
 ;;;;;;;;;; PureRGBnote: ADDED: hide the third pokeball in oak's lab because he's using it in battle now
 	ld a, [wPlayerStarter]
 	cp STARTER1
-	jr z, .hide3
+	ld c, TOGGLE_STARTER_BALL_3
+	jr z, .hideStarterBall
 	cp STARTER2
-	jr z, .hide1
-	ld a, TOGGLE_STARTER_BALL_2
-	jr .hideStarterBall
-.hide3
-	ld a, TOGGLE_STARTER_BALL_3
-	jr .hideStarterBall
-.hide1
-	ld a, TOGGLE_STARTER_BALL_1
+	ld c, TOGGLE_STARTER_BALL_1
+	jr z, .hideStarterBall
+	ld c, TOGGLE_STARTER_BALL_2
 .hideStarterBall
-	ld [wToggleableObjectIndex], a
-	predef HideObject
+	call HideObject
 ;;;;;;;;;;
-	ld a, TOGGLE_CERULEAN_CAVE_GUY
-	ld [wToggleableObjectIndex], a
-	predef HideObject
+	ld c, TOGGLE_CERULEAN_CAVE_GUY
+	call HideObject
 ;;;;;;;;;; PureRGBnote: ADDED: hide the guy in the first floor of the secret house in cerulean - makes it appear he went downstairs.
-	ld a, TOGGLE_CERULEAN_ROCKET_HOUSE_1F_GUY
-	ld [wToggleableObjectIndex], a
-	predef HideObject
+	ld c, TOGGLE_CERULEAN_ROCKET_HOUSE_1F_GUY
+	call HideObject
 ;;;;;;;;;;
 	ld a, SCRIPT_HALLOFFAME_RESET_EVENTS_AND_SAVE
 	ld [wHallOfFameCurScript], a
@@ -126,8 +112,4 @@ HallOfFameOakCongratulationsScript:
 
 HallOfFame_TextPointers:
 	def_text_pointers
-	dw_const HallOfFameOakText, TEXT_HALLOFFAME_OAK
-
-HallOfFameOakText:
-	text_far _HallOfFameOakText
-	text_end
+	dba_const _HallOfFameOakText, TEXT_HALLOFFAME_OAK

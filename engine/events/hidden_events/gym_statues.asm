@@ -6,61 +6,46 @@ GymStatues:
 	ld a, [wSpritePlayerStateData1FacingDirection]
 	cp SPRITE_FACING_UP
 	ret nz
+	tx_pre_id GymStatueTextScript
+	jp PrintPredefText
+
+INCLUDE "data/maps/badge_maps.asm"
+
+GymStatueTextScript::
+	text_asm
+	call GetStatueNames
 	ld hl, MapBadgeFlags
 	ld a, [wCurMap]
-	ld b, a
-.loop
-	ld a, [hli]
-	cp $ff
-	ret z
-	cp b
-	jr z, .match
+	ld de, 2
+	call IsInArray
+	jr nc, .done
 	inc hl
-	jr .loop
-.match
 	ld b, [hl]
 	ld a, [wObtainedBadges]
 	and b
 	cp b
-	tx_pre_id GymStatueText2
+	ld hl, .text2
 	jr z, .haveBadge
-	tx_pre_id GymStatueText1
+	ld hl, .text1
 .haveBadge
-	jp PrintPredefTextID
-
-INCLUDE "data/maps/badge_maps.asm"
-
-GymStatueText1::
-	text_asm
-	call GetStatueNames
-	ld hl, GymStatueText1Text
 	rst _PrintText
+.done
 	rst TextScriptEnd
-
-GymStatueText1Text::
+.text1
 	text_far _GymStatueText
-	text_far _GymStatueRival
-	text_end
-
-GymStatueText2::
-	text_asm
-	call GetStatueNames
-	ld hl, GymStatueText2Text
-	rst _PrintText
-	rst TextScriptEnd
-
-GymStatueText2Text::
+	text_far_end _GymStatueRival
+.text2
 	text_far _GymStatueText
-	text_far _GymStatueRivalPlayer
-	text_end
+	text_far_end _GymStatueRivalPlayer
 
 ; PureRGBnote: CHANGED: Previously gym statue name data was loaded by the respective gym's map script into wram, 
 ; but it was wasteful because it's not even hard to load without even using wram values right when you read the statue.
 ; this was refactored from some free wram space.
 
 GetStatueNames:
-	ld hl, StatueTextMap
 	ld a, [wCurMap]
+GetArbitraryStatueNames:
+	ld hl, StatueTextMap
 	ld de, 4
 	call IsInArray
 	ret nc
@@ -95,3 +80,39 @@ StatueTextMap::
 	dwb CinnabarIslandName, BLAINE
 	db VIRIDIAN_GYM
 	dwb ViridianCityName, GIOVANNI
+
+
+GymOutsideSignTextScript::
+	push de
+	ld a, c
+	call GetArbitraryStatueNames
+	ld hl, .genericGymSignText
+	rst _PrintText
+	pop hl
+	rst _PrintText
+	rst TextScriptEnd
+.genericGymSignText
+	text_far _GymSignGenericText
+	text_promptbutton
+	text_end
+
+PewterGymOutsideSign::
+	text_far_end _PewterCityGymSignText
+
+CeruleanGymOutsideSign::
+	text_far_end _CeruleanCityGymSign
+
+VermilionGymOutsideSign::
+	text_far_end _VermilionCityGymSignText
+
+CeladonGymOutsideSign::
+	text_far_end _CeladonCityGymSignText
+	
+FuchsiaGymOutsideSign::
+	text_far_end _FuchsiaCityGymSignText
+
+SaffronGymOutsideSign::
+	text_far_end _SaffronCityGymSignText
+
+CinnabarGymOutsideSign::
+	text_far_end _CinnabarIslandGymSignText

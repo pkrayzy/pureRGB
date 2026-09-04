@@ -1,15 +1,12 @@
 RocketHideoutElevator_Script:
-	ld hl, wCurrentMapScriptFlags
-	bit BIT_CUR_MAP_LOADED_1, [hl]
-	res BIT_CUR_MAP_LOADED_1, [hl]
+	call WasMapJustLoaded
 	push hl
 	call nz, RocketHideoutElevatorStoreWarpEntriesScript
 	pop hl
 	bit BIT_CUR_MAP_USED_ELEVATOR, [hl]
 	res BIT_CUR_MAP_USED_ELEVATOR, [hl]
 	call nz, RocketHideoutElevatorShakeScript
-	xor a
-	ld [wAutoTextBoxDrawingControl], a
+	call EnableAutoTextBoxDrawing
 	inc a
 	ld [wDoNotWaitForButtonPressAfterDisplayingText], a
 	ret
@@ -61,7 +58,7 @@ RocketHideoutElevatorShakeScript:
 
 RocketHideoutElevator_TextPointers:
 	def_text_pointers
-	dw_const RocketHideoutElevatorText, TEXT_ROCKETHIDEOUTELEVATOR
+	dba_const RocketHideoutElevatorText, TEXT_ROCKETHIDEOUTELEVATOR
 
 RocketHideoutElevatorText:
 	text_asm
@@ -88,20 +85,15 @@ RocketHideoutElevatorText:
 .startLift
 ;;;;;;;;;;
 	call RocketHideoutElevatorScript
-	ld hl, RocketHideoutElevatorWarpMaps
-	predef DisplayElevatorFloorMenu
-	jr .text_script_end
+	callfar DisplayElevatorFloorMenu
+	rst TextScriptEnd
 .no_key
 	ld hl, .AppearsToNeedKeyText
 	rst _PrintText
-.text_script_end
 	rst TextScriptEnd
 
 .UnlockedElevatorText:
-	text_far _UnlockedElevatorText
-	text_end
+	text_far_end _UnlockedElevatorText
 
 .AppearsToNeedKeyText:
-	text_far _RocketHideoutElevatorAppearsToNeedKeyText
-	text_waitbutton
-	text_end
+	text_far_end _RocketHideoutElevatorAppearsToNeedKeyText

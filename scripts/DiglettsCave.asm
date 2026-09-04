@@ -7,7 +7,7 @@ DiglettsCave_Script:
 
 DiglettsCave_TextPointers:
 	def_text_pointers
-	dw_const DiglettsCaveDiglettText, TEXT_DIGLETTS_CAVE_DIGLETTS
+	dba_const DiglettsCaveDiglettText, TEXT_DIGLETTS_CAVE_DIGLETTS
 
 CheckAutoHideDigletts:
 	; can happen if you change the option setting while they're visible
@@ -19,9 +19,7 @@ CheckAutoHideDigletts:
 	jp HideDigletts
 
 DiglettsCaveCheckStandingOnWarp:
-	ld hl, wCurrentMapScriptFlags
-	bit BIT_CUR_MAP_LOADED_1, [hl]
-	res BIT_CUR_MAP_LOADED_1, [hl]
+	call WasMapJustLoaded
 	jr z, .checkStandingOnWarp
 	call .standingOnBottomWarp
 	jr nz, .loadDigletts
@@ -64,52 +62,46 @@ DiglettsCaveLoadDiglettSprites::
 	ld hl, vNPCSprites tile $0C
 	ld de, PartyMonSprites2 tile 50
 	lb bc, BANK(PartyMonSprites2), 2
-	call CopyVideoData
+	call CopyVideoDataHBlank
 	ld hl, vNPCSprites tile $0E
 	ld de, PartyMonSprites2 tile 54
 	lb bc, BANK(PartyMonSprites2), 2
-	call CopyVideoData
+	call CopyVideoDataHBlank
 	; half visible sprite
 	ld de, DiglettDiggingSprite tile 4
 	ld hl, vNPCSprites tile $10
 	lb bc, BANK(DiglettDiggingSprite), 4
-	call CopyVideoData
+	call CopyVideoDataHBlank
 	; gone sprite
 	ld de, DiglettDiggingSprite tile 14
 	ld hl, vNPCSprites tile $16
 	lb bc, BANK(DiglettDiggingSprite), 2
-	call CopyVideoData
+	call CopyVideoDataHBlank
 	ld de, NothingSprite
 	ld hl, vNPCSprites tile $14
 	lb bc, BANK(NothingSprite), 2
-	call CopyVideoData
+	call CopyVideoDataHBlank
 
 HideDigletts:
 	ResetEvent EVENT_DIGLETTS_VISIBLE
-	ld a, TOGGLE_DIGLETTS_CAVE_DIGLETT1
-	call DiglettsCaveHideExtraObjectEntry
-	ld a, TOGGLE_DIGLETTS_CAVE_DIGLETT2
-	call DiglettsCaveHideExtraObjectEntry
-	ld a, TOGGLE_DIGLETTS_CAVE_DIGLETT3
-	call DiglettsCaveHideExtraObjectEntry
-	ld a, TOGGLE_DIGLETTS_CAVE_DIGLETT4
-	; fall through
-DiglettsCaveHideExtraObjectEntry:
-	ld [wToggleableObjectIndex], a
-	predef_jump HideExtraObject
+	ld c, TOGGLE_DIGLETTS_CAVE_DIGLETT1
+	call HideExtraObject
+	ld c, TOGGLE_DIGLETTS_CAVE_DIGLETT2
+	call HideExtraObject
+	ld c, TOGGLE_DIGLETTS_CAVE_DIGLETT3
+	call HideExtraObject
+	ld c, TOGGLE_DIGLETTS_CAVE_DIGLETT4
+	jp HideExtraObject
 
 ShowDigletts:
-	ld a, TOGGLE_DIGLETTS_CAVE_DIGLETT1
-	call DiglettsCaveShowExtraObjectEntry
-	ld a, TOGGLE_DIGLETTS_CAVE_DIGLETT2
-	call DiglettsCaveShowExtraObjectEntry
-	ld a, TOGGLE_DIGLETTS_CAVE_DIGLETT3
-	call DiglettsCaveShowExtraObjectEntry
-	ld a, TOGGLE_DIGLETTS_CAVE_DIGLETT4
-	; fall through
-DiglettsCaveShowExtraObjectEntry:
-	ld [wToggleableObjectIndex], a
-	predef_jump ShowExtraObject
+	ld c, TOGGLE_DIGLETTS_CAVE_DIGLETT1
+	call ShowExtraObject
+	ld c, TOGGLE_DIGLETTS_CAVE_DIGLETT2
+	call ShowExtraObject
+	ld c, TOGGLE_DIGLETTS_CAVE_DIGLETT3
+	call ShowExtraObject
+	ld c, TOGGLE_DIGLETTS_CAVE_DIGLETT4
+	jp ShowExtraObject
 
 IsPlayerNearDigletts:
 	ld de, Diglett1Range

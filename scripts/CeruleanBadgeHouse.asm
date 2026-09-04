@@ -1,7 +1,5 @@
 CeruleanBadgeHouse_Script:
-	ld hl, wCurrentMapScriptFlags
-	bit BIT_CUR_MAP_LOADED_1, [hl]
-	res BIT_CUR_MAP_LOADED_1, [hl]
+	call WasMapJustLoaded
 	jr z, .notFirstLoad
 	CheckEvent FLAG_LEARNSETS_DISABLED
 	jr z, .notFirstLoad
@@ -23,12 +21,12 @@ CeruleanBadgeHouse_Script:
 
 CeruleanBadgeHouse_TextPointers:
 	def_text_pointers
-	dw_const CeruleanBadgeHouseMiddleAgedManText, TEXT_CERULEANBADGEHOUSE_MIDDLE_AGED_MAN
-	dw_const CeruleanBadgeHouseLeftPaperText, TEXT_CERULEANBADGEHOUSE_PAPER_LEFT
-	dw_const CeruleanBadgeHouseCenterLeftPaperText, TEXT_CERULEANBADGEHOUSE_PAPER_CENTER_LEFT
-	dw_const CeruleanBadgeHouseCenterRightPaperText, TEXT_CERULEANBADGEHOUSE_PAPER_CENTER_RIGHT
-	dw_const CeruleanBadgeHouseRightPaperText, TEXT_CERULEANBADGEHOUSE_PAPER_RIGHT
-	dw_const CeruleanBadgeHouseGarbageText, TEXT_CERULEANBADGEHOUSE_GARBAGE
+	dba_const CeruleanBadgeHouseMiddleAgedManText, TEXT_CERULEANBADGEHOUSE_MIDDLE_AGED_MAN
+	dba_const _CeruleanBadgeHouseLeftPaperText, TEXT_CERULEANBADGEHOUSE_PAPER_LEFT
+	dba_const _CeruleanBadgeHouseCenterLeftPaperText, TEXT_CERULEANBADGEHOUSE_PAPER_CENTER_LEFT
+	dba_const _CeruleanBadgeHouseCenterRightPaperText, TEXT_CERULEANBADGEHOUSE_PAPER_CENTER_RIGHT
+	dba_const _CeruleanBadgeHouseRightPaperText, TEXT_CERULEANBADGEHOUSE_PAPER_RIGHT
+	dba_const CeruleanBadgeHouseGarbageText, TEXT_CERULEANBADGEHOUSE_GARBAGE
 
 CeruleanBadgeHouseMiddleAgedManText:
 	text_asm
@@ -39,8 +37,11 @@ CeruleanBadgeHouseMiddleAgedManText:
 	xor a
 	ld [wCurrentMenuItem], a
 	ld [wListScrollOffset], a
-.loop
 	ld hl, .WhichBadgeText
+	jr .loopEntry
+.loop
+	ld hl, .AnyMoreBadgeInfo
+.loopEntry
 	rst _PrintText
 	ld hl, .BadgeItemList
 	call LoadItemList
@@ -58,15 +59,34 @@ CeruleanBadgeHouseMiddleAgedManText:
 	ld [wListMenuCustomType], a
 	call DisplayListMenuID
 	jr c, .done
-	ld hl, CeruleanBadgeHouseBadgeTextPointers
 	ld a, [wCurListMenuItem]
-	add a
-	ld d, $0
+	cp 5
+	jr nc, .noHMName
+	ld hl, BadgeHMMapping
+	ld d, 0
 	ld e, a
 	add hl, de
-	ld a, [hli]
-	ld h, [hl]
-	ld l, a
+	push af
+	ld a, [hl]
+	ld [wNamedObjectIndex], a
+	call GetMoveName
+	pop af
+.noHMName
+	ld b, a
+	ld c, a
+	and a
+	ld a, 20
+	jr z, .gotMaxLevel
+.loopMaxLevel
+	add 10
+	dec c
+	jr nz, .loopMaxLevel
+.gotMaxLevel
+	ld [w2CharStringBuffer], a
+	ld hl, CeruleanBadgeHouseBadgeTextPointers
+	ld a, b
+	ld bc, TEXT_FAR_TABLE_ENTRY_SIZE
+	call AddNTimes
 	rst _PrintText
 	jr .loop
 .done
@@ -91,80 +111,48 @@ CeruleanBadgeHouseMiddleAgedManText:
 	db -1 ; end
 
 .Text:
-	text_far _CeruleanBadgeHouseMiddleAgedManText
-	text_end
+	text_far_end _CeruleanBadgeHouseMiddleAgedManText
 
 .WhichBadgeText:
-	text_far _CeruleanBadgeHouseMiddleAgedManWhichBadgeText
-	text_end
+	text_far _CeruleanBadgeHouseNowThenText
+	text_far_end _CeruleanBadgeHouseMiddleAgedManWhichBadgeText
 
 .VisitAnyTimeText:
-	text_far _CeruleanBadgeHouseMiddleAgedManVisitAnyTimeText
-	text_end
+	text_far_end _CeruleanBadgeHouseMiddleAgedManVisitAnyTimeText
+
+.AnyMoreBadgeInfo:
+	text_far _CeruleanBadgeHouseNowThenText
+	text_far_end _CeruleanBadgeHouseAnyMoreText
+
+BadgeHMMapping:
+	db FLASH
+	db CUT
+	db FLY
+	db STRENGTH
+	db SURF
 
 CeruleanBadgeHouseBadgeTextPointers:
-	table_width 2
-	dw CeruleanBadgeHouseBoulderBadgeText
-	dw CeruleanBadgeHouseCascadeBadgeText
-	dw CeruleanBadgeHouseThunderBadgeText
-	dw CeruleanBadgeHouseRainbowBadgeText
-	dw CeruleanBadgeHouseSoulBadgeText
-	dw CeruleanBadgeHouseMarshBadgeText
-	dw CeruleanBadgeHouseVolcanoBadgeText
-	dw CeruleanBadgeHouseEarthBadgeText
-	assert_table_length NUM_BADGES
-
+	table_width TEXT_FAR_TABLE_ENTRY_SIZE
 CeruleanBadgeHouseBoulderBadgeText:
-	text_far _CeruleanBadgeHouseBoulderBadgeText
-	text_end
-
+	text_far_end _CeruleanBadgeHouseBoulderBadgeText
 CeruleanBadgeHouseCascadeBadgeText:
-	text_far _CeruleanBadgeHouseCascadeBadgeText
-	text_end
-
+	text_far_end _CeruleanBadgeHouseCascadeBadgeText
 CeruleanBadgeHouseThunderBadgeText:
-	text_far _CeruleanBadgeHouseThunderBadgeText
-	text_end
-
+	text_far_end _CeruleanBadgeHouseThunderBadgeText
 CeruleanBadgeHouseRainbowBadgeText:
-	text_far _CeruleanBadgeHouseRainbowBadgeText
-	text_end
-
+	text_far_end _CeruleanBadgeHouseRainbowBadgeText
 CeruleanBadgeHouseSoulBadgeText:
-	text_far _CeruleanBadgeHouseSoulBadgeText
-	text_end
-
+	text_far_end _CeruleanBadgeHouseSoulBadgeText
 CeruleanBadgeHouseMarshBadgeText:
-	text_far _CeruleanBadgeHouseMarshBadgeText
-	text_end
-
+	text_far_end _CeruleanBadgeHouseMarshBadgeText
 CeruleanBadgeHouseVolcanoBadgeText:
-	text_far _CeruleanBadgeHouseVolcanoBadgeText
-	text_end
-
+	text_far_end _CeruleanBadgeHouseVolcanoBadgeText
 CeruleanBadgeHouseEarthBadgeText:
-	text_far _CeruleanBadgeHouseEarthBadgeText
-	text_end
+	text_far_end _CeruleanBadgeHouseEarthBadgeText
+	assert_table_length NUM_BADGES
 
 ; PureRGBnote: ADDED: some text where it seems like there should be an interaction.
 
 CeruleanBadgeHouseGarbageText:
 	text_far _GarbageCrumpledUpPaper
-	text_far _CeruleanBadgeHouseGarbageText
-	text_end
-
-CeruleanBadgeHouseLeftPaperText:
-	text_far _CeruleanBadgeHouseLeftPaperText
-	text_end
-
-CeruleanBadgeHouseCenterLeftPaperText:
-	text_far _CeruleanBadgeHouseCenterLeftPaperText
-	text_end
-
-CeruleanBadgeHouseCenterRightPaperText:
-	text_far _CeruleanBadgeHouseCenterRightPaperText
-	text_end
-
-CeruleanBadgeHouseRightPaperText:
-	text_far _CeruleanBadgeHouseRightPaperText
-	text_end
+	text_far_end _CeruleanBadgeHouseGarbageText

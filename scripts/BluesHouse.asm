@@ -51,10 +51,10 @@ OnExitCoords:
 
 BluesHouse_TextPointers:
 	def_text_pointers
-	dw_const BluesHouseDaisySittingText, TEXT_BLUESHOUSE_DAISY_SITTING
-	dw_const BluesHouseDaisyWalkingText, TEXT_BLUESHOUSE_DAISY_WALKING
-	dw_const BluesHouseTownMapText,      TEXT_BLUESHOUSE_TOWN_MAP
-	dw_const BluesHouseTeaText,          TEXT_BLUESHOUSE_TEA
+	dba_const BluesHouseDaisySittingText, TEXT_BLUESHOUSE_DAISY_SITTING
+	dba_const _BluesHouseDaisyWalkingText, TEXT_BLUESHOUSE_DAISY_WALKING
+	dba_const _BluesHouseTownMapText,      TEXT_BLUESHOUSE_TOWN_MAP
+	dba_const BluesHouseTeaText,          TEXT_BLUESHOUSE_TEA
 
 BluesHouseDaisySittingText:
 	text_asm
@@ -72,9 +72,8 @@ BluesHouseDaisySittingText:
 ;	lb bc, TOWN_MAP, 1
 ;	call GiveItem ; PureRGBnote: CHANGED: TOWN MAP is not treated as a bag item, pressing SELECT in the pokedex will open it after having received it from daisy.
 ;	jr nc, .bag_full
-	ld a, TOGGLE_TOWN_MAP
-	ld [wToggleableObjectIndex], a
-	predef HideObject
+	ld c, TOGGLE_TOWN_MAP
+	call HideObject
 	ld hl, GotMapText
 	rst _PrintText
 	SetEvent EVENT_GOT_TOWN_MAP
@@ -167,12 +166,12 @@ BluesHouseTeaEvent:
 	ld [wPlayerMovingDirection], a
 	call UpdateSprites
 	ld c, 10
-	rst _DelayFrames
+	rst DelayFrames
 .drinkTea
 	; fade to white
 	call GBFadeOutToWhite
 	ld c, 60
-	rst _DelayFrames
+	rst DelayFrames
 	call ClearScreen
 	ld hl, TextScriptEndingText
 	rst _PrintText ; seemingly the only way of preventing sprites from flickering on the screen during the next printText
@@ -182,15 +181,15 @@ BluesHouseTeaEvent:
 	ld a, SFX_WITHDRAW_DEPOSIT
 	call PlaySoundWaitForCurrent
 	ld c, 30
-	rst _DelayFrames
+	rst DelayFrames
 	ld a, SFX_WITHDRAW_DEPOSIT
 	rst _PlaySound
 	ld c, 30
-	rst _DelayFrames
+	rst DelayFrames
 	ld a, SFX_WITHDRAW_DEPOSIT
 	rst _PlaySound
 	ld c, 30
-	rst _DelayFrames
+	rst DelayFrames
 	; store a party pokemon's nickname to use later in the text
 	ld a, [wPartyCount]
 	cp 6 ; if they player has less than 6 pokemon just use the first pokemon
@@ -217,13 +216,13 @@ BluesHouseTeaEvent:
 	call PlayCry
 	call WaitForSoundToFinish
 	ld c, 30
-	rst _DelayFrames
+	rst DelayFrames
 	call ClearScreen
 	callfar MomHealPokemonImmediate
 	ld hl, vChars2 tile $36
 	ld de, House_GFX tile $36
 	lb bc, BANK(House_GFX), 1
-	call CopyVideoData
+	call CopyVideoDataHBlank
 	call GBPalWhiteOut
 	call LoadScreenTilesFromBuffer2
 	ld a, [wXCoord]
@@ -267,22 +266,19 @@ BluesHouseTeaEvent:
 	swap a
 	set 0, a ; go back to script #1
 	ld [wBluesHouseCurScript], a
-	sla e ; multiply e by 2
 	ld d, 0
 	ld hl, TeaTextPointers
+	ld b, TEXT_FAR_TABLE_ENTRY_SIZE
+.loop
 	add hl, de
-	ld a, [hli]
-	ld h, [hl]
-	ld l, a ; hl = which text to print
+	dec b
+	jr nz, .loop
 	rst _PrintText
-	ret
-
-PlayerDaisyFacingEachOther:
-	
+	ret	
 
 DaisyBlink:
   	ld c, 20
-  	rst _DelayFrames
+  	rst DelayFrames
 	ld a, 3
 .loop
 	push af
@@ -291,91 +287,61 @@ DaisyBlink:
  	lb bc, BANK(DaisyBlinkingSprite), 2
  	call CopyVideoData
  	ld c, 5
- 	rst _DelayFrames
+ 	rst DelayFrames
  	ld hl, vChars0 tile $0C
  	ld de, DaisySprite
  	lb bc, BANK(DaisySprite), 2
  	call CopyVideoData
  	ld c, 5
- 	rst _DelayFrames
+ 	rst DelayFrames
  	pop af
  	dec a
  	jr nz, .loop
  	ld c, 80
- 	rst _DelayFrames
+ 	rst DelayFrames
  	ret
 
 
 TeaTextPointers:
-	dw DaisyTeaBarley
-	dw DaisyTeaPeppermint
-	dw DaisyTeaChai
+DaisyTeaBarley:
+	text_far_end _DaisyTeaBarley
+DaisyTeaPeppermint:
+	text_far_end _DaisyTeaPeppermint
+DaisyTeaChai:
+	text_far_end _DaisyTeaChai
 
 BluesHouseDaisyRivalAtLabText:
-	text_far _BluesHouseDaisyRivalAtLabText
-	text_end
+	text_far_end _BluesHouseDaisyRivalAtLabText
 
 BluesHouseDaisyOfferMapText:
-	text_far _BluesHouseDaisyOfferMapText
-	text_end
+	text_far_end _BluesHouseDaisyOfferMapText
 
 GotMapText:
-	text_far _GotMapText
-	sound_get_key_item
-	text_end
+	text_far_end _GotMapText
 
 MapHelpText:
-	text_far _MapHelpText
-	text_end
+	text_far_end _MapHelpText
 
 BluesHouseDaisyBagFullText:
-	text_far _BluesHouseDaisyBagFullText
-	text_end
+	text_far_end _BluesHouseDaisyBagFullText
 
 BluesHouseDaisyUseMapText:
-	text_far _BluesHouseDaisyUseMapText
-	text_end
-
-BluesHouseDaisyWalkingText:
-	text_far _BluesHouseDaisyWalkingText
-	text_end
-
-BluesHouseTownMapText:
-	text_far _BluesHouseTownMapText
-	text_end
+	text_far_end _BluesHouseDaisyUseMapText
 
 DaisyTeaEvent:
-	text_far _DaisyTeaEvent
-	text_end
+	text_far_end _DaisyTeaEvent
 	
 DaisyTeaEventNo:
-	text_far _DaisyTeaEventNo
-	text_end
-
-DaisyTeaBarley:
-	text_far _DaisyTeaBarley
-	text_end
-
-DaisyTeaPeppermint:
-	text_far _DaisyTeaPeppermint
-	text_end
-
-DaisyTeaChai:
-	text_far _DaisyTeaChai
-	text_end
+	text_far_end _DaisyTeaEventNo
 
 DaisyTeaSitDown:
-	text_far _DaisyTeaSitDown
-	text_end
+	text_far_end _DaisyTeaSitDown
 
 TeaDrink:
-	text_far _TeaDrink
-	text_end
+	text_far_end _TeaDrink
 
 TeaReaction:
-	text_far _TeaReaction
-	text_end
+	text_far_end _TeaReaction
 
 DaisyTeaEnd:
-	text_far _DaisyTeaEnd
-	text_end
+	text_far_end _DaisyTeaEnd

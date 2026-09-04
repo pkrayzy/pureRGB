@@ -1,14 +1,7 @@
 ChampionsRoom_Script:
-	call EnableAutoTextBoxDrawing
 	ld hl, ChampionsRoom_ScriptPointers
-	ld a, [wChampionsRoomCurScript]
-	jp CallFunctionInTable
-
-ResetRivalScript:
-	xor a ; SCRIPT_CHAMPIONSROOM_DEFAULT
-	ld [wJoyIgnore], a
-	ld [wChampionsRoomCurScript], a
-	ret
+	ld de, wChampionsRoomCurScript
+	jp CallMapScriptInTable
 
 ChampionsRoom_ScriptPointers:
 	def_script_pointers
@@ -25,14 +18,12 @@ ChampionsRoom_ScriptPointers:
 	dw_const ChampionsRoomCleanupScript,                  SCRIPT_CHAMPIONSROOM_CLEANUP_SCRIPT
 
 ChampionsRoomPlayerEntersScript:
-	ld a, PAD_BUTTONS | PAD_CTRL_PAD
-	ld [wJoyIgnore], a
 	ld hl, wSimulatedJoypadStatesEnd
 	ld de, RivalEntrance_RLEMovement
 	call DecodeRLEList
 	dec a
 	ld [wSimulatedJoypadStatesIndex], a
-	call StartSimulatingJoypadStates
+	call StartSimulatingJoypadStatesNoJoypad
 	ld a, SCRIPT_CHAMPIONSROOM_RIVAL_READY_TO_BATTLE
 	ld [wChampionsRoomCurScript], a
 	ret
@@ -48,8 +39,7 @@ ChampionsRoomRivalReadyToBattleScript:
 	and a
 	ret nz
 	call Delay3
-	xor a
-	ld [wJoyIgnore], a
+	call EnableAllJoypad
 	ld hl, wOptions
 	res BIT_BATTLE_ANIMATION, [hl]
 	ld a, TEXT_CHAMPIONSROOM_RIVAL
@@ -76,14 +66,19 @@ ChampionsRoomRivalReadyToBattleScript:
 	ld [wChampionsRoomCurScript], a
 	ret
 
+ResetRivalScript:
+	call EnableAllJoypad
+	; a = 0 from EnableAllJoypad
+	ld [wChampionsRoomCurScript], a ; SCRIPT_CHAMPIONSROOM_DEFAULT
+	ret
+
 ChampionsRoomRivalDefeatedScript:
 	ld a, [wIsInBattle]
 	cp $ff
-	jp z, ResetRivalScript
+	jr z, ResetRivalScript
 	call UpdateSprites
 	SetEvent EVENT_BEAT_CHAMPION_RIVAL
-	ld a, PAD_CTRL_PAD
-	ld [wJoyIgnore], a
+	call DisableDpad
 	ld d, CHAMPIONSROOM_RIVAL
 	callfar MakeSpriteFacePlayer
 	ld a, TEXT_CHAMPIONSROOM_RIVAL
@@ -108,9 +103,8 @@ ChampionsRoomOakArrivesScript:
 	ld a, CHAMPIONSROOM_OAK
 	ldh [hSpriteIndex], a
 	call MoveSprite
-	ld a, TOGGLE_CHAMPIONS_ROOM_OAK
-	ld [wToggleableObjectIndex], a
-	predef ShowObject
+	ld c, TOGGLE_CHAMPIONS_ROOM_OAK
+	call ShowObject
 	ld a, SCRIPT_CHAMPIONSROOM_OAK_CONGRATULATES_PLAYER
 	ld [wChampionsRoomCurScript], a
 	ret
@@ -124,8 +118,7 @@ OakEntranceAfterVictoryMovement:
 	db -1 ; end
 
 ChampionsRoomOakCongratulatesPlayerScript:
-	ld a, [wStatusFlags5]
-	bit BIT_SCRIPTED_NPC_MOVEMENT, a
+	call IsNPCAutoMoving
 	ret nz
 	ld a, PLAYER_DIR_LEFT
 	ld [wPlayerMovingDirection], a
@@ -182,25 +175,21 @@ OakExitChampionsRoomMovement:
 	db -1 ; end
 
 ChampionsRoomOakExitsScript:
-	ld a, [wStatusFlags5]
-	bit BIT_SCRIPTED_NPC_MOVEMENT, a
+	call IsNPCAutoMoving
 	ret nz
-	ld a, TOGGLE_CHAMPIONS_ROOM_OAK
-	ld [wToggleableObjectIndex], a
-	predef HideObject
+	ld c, TOGGLE_CHAMPIONS_ROOM_OAK
+	call HideObject
 	ld a, SCRIPT_CHAMPIONSROOM_PLAYER_FOLLOWS_OAK
 	ld [wChampionsRoomCurScript], a
 	ret
 
 ChampionsRoomPlayerFollowsOakScript:
-	ld a, PAD_BUTTONS | PAD_CTRL_PAD
-	ld [wJoyIgnore], a
 	ld hl, wSimulatedJoypadStatesEnd
 	ld de, WalkToHallOfFame_RLEMovement
 	call DecodeRLEList
 	dec a
 	ld [wSimulatedJoypadStatesIndex], a
-	call StartSimulatingJoypadStates
+	call StartSimulatingJoypadStatesNoJoypad
 	ld a, SCRIPT_CHAMPIONSROOM_CLEANUP_SCRIPT
 	ld [wChampionsRoomCurScript], a
 	ret
@@ -214,26 +203,22 @@ ChampionsRoomCleanupScript:
 	ld a, [wSimulatedJoypadStatesIndex]
 	and a
 	ret nz
-	xor a ; same as SCRIPT_CHAMPIONSROOM_DEFAULT
-	ld [wJoyIgnore], a
-	ld [wChampionsRoomCurScript], a
+	call EnableAllJoypad
+	ld [wChampionsRoomCurScript], a ; SCRIPT_CHAMPIONSROOM_DEFAULT
 	ret
 
 ChampionsRoom_DisplayTextID_AllowABSelectStart:
-	ld a, PAD_CTRL_PAD
-	ld [wJoyIgnore], a
+	call DisableDpad
 	call DisplayTextID
-	ld a, PAD_BUTTONS | PAD_CTRL_PAD
-	ld [wJoyIgnore], a
-	ret
+	jp DisableAllJoypad
 
 ChampionsRoom_TextPointers:
 	def_text_pointers
-	dw_const ChampionsRoomRivalText,                    TEXT_CHAMPIONSROOM_RIVAL
-	dw_const ChampionsRoomOakText,                      TEXT_CHAMPIONSROOM_OAK
-	dw_const ChampionsRoomOakCongratulatesPlayerText,   TEXT_CHAMPIONSROOM_OAK_CONGRATULATES_PLAYER
-	dw_const ChampionsRoomOakDisappointedWithRivalText, TEXT_CHAMPIONSROOM_OAK_DISAPPOINTED_WITH_RIVAL
-	dw_const ChampionsRoomOakComeWithMeText,            TEXT_CHAMPIONSROOM_OAK_COME_WITH_ME
+	dba_const ChampionsRoomRivalText,                    TEXT_CHAMPIONSROOM_RIVAL
+	dba_const _ChampionsRoomOakText,                      TEXT_CHAMPIONSROOM_OAK
+	dba_const ChampionsRoomOakCongratulatesPlayerText,   TEXT_CHAMPIONSROOM_OAK_CONGRATULATES_PLAYER
+	dba_const _ChampionsRoomOakDisappointedWithRivalText, TEXT_CHAMPIONSROOM_OAK_DISAPPOINTED_WITH_RIVAL
+	dba_const _ChampionsRoomOakComeWithMeText,            TEXT_CHAMPIONSROOM_OAK_COME_WITH_ME
 
 ChampionsRoomRivalText:
 	text_asm
@@ -246,24 +231,16 @@ ChampionsRoomRivalText:
 	rst TextScriptEnd
 
 .IntroText:
-	text_far _ChampionsRoomRivalIntroText
-	text_end
+	text_far_end _ChampionsRoomRivalIntroText
 
 RivalDefeatedText:
-	text_far _RivalDefeatedText
-	text_end
+	text_far_end _RivalDefeatedText
 
 RivalVictoryText:
-	text_far _RivalVictoryText
-	text_end
+	text_far_end _RivalVictoryText
 
 ChampionsRoomRivalAfterBattleText:
-	text_far _ChampionsRoomRivalAfterBattleText
-	text_end
-
-ChampionsRoomOakText:
-	text_far _ChampionsRoomOakText
-	text_end
+	text_far_end _ChampionsRoomRivalAfterBattleText
 
 ChampionsRoomOakCongratulatesPlayerText:
 	text_asm
@@ -275,13 +252,4 @@ ChampionsRoomOakCongratulatesPlayerText:
 	rst TextScriptEnd
 
 .Text:
-	text_far _ChampionsRoomOakCongratulatesPlayerText
-	text_end
-
-ChampionsRoomOakDisappointedWithRivalText:
-	text_far _ChampionsRoomOakDisappointedWithRivalText
-	text_end
-
-ChampionsRoomOakComeWithMeText:
-	text_far _ChampionsRoomOakComeWithMeText
-	text_end
+	text_far_end _ChampionsRoomOakCongratulatesPlayerText

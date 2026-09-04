@@ -19,8 +19,7 @@ DisplayListMenuID::
 	and a
 	call nz, CheckSaveHoverTextScreenTiles
 ;;;;;;;;;;
-	ld hl, wStatusFlags5
-	set BIT_NO_TEXT_DELAY, [hl] ; turn off letter printing delay
+	call DisableTextDelay
 	xor a
 	ld [wMenuItemToSwap], a ; 0 means no item is currently being swapped
 	ld [wListCount], a
@@ -75,7 +74,7 @@ DisplayListMenuIDLoop::
 .oldManBattle
 	; we will be in BANK(DisplayBattleMenu) if old man battle so call a new function in that bank to save space in home
 	call OldManListMenuInit
-	; TODO: add assertion
+	ASSERT BANK(OldManListMenuInit) == BANK("Battle Core")
 	jr .buttonAPressed
 .notOldManBattle
 	call LoadGBPal
@@ -159,8 +158,7 @@ DisplayListMenuIDLoop::
 	xor a
 	ldh [hJoy7], a ; joypad state update flag
 	ld [wListMenuNewFlags], a ; PureRGBnote: ADDED: once we pick a list entry, we consider TM text not shown so we will re-render it after finishing
-	ld hl, wStatusFlags5
-	res BIT_NO_TEXT_DELAY, [hl] ; turn on letter printing delay
+	call EnableTextDelay
 	jp BankswitchBack
 .checkOtherKeys ; check B, SELECT, Up, and Down keys
 	bit B_PAD_B, a
@@ -333,7 +331,7 @@ DisplayChooseQuantityMenuMinQuantity::
 	ldh [hDivideBCDDivisor + 1], a
 	ld a, $02
 	ldh [hDivideBCDDivisor + 2], a
-	predef DivideBCDPredef3 ; halves the price
+	callfar DivideBCD
 ; store the halved price
 	ldh a, [hDivideBCDQuotient]
 	ldh [hMoney], a
@@ -376,8 +374,7 @@ ExitListMenu::
 	ld a, CANCELLED_MENU
 	ld [wMenuExitMethod], a
 	ld [wMenuWatchMovingOutOfBounds], a
-	ld hl, wStatusFlags5
-	res BIT_NO_TEXT_DELAY, [hl]
+	call EnableTextDelay
 	call BankswitchBack
 	xor a
 	ld [wListMenuNewFlags], a ; PureRGBnote: ADDED: when we leave a list menu we are no longer displaying any TM text
@@ -518,7 +515,8 @@ PrintListMenuEntries::
 	pop hl
 	ld bc, SCREEN_WIDTH + 8 ; 1 row down and 8 columns right
 	add hl, bc
-	call PrintLevel
+	ld a, $CE ; level tile (when in pc menus)
+	call PrintLevelArbitraryTile
 	pop af
 	ld [wNamedObjectIndex], a
 ;;;;

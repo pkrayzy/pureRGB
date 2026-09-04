@@ -1,8 +1,7 @@
 Museum1F_Script:
-	call EnableAutoTextBoxDrawing
 	ld hl, Museum1F_ScriptPointers
-	ld a, [wMuseum1FCurScript]
-	jp CallFunctionInTable
+	ld de, wMuseum1FCurScript
+	jp CallMapScriptInTable
 
 Museum1F_ScriptPointers:
 	def_script_pointers
@@ -28,11 +27,13 @@ Museum1FDefaultScript:
 
 Museum1F_TextPointers:
 	def_text_pointers
-	dw_const Museum1FScientist1Text, TEXT_MUSEUM1F_SCIENTIST1
-	dw_const Museum1FGamblerText,    TEXT_MUSEUM1F_GAMBLER
-	dw_const Museum1FScientist2Text, TEXT_MUSEUM1F_SCIENTIST2
-	dw_const Museum1FScientist3Text, TEXT_MUSEUM1F_SCIENTIST3
-	dw_const Museum1FOldAmberText,   TEXT_MUSEUM1F_OLD_AMBER
+	dba_const Museum1FScientist1Text, TEXT_MUSEUM1F_SCIENTIST1
+	dba_const Museum1FGamblerText,    TEXT_MUSEUM1F_GAMBLER
+	dba_const Museum1FScientist2Text, TEXT_MUSEUM1F_SCIENTIST2
+	dba_const Museum1FScientist3Text, TEXT_MUSEUM1F_SCIENTIST3
+	dba_const Museum1FOldAmberText,   TEXT_MUSEUM1F_OLD_AMBER
+	dba_const Museum1FAerodactylFossilText, TEXT_MUSEUM1F_AERODACTYL_FOSSIL
+	dba_const Museum1FKabutopsFossilText, TEXT_MUSEUM1F_KABUTOPS_FOSSIL
 
 Museum1FScientist1Text:
 	text_asm
@@ -130,44 +131,39 @@ Museum1FScientist1Text:
 	rst TextScriptEnd
 
 .ComeAgainText:
-	text_far _Museum1FScientist1ComeAgainText
-	text_end
+	text_far_end _Museum1FScientist1ComeAgainText
 
 .WouldYouLikeToComeInText:
-	text_far _Museum1FScientist1WouldYouLikeToComeInText
-	text_end
+	text_far_end _Museum1FScientist1WouldYouLikeToComeInText
 
 .ThankYouText:
-	text_far _Museum1FScientist1ThankYouText
-	text_end
+	text_far_end _Museum1FScientist1ThankYouText
 
 .DontHaveEnoughMoneyText:
-	text_far _GenericYouDontHaveEnoughMoneyText
-	text_end
+	text_far_end _GenericYouDontHaveEnoughMoneyText
 
 .DoYouKnowWhatAmberIsText:
-	text_far _Museum1FScientist1DoYouKnowWhatAmberIsText
-	text_end
+	text_far_end _Museum1FScientist1DoYouKnowWhatAmberIsText
 
 .TheresALabSomewhereText:
-	text_far _Museum1FScientist1TheresALabSomewhereText
-	text_end
+	text_far_end _Museum1FScientist1TheresALabSomewhereText
 
 .AmberIsFossilizedTreeSapText:
-	text_far _Museum1FScientist1AmberIsFossilizedTreeSapText
-	text_end
+	text_far_end _Museum1FScientist1AmberIsFossilizedTreeSapText
 
 .GoToOtherSideText:
-	text_far _Museum1FScientist1GoToOtherSideText
-	text_end
+	text_far_end _Museum1FScientist1GoToOtherSideText
 
 .TakePlentyOfTimeText:
-	text_far _Museum1FScientist1TakePlentyOfTimeText
-	text_end
+	text_far_end _Museum1FScientist1TakePlentyOfTimeText
 
 Museum1FGamblerText:
-	text_far _Museum1FGamblerText
-	text_end
+	text_asm
+	ld hl, .text
+	rst _PrintText
+	rst TextScriptEnd
+.text
+	text_far_end _Museum1FGamblerText
 
 Museum1FScientist2Text:
 	text_asm
@@ -180,9 +176,8 @@ Museum1FScientist2Text:
 	ld hl, .YouDontHaveSpaceText
 	jr nc, .done
 	SetEvent EVENT_GOT_OLD_AMBER
-	ld a, TOGGLE_OLD_AMBER
-	ld [wToggleableObjectIndex], a
-	predef HideObject
+	ld c, TOGGLE_OLD_AMBER
+	call HideObject
 	ld hl, .ReceivedOldAmberText
 	jr .done
 .checked
@@ -203,30 +198,102 @@ Museum1FScientist2Text:
 	rst TextScriptEnd
 
 .TakeThisToAPokemonLabText:
-	text_far _Museum1FScientist2TakeThisToAPokemonLabText
-	text_end
+	text_far_end _Museum1FScientist2TakeThisToAPokemonLabText
 
 .ReceivedOldAmberText:
-	text_far _GenericPlayerReceivedText
-	sound_get_item_1
-	text_end
+	text_far_end _GenericPlayerReceivedTextSFX1
 
 .GetTheOldAmberCheckText:
-	text_far _Museum1FScientist2GetTheOldAmberCheckText
-	text_end
+	text_far_end _Museum1FScientist2GetTheOldAmberCheckText
 
 .YouDontHaveSpaceText:
-	text_far _Museum1FScientist2YouDontHaveSpaceText
-	text_end
+	text_far_end _Museum1FScientist2YouDontHaveSpaceText
 
 .amberHasBeenChecked
-	text_far _Museum1FScientist2GetTheOldAmberRevivedText
-	text_end
+	text_far_end _Museum1FScientist2GetTheOldAmberRevivedText
 
 Museum1FScientist3Text:
-	text_far _Museum1FScientist3Text
-	text_end
+	text_asm
+	ld hl, .text
+	rst _PrintText
+	rst TextScriptEnd
+.text
+	text_far_end _Museum1FScientist3Text
 
 Museum1FOldAmberText:
-	text_far _Museum1FOldAmberText
-	text_end
+	text_asm
+	ld hl, .text
+	rst _PrintText
+	rst TextScriptEnd
+.text
+	text_far_end _Museum1FOldAmberText
+
+Museum1FAerodactylFossilText:
+	text_asm
+	ld a, AERODACTYL
+	ld b, FOSSIL_AERODACTYL
+.fossil
+	push bc
+	ld [wNamedObjectIndex], a
+	call GetMonName
+	pop bc
+	ld a, b
+	ld [wCurPartySpecies], a
+	call DisplayMonFrontSpriteInBox
+	xor a
+	ldh [hWY], a
+	call LoadFontTilePatterns
+	ld hl, .text
+	rst _PrintText
+	rst TextScriptEnd
+.text
+	text_far_end _AerodactylKabutopsFossilText
+
+Museum1FKabutopsFossilText:
+	text_asm
+	ld a, KABUTOPS
+	ld b, FOSSIL_KABUTOPS
+	jr Museum1FAerodactylFossilText.fossil
+
+;;;;;;;; PureRGBnote: FIXED: Updated function to display the correct pokemon palette
+DisplayMonFrontSpriteInBox::
+; Displays a pokemon's front sprite in a pop-up window.
+	ld a, 1
+	ldh [hAutoBGTransferEnabled], a
+	call Delay3
+	xor a
+	ldh [hWY], a
+	call SaveScreenTilesToBuffer1
+	ld a, MON_SPRITE_POPUP
+	ld [wTextBoxID], a
+	call DisplayTextBoxID
+	call UpdateSpritesAndDelay3 ; allow box to finish rendering before setting palette
+	ld d, SET_PAL_MIDDLE_SCREEN_MON_BOX
+	call RunPaletteCommand
+	ld a, [wCurPartySpecies]
+	ld [wCurSpecies], a
+	call GetMonHeader
+	ld de, vChars1 tile $31
+	call LoadMonFrontSprite
+	ld a, $80
+	ldh [hStartTileID], a
+	decoord 10, 11
+	callfar FarAnimateSendingOutMon
+	ld a, [wCurPartySpecies]
+	cp FOSSIL_KABUTOPS
+	jr z, .skipCry
+	cp FOSSIL_AERODACTYL
+	call nz, PlayCry
+.skipCry
+	call WaitForTextScrollButtonPress
+	ld a, MON_SPRITE_POPUP
+	ld [wTextBoxID], a
+	call DisplayTextBoxID ; redisplay the box to clear the pokemon sprite out
+	call Delay3 ; allow box to finish clearing 
+	call RunDefaultPaletteCommand ; reset palette to what it was before displaying this box
+	call LoadScreenTilesFromBuffer1 ; close the box
+	call Delay3 ; allow box to finish closing before resetting hWY
+	ld a, $90
+	ldh [hWY], a
+	ret
+;;;;;;;;

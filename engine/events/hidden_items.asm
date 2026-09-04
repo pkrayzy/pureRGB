@@ -32,9 +32,7 @@ HiddenItemsInit:
 	ld a, [wHiddenItemOrCoinsIndex]
 	ld c, a
 	ld b, FLAG_TEST
-	predef FlagActionPredef
-	ld a, c
-	and a
+	call FlagAction
 	ret nz
 	call EnableAutoTextBoxDrawing
 	ld a, 1
@@ -81,7 +79,7 @@ FoundHiddenItemText::
 	ld a, [wHiddenItemOrCoinsIndex]
 	ld c, a
 	ld b, FLAG_SET
-	predef FlagActionPredef
+	call FlagAction
 	ld a, SFX_GET_ITEM_2
 	call PlaySoundWaitForCurrent
 	call WaitForSoundToFinish
@@ -99,16 +97,13 @@ FoundHiddenItemText::
 	rst TextScriptEnd
 
 FoundHiddenItemSingleText::
-	text_far _FoundHiddenItemText
-	text_end
+	text_far_end _FoundHiddenItemText
 
 FoundHiddenItemMultiText::
-	text_far _FoundHiddenItemMultiText
-	text_end
+	text_far_end _FoundHiddenItemMultiText
 
 HiddenItemBagFullText::
-	text_far _HiddenItemBagFullText
-	text_end
+	text_far_end _HiddenItemBagFullText
 
 ;;;;;;;;;;
 
@@ -123,9 +118,7 @@ HiddenCoins:
 	ld a, [wHiddenItemOrCoinsIndex]
 	ld c, a
 	ld b, FLAG_TEST
-	predef FlagActionPredef
-	ld a, c
-	and a
+	call FlagAction
 	ret nz
 	xor a
 	ldh [hUnusedCoinsByte], a
@@ -164,33 +157,22 @@ HiddenCoins:
 	ld a, [wHiddenItemOrCoinsIndex]
 	ld c, a
 	ld b, FLAG_SET
-	predef FlagActionPredef
+	call FlagAction
 	call EnableAutoTextBoxDrawing
+	ld b, TEXT_GAMECORNER_FOUND_HIDDEN_COINS
 	ld a, [wPlayerCoins]
 	cp $99
 	jr nz, .roomInCoinCase
 	ld a, [wPlayerCoins + 1]
 	cp $99
 	jr nz, .roomInCoinCase
-	tx_pre_id DroppedHiddenCoinsText
-	jr .done
+	ld b, TEXT_GAMECORNER_DROPPED_HIDDEN_COINS
 .roomInCoinCase
-	tx_pre_id FoundHiddenCoinsText
-.done
-	jp PrintPredefTextID
+	ld a, b
+	ldh [hTextID], a
+	jp DisplayTextID
 
 INCLUDE "data/events/hidden_coins.asm"
-
-FoundHiddenCoinsText::
-	text_far _FoundHiddenCoinsText
-	sound_get_item_2
-	text_end
-
-DroppedHiddenCoinsText::
-	text_far _FoundHiddenCoins2Text
-	sound_get_item_2
-	text_far _DroppedHiddenCoinsText
-	text_end
 
 FindHiddenItemOrCoinsIndex:
 	ld a, [wHiddenEventY]

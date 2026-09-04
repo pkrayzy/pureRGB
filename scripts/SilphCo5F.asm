@@ -2,84 +2,15 @@
 
 SilphCo5F_Script:
 	call SilphCo5FGateCallbackScript
-	call EnableAutoTextBoxDrawing
 	ld hl, SilphCo5TrainerHeaders
 	ld de, SilphCo5F_ScriptPointers
-	ld a, [wSilphCo5FCurScript]
-	call ExecuteCurMapScriptInTable
-	ld [wSilphCo5FCurScript], a
-	ret
+	ld bc, wSilphCo5FCurScript
+	jp ExecuteCustomMapScriptInTable
 
 SilphCo5FGateCallbackScript::
-	ld hl, wCurrentMapScriptFlags
-	bit BIT_CUR_MAP_LOADED_1, [hl]
-	res BIT_CUR_MAP_LOADED_1, [hl]
+	call WasMapJustLoaded
 	ret z
-	ld hl, .GateCoordinates
-	call SilphCo4F_SetCardKeyDoorYScript
-	call SilphCo5F_SetUnlockedSilphCoDoorsScript
-	CheckEvent EVENT_SILPH_CO_5_UNLOCKED_DOOR1
-	jr nz, .unlock_door1
-	push af
-	ld a, $5f
-	ld [wNewTileBlockID], a
-	lb bc, 2, 3
-	predef ReplaceTileBlock
-	pop af
-.unlock_door1
-	CheckEventAfterBranchReuseA EVENT_SILPH_CO_5_UNLOCKED_DOOR2, EVENT_SILPH_CO_5_UNLOCKED_DOOR1
-	jr nz, .unlock_door2
-	push af
-	ld a, $5f
-	ld [wNewTileBlockID], a
-	lb bc, 6, 3
-	predef ReplaceTileBlock
-	pop af
-.unlock_door2
-	CheckEventAfterBranchReuseA EVENT_SILPH_CO_5_UNLOCKED_DOOR3, EVENT_SILPH_CO_5_UNLOCKED_DOOR2
-	ret nz
-	ld a, $5f
-	ld [wNewTileBlockID], a
-	lb bc, 5, 7
-	predef_jump ReplaceTileBlock
-
-.GateCoordinates:
-	dbmapcoord  3,  2
-	dbmapcoord  3,  6
-	dbmapcoord  7,  5
-	db -1 ; end
-
-SilphCo5F_SetUnlockedSilphCoDoorsScript:
-	EventFlagAddress hl, EVENT_SILPH_CO_5_UNLOCKED_DOOR1
-	ldh a, [hUnlockedSilphCoDoors]
-	and a
-	ret z
-	cp $1
-	jr nz, .unlock_door1
-	SetEventReuseHL EVENT_SILPH_CO_5_UNLOCKED_DOOR1
-	callfar CheckAllCardKeyEvents
-	jp Load5FCheckCardKeyText
-.unlock_door1
-	cp $2
-	jr nz, .unlock_door2
-	SetEventAfterBranchReuseHL EVENT_SILPH_CO_5_UNLOCKED_DOOR2, EVENT_SILPH_CO_5_UNLOCKED_DOOR1
-	callfar CheckAllCardKeyEvents
-	jp Load5FCheckCardKeyText
-.unlock_door2
-	SetEventAfterBranchReuseHL EVENT_SILPH_CO_5_UNLOCKED_DOOR3, EVENT_SILPH_CO_5_UNLOCKED_DOOR1
-	callfar CheckAllCardKeyEvents
-	; fall through
-Load5FCheckCardKeyText:
-	CheckEvent EVENT_ALL_CARD_KEY_DOORS_OPENED
-	ret z
-	ld a, TEXT_SILPHCO5F_CARD_KEY_DONE
-	ldh [hTextID], a
-	jp DisplayTextID
-
-SilphCo5Text12:
-	text_asm
-	callfar PrintCardKeyDoneText
-	rst TextScriptEnd
+	jpfar SilphCo5FCardKeyMapLoad
 
 SilphCo5F_ScriptPointers:
 	def_script_pointers
@@ -89,30 +20,41 @@ SilphCo5F_ScriptPointers:
 
 SilphCo5F_TextPointers:
 	def_text_pointers
-	dw_const SilphCo5FSilphWorkerMText,   TEXT_SILPHCO5F_SILPH_WORKER_M
-	dw_const SilphCo5FRocket1Text,        TEXT_SILPHCO5F_ROCKET1
-	dw_const SilphCo5FScientistText,      TEXT_SILPHCO5F_SCIENTIST
-	dw_const SilphCo5FRockerText,         TEXT_SILPHCO5F_ROCKER
-	dw_const SilphCo5FRocket2Text,        TEXT_SILPHCO5F_ROCKET2
-	dw_const PickUpItemText,              TEXT_SILPHCO5F_ITEM1
-	dw_const PickUpItemText,              TEXT_SILPHCO5F_ITEM2
-	dw_const PickUpItemText,              TEXT_SILPHCO5F_ITEM3
-	dw_const SilphCo5FPokemonReport1Text, TEXT_SILPHCO5F_POKEMON_REPORT1
-	dw_const SilphCo5FPokemonReport2Text, TEXT_SILPHCO5F_POKEMON_REPORT2
-	dw_const SilphCo5FPokemonReport3Text, TEXT_SILPHCO5F_POKEMON_REPORT3
-	dw_const SilphCo5Text12,              TEXT_SILPHCO5F_CARD_KEY_DONE
+	dba_const SilphCo5FSilphWorkerMText,   TEXT_SILPHCO5F_SILPH_WORKER_M
+	dba_const SilphCo5FRocket1Text,        TEXT_SILPHCO5F_ROCKET1
+	dba_const SilphCo5FScientistText,      TEXT_SILPHCO5F_SCIENTIST
+	dba_const SilphCo5FRockerText,         TEXT_SILPHCO5F_ROCKER
+	dba_const SilphCo5FRocket2Text,        TEXT_SILPHCO5F_ROCKET2
+	dba_const PickUpItemText,              TEXT_SILPHCO5F_ITEM1
+	dba_const PickUpItemText,              TEXT_SILPHCO5F_ITEM2
+	dba_const PickUpItemText,              TEXT_SILPHCO5F_ITEM3
+	dba_const _SilphCo5FPokemonReport1Text, TEXT_SILPHCO5F_POKEMON_REPORT1
+	dba_const _SilphCo5FPokemonReport2Text, TEXT_SILPHCO5F_POKEMON_REPORT2
+	dba_const _SilphCo5FPokemonReport3Text, TEXT_SILPHCO5F_POKEMON_REPORT3
 
 SilphCo5TrainerHeaders:
 	def_trainers 2
 SilphCo5TrainerHeader0:
-	trainer EVENT_BEAT_SILPH_CO_5F_TRAINER_0, 1, SilphCo5FRocket1BattleText, SilphCo5FRocket1EndBattleText, SilphCo5FRocket1AfterBattleText
+	trainer EVENT_BEAT_SILPH_CO_5F_TRAINER_0, 1, _SilphCo5FRocket1BattleText, _SilphCo5FRocket1EndBattleText, _SilphCo5FRocket1AfterBattleText
 SilphCo5TrainerHeader1:
-	trainer EVENT_BEAT_SILPH_CO_5F_TRAINER_1, 2, SilphCo5FScientistBattleText, SilphCo5FScientistEndBattleText, SilphCo5FScientistAfterBattleText
+	trainer EVENT_BEAT_SILPH_CO_5F_TRAINER_1, 2, _SilphCo5FScientistBattleText, _SilphCo5FScientistEndBattleText, _SilphCo5FScientistAfterBattleText
 SilphCo5TrainerHeader2:
-	trainer EVENT_BEAT_SILPH_CO_5F_TRAINER_2, 4, SilphCo5FRockerBattleText, SilphCo5FRockerEndBattleText, SilphCo5FRockerAfterBattleText
+	trainer EVENT_BEAT_SILPH_CO_5F_TRAINER_2, 4, _SilphCo5FRockerBattleText, _SilphCo5FRockerEndBattleText, _SilphCo5FRockerAfterBattleText
 SilphCo5TrainerHeader3:
-	trainer EVENT_BEAT_SILPH_CO_5F_TRAINER_3, 3, SilphCo5FRocket2BattleText, SilphCo5FRocket2EndBattleText, SilphCo5FRocket2AfterBattleText
+	trainer EVENT_BEAT_SILPH_CO_5F_TRAINER_3, 3, _SilphCo5FRocket2BattleText, _SilphCo5FRocket2EndBattleText, _SilphCo5FRocket2AfterBattleText
 	db -1 ; end
+
+SilphCo5FRocket1Text:
+	script_trainer SilphCo5TrainerHeader0
+
+SilphCo5FScientistText:
+	script_trainer SilphCo5TrainerHeader1
+
+SilphCo5FRockerText:
+	script_trainer SilphCo5TrainerHeader2
+
+SilphCo5FRocket2Text:
+	script_trainer SilphCo5TrainerHeader3
 
 SilphCo5FSilphWorkerMText:
 	text_asm
@@ -122,93 +64,7 @@ SilphCo5FSilphWorkerMText:
 	rst TextScriptEnd
 
 .ThatsYouRightText:
-	text_far _SilphCo5FSilphWorkerMThatsYouRightText
-	text_end
+	text_far_end _SilphCo5FSilphWorkerMThatsYouRightText
 
 .YoureOurHeroText:
-	text_far _SilphCo5FSilphWorkerMYoureOurHeroText
-	text_end
-
-SilphCo5FRocket1Text:
-	text_asm
-	ld hl, SilphCo5TrainerHeader0
-	call TalkToTrainer
-	rst TextScriptEnd
-
-SilphCo5FRocket1BattleText:
-	text_far _SilphCo5FRocket1BattleText
-	text_end
-
-SilphCo5FRocket1EndBattleText:
-	text_far _SilphCo5FRocket1EndBattleText
-	text_end
-
-SilphCo5FRocket1AfterBattleText:
-	text_far _SilphCo5FRocket1AfterBattleText
-	text_end
-
-SilphCo5FScientistText:
-	text_asm
-	ld hl, SilphCo5TrainerHeader1
-	call TalkToTrainer
-	rst TextScriptEnd
-
-SilphCo5FScientistBattleText:
-	text_far _SilphCo5FScientistBattleText
-	text_end
-
-SilphCo5FScientistEndBattleText:
-	text_far _SilphCo5FScientistEndBattleText
-	text_end
-
-SilphCo5FScientistAfterBattleText:
-	text_far _SilphCo5FScientistAfterBattleText
-	text_end
-
-SilphCo5FRockerText:
-	text_asm
-	ld hl, SilphCo5TrainerHeader2
-	call TalkToTrainer
-	rst TextScriptEnd
-
-SilphCo5FRockerBattleText:
-	text_far _SilphCo5FRockerBattleText
-	text_end
-
-SilphCo5FRockerEndBattleText:
-	text_far _SilphCo5FRockerEndBattleText
-	text_end
-
-SilphCo5FRockerAfterBattleText:
-	text_far _SilphCo5FRockerAfterBattleText
-	text_end
-
-SilphCo5FRocket2Text:
-	text_asm
-	ld hl, SilphCo5TrainerHeader3
-	call TalkToTrainer
-	rst TextScriptEnd
-
-SilphCo5FRocket2BattleText:
-	text_far _SilphCo5FRocket2BattleText
-	text_end
-
-SilphCo5FRocket2EndBattleText:
-	text_far _SilphCo5FRocket2EndBattleText
-	text_end
-
-SilphCo5FRocket2AfterBattleText:
-	text_far _SilphCo5FRocket2AfterBattleText
-	text_end
-
-SilphCo5FPokemonReport1Text:
-	text_far _SilphCo5FPokemonReport1Text
-	text_end
-
-SilphCo5FPokemonReport2Text:
-	text_far _SilphCo5FPokemonReport2Text
-	text_end
-
-SilphCo5FPokemonReport3Text:
-	text_far _SilphCo5FPokemonReport3Text
-	text_end
+	text_far_end _SilphCo5FSilphWorkerMYoureOurHeroText

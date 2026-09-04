@@ -1,18 +1,8 @@
 PokemonTower6F_Script:
-	call EnableAutoTextBoxDrawing
 	ld hl, PokemonTower6TrainerHeaders
 	ld de, PokemonTower6F_ScriptPointers
-	ld a, [wPokemonTower6FCurScript]
-	call ExecuteCurMapScriptInTable
-	ld [wPokemonTower6FCurScript], a
-	ret
-
-PokemonTower6FSetDefaultScript:
-	xor a
-	ld [wJoyIgnore], a
-	ld [wPokemonTower6FCurScript], a ; SCRIPT_POKEMONTOWER6F_DEFAULT
-	ld [wCurMapScript], a ; SCRIPT_POKEMONTOWER6F_DEFAULT
-	ret
+	ld bc, wPokemonTower6FCurScript
+	jp ExecuteCustomMapScriptInTable
 
 PokemonTower6F_ScriptPointers:
 	def_script_pointers
@@ -25,9 +15,9 @@ PokemonTower6F_ScriptPointers:
 PokemonTower6FDefaultScript:
 	CheckEvent EVENT_BEAT_GHOST_MAROWAK
 	jp nz, CheckFightingMapTrainers
-	ld hl, PokemonTower6FMarowakCoords
-	call ArePlayerCoordsInArray
-	jp nc, CheckFightingMapTrainers
+	lb de, 10, 16
+	call IsPlayerAtCoords
+	jp nz, CheckFightingMapTrainers
 	xor a
 	ldh [hJoyHeld], a
 	ld a, TEXT_POKEMONTOWER6F_BEGONE
@@ -42,26 +32,23 @@ PokemonTower6FDefaultScript:
 	ld a, 30
 	ld [wCurEnemyLevel], a
 	ld a, SCRIPT_POKEMONTOWER6F_MAROWAK_BATTLE
-	ld [wPokemonTower6FCurScript], a
-	ld [wCurMapScript], a
-	ret
+	jr PokemonTower6FSetMapScript
 
-PokemonTower6FMarowakCoords:
-	dbmapcoord 10, 16
-	db -1 ; end
+PokemonTower6FSetDefaultScript:
+	call ResetMapScripts
+	ld [wPokemonTower6FCurScript], a ; SCRIPT_POKEMONTOWER6F_DEFAULT
+	ret
 
 PokemonTower6FMarowakBattleScript:
 	ld a, [wIsInBattle]
 	cp $ff
-	jp z, PokemonTower6FSetDefaultScript
-	ld a, PAD_BUTTONS | PAD_CTRL_PAD
-	ld [wJoyIgnore], a
+	jr z, PokemonTower6FSetDefaultScript
+	call DisableAllJoypad
 	ld a, [wStatusFlags3]
 	bit BIT_TALKED_TO_TRAINER, a
 	ret nz
 	call UpdateSprites
-	ld a, PAD_CTRL_PAD
-	ld [wJoyIgnore], a
+	call DisableDpad
 ;;;;;;;;;; PureRGBnote: ADDED: ghost marowak can be caught and the event will complete if you do so
 	ld hl, wBattleFunctionalFlags
 	bit 1, [hl]
@@ -83,11 +70,7 @@ PokemonTower6FMarowakBattleScript:
 	ld a, TEXT_POKEMONTOWER6F_MAROWAK_DEPARTED
 	ldh [hTextID], a
 	call DisplayTextID
-	xor a ; same as SCRIPT_POKEMONTOWER6F_DEFAULT
-	ld [wJoyIgnore], a
-	ld [wPokemonTower6FCurScript], a
-	ld [wCurMapScript], a
-	ret
+	jr PokemonTower6FSetDefaultScript
 .did_not_defeat
 	ld a, $1
 	ld [wSimulatedJoypadStatesIndex], a
@@ -96,12 +79,9 @@ PokemonTower6FMarowakBattleScript:
 	xor a
 	ld [wSpritePlayerStateData2MovementByte1], a
 	ld [wOverrideSimulatedJoypadStatesMask], a
-	ld hl, wStatusFlags5
-	set BIT_SCRIPTED_MOVEMENT_STATE, [hl]
+	call SetPlayerAutoMoving
 	ld a, SCRIPT_POKEMONTOWER6F_PLAYER_MOVING
-	ld [wPokemonTower6FCurScript], a
-	ld [wCurMapScript], a
-	ret
+	jr PokemonTower6FSetMapScript
 
 PokemonTower6FPlayerMovingScript:
 	ld a, [wSimulatedJoypadStatesIndex]
@@ -109,47 +89,39 @@ PokemonTower6FPlayerMovingScript:
 	ret nz
 	call Delay3
 	xor a
+PokemonTower6FSetMapScript:
 	ld [wPokemonTower6FCurScript], a
 	ld [wCurMapScript], a
 	ret
 
 PokemonTower6F_TextPointers:
 	def_text_pointers
-	dw_const PokemonTower6FChanneler1Text,      TEXT_POKEMONTOWER6F_CHANNELER1
-	dw_const PokemonTower6FChanneler2Text,      TEXT_POKEMONTOWER6F_CHANNELER2
-	dw_const PokemonTower6FChanneler3Text,      TEXT_POKEMONTOWER6F_CHANNELER3
-	dw_const PickUpItemText,                    TEXT_POKEMONTOWER6F_ITEM1
-	dw_const PickUp2ItemText,                   TEXT_POKEMONTOWER6F_ITEM2
-	dw_const PokemonTower6FBeGoneText,          TEXT_POKEMONTOWER6F_BEGONE
-	dw_const PokemonTower6FMarowakDepartedText, TEXT_POKEMONTOWER6F_MAROWAK_DEPARTED
+	dba_const PokemonTower6FChanneler1Text,      TEXT_POKEMONTOWER6F_CHANNELER1
+	dba_const PokemonTower6FChanneler2Text,      TEXT_POKEMONTOWER6F_CHANNELER2
+	dba_const PokemonTower6FChanneler3Text,      TEXT_POKEMONTOWER6F_CHANNELER3
+	dba_const PickUpItemText,                    TEXT_POKEMONTOWER6F_ITEM1
+	dba_const PickUp2ItemText,                   TEXT_POKEMONTOWER6F_ITEM2
+	dba_const _PokemonTower6FBeGoneText,         TEXT_POKEMONTOWER6F_BEGONE
+	dba_const PokemonTower6FMarowakDepartedText, TEXT_POKEMONTOWER6F_MAROWAK_DEPARTED
 
 PokemonTower6TrainerHeaders:
 	def_trainers
 PokemonTower6TrainerHeader0:
-	trainer EVENT_BEAT_POKEMONTOWER_6_TRAINER_0, 3, PokemonTower6FChanneler1BattleText, PokemonTower6FChanneler1EndBattleText, PokemonTower6FChanneler1AfterBattleText
+	trainer EVENT_BEAT_POKEMONTOWER_6_TRAINER_0, 3, _PokemonTower6FChanneler1BattleText, _PokemonTower6FChanneler1EndBattleText, _PokemonTower6FChanneler1AfterBattleText
 PokemonTower6TrainerHeader1:
-	trainer EVENT_BEAT_POKEMONTOWER_6_TRAINER_1, 3, PokemonTower6FChanneler2BattleText, PokemonTower6FChanneler2EndBattleText, PokemonTower6FChanneler2AfterBattleText
+	trainer EVENT_BEAT_POKEMONTOWER_6_TRAINER_1, 3, _PokemonTower6FChanneler2BattleText, _PokemonTower6FChanneler2EndBattleText, _PokemonTower6FChanneler2AfterBattleText
 PokemonTower6TrainerHeader2:
-	trainer EVENT_BEAT_POKEMONTOWER_6_TRAINER_2, 2, PokemonTower6FChanneler3BattleText, PokemonTower6FChanneler3EndBattleText, PokemonTower6FChanneler3AfterBattleText
+	trainer EVENT_BEAT_POKEMONTOWER_6_TRAINER_2, 2, _PokemonTower6FChanneler3BattleText, _PokemonTower6FChanneler3EndBattleText, _PokemonTower6FChanneler3AfterBattleText
 	db -1 ; end
 
 PokemonTower6FChanneler1Text:
-	text_asm
-	ld hl, PokemonTower6TrainerHeader0
-	call TalkToTrainer
-	rst TextScriptEnd
+	script_trainer PokemonTower6TrainerHeader0
 
 PokemonTower6FChanneler2Text:
-	text_asm
-	ld hl, PokemonTower6TrainerHeader1
-	call TalkToTrainer
-	rst TextScriptEnd
+	script_trainer PokemonTower6TrainerHeader1
 
 PokemonTower6FChanneler3Text:
-	text_asm
-	ld hl, PokemonTower6TrainerHeader2
-	call TalkToTrainer
-	rst TextScriptEnd
+	script_trainer PokemonTower6TrainerHeader2
 
 PokemonTower6FMarowakDepartedText:
 	text_asm
@@ -159,75 +131,29 @@ PokemonTower6FMarowakDepartedText:
 	call PlayCry
 	call WaitForSoundToFinish
 	ld c, 30
-	rst _DelayFrames
+	rst DelayFrames
 	ld hl, PokemonTower6FSoulWasCalmedText
 	rst _PrintText
 ;;;;;;;;;; PureRGBnote: ADDED: ghost marowak can be caught and the event will complete if you do so
 	CheckEvent EVENT_CAUGHT_GHOST_MAROWAK
-	jr nz, .caughtGhostMarowak
-	ld hl, PokemonTower2Text_toAfterlife
-	jr .done
-.caughtGhostMarowak
 	ld hl, PokemonTower2Text_CaughtGhostMarowak	
-.done
+	jr nz, .printDone
+	ld hl, PokemonTower2Text_toAfterlife
+.printDone
 	rst _PrintText
 ;;;;;;;;;;
 	rst TextScriptEnd
 
 PokemonTower6FGhostWasCubonesMotherText:
-	text_far _PokemonTower6FGhostWasCubonesMotherText
-	text_end
+	text_far_end _PokemonTower6FGhostWasCubonesMotherText
 
 PokemonTower6FSoulWasCalmedText:
-	text_far _PokemonTower6FSoulWasCalmedText
-	text_end
+	text_far_end _PokemonTower6FSoulWasCalmedText
 
 ;;;;;;;;;; PureRGBnote: ADDED: ghost marowak can be caught and the event will complete if you do so
 PokemonTower2Text_CaughtGhostMarowak:
-	text_far _PokemonTower2Text_Caught
-	text_end
+	text_far_end _PokemonTower2Text_Caught
 
 PokemonTower2Text_toAfterlife:
-	text_far _PokemonTower2Text_toAfterlife
-	text_end
+	text_far_end _PokemonTower2Text_toAfterlife
 ;;;;;;;;;;
-
-PokemonTower6FChanneler1BattleText:
-	text_far _PokemonTower6FChanneler1BattleText
-	text_end
-
-PokemonTower6FChanneler1EndBattleText:
-	text_far _PokemonTower6FChanneler1EndBattleText
-	text_end
-
-PokemonTower6FChanneler1AfterBattleText:
-	text_far _PokemonTower6FChanneler1AfterBattleText
-	text_end
-
-PokemonTower6FChanneler2BattleText:
-	text_far _PokemonTower6FChanneler2BattleText
-	text_end
-
-PokemonTower6FChanneler2EndBattleText:
-	text_far _PokemonTower6FChanneler2EndBattleText
-	text_end
-
-PokemonTower6FChanneler2AfterBattleText:
-	text_far _PokemonTower6FChanneler2AfterBattleText
-	text_end
-
-PokemonTower6FChanneler3BattleText:
-	text_far _PokemonTower6FChanneler3BattleText
-	text_end
-
-PokemonTower6FChanneler3EndBattleText:
-	text_far _PokemonTower6FChanneler3EndBattleText
-	text_end
-
-PokemonTower6FChanneler3AfterBattleText:
-	text_far _PokemonTower6FChanneler3AfterBattleText
-	text_end
-
-PokemonTower6FBeGoneText:
-	text_far _PokemonTower6FBeGoneText
-	text_end

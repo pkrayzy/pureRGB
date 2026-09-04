@@ -1,17 +1,12 @@
 LancesRoom_Script:
 	call LanceShowOrHideEntranceBlocks
-	call EnableAutoTextBoxDrawing
 	ld hl, LancesRoomTrainerHeaders
 	ld de, LancesRoom_ScriptPointers
-	ld a, [wLancesRoomCurScript]
-	call ExecuteCurMapScriptInTable
-	ld [wLancesRoomCurScript], a
-	ret
+	ld bc, wLancesRoomCurScript
+	jp ExecuteCustomMapScriptInTable
 
 LanceShowOrHideEntranceBlocks:
-	ld hl, wCurrentMapScriptFlags
-	bit BIT_CUR_MAP_LOADED_1, [hl]
-	res BIT_CUR_MAP_LOADED_1, [hl]
+	call WasMapJustLoaded
 	ret z
 	CheckEvent EVENT_LANCES_ROOM_LOCK_DOOR
 	jr nz, .closeEntrance
@@ -39,7 +34,7 @@ LanceShowOrHideEntranceBlocks:
 	ret z
 	jp GBFadeInFromWhite ; PureRGBnote: ADDED: since trainer instantly talks to us after battle we need to fade back in here
 .SetEntranceBlock:
-	predef_jump ReplaceTileBlock
+	jp ReplaceTileBlock
 
 ResetLanceScript:
 	xor a ; SCRIPT_LANCESROOM_DEFAULT
@@ -52,26 +47,21 @@ LancesRoom_ScriptPointers:
 	dw_const DisplayEnemyTrainerTextAndStartBattle, SCRIPT_LANCESROOM_LANCE_START_BATTLE
 	dw_const LancesRoomLanceEndBattleScript,        SCRIPT_LANCESROOM_LANCE_END_BATTLE
 	dw_const LancesRoomPlayerIsMovingScript,        SCRIPT_LANCESROOM_PLAYER_IS_MOVING
-	dw_const DoRet,                                 SCRIPT_LANCESROOM_NOOP
 
 LancesRoomDefaultScript:
 	CheckEvent EVENT_BEAT_LANCE
 	ret nz
-	ld hl, LanceTriggerMovementCoords
-	call ArePlayerCoordsInArray
-	jp nc, CheckFightingMapTrainers
-	xor a
-	ldh [hJoyHeld], a
-	ld a, [wCoordIndex]
-	cp $3  ; Is player standing next to Lance's sprite?
-	jr nc, .notStandingNextToLance
-	call LancesRoomDoFacings
-	ld a, TEXT_LANCESROOM_LANCE
-	ldh [hTextID], a
-	jp DisplayTextID
-.notStandingNextToLance
-	cp $5  ; Is player standing on the entrance staircase?
+	lb de, 5, 1
+	call IsPlayerAtCoords
+	jr z, .nextToLance
+	lb de, 6, 2
+	call IsPlayerAtCoords
+	jr z, .nextToLance
+	ld a, [wYCoord]
+	cp 16
 	jr z, WalkToLance
+	cp 11
+	jp nz, CheckFightingMapTrainers
 	CheckAndSetEvent EVENT_LANCES_ROOM_LOCK_DOOR
 	ret nz
 	ld hl, wCurrentMapScriptFlags
@@ -79,15 +69,11 @@ LancesRoomDefaultScript:
 	ld a, SFX_GO_INSIDE
 	rst _PlaySound
 	jp LanceShowOrHideEntranceBlocks
-
-
-LanceTriggerMovementCoords:
-	dbmapcoord  5,  1
-	dbmapcoord  6,  2
-	dbmapcoord  5, 11
-	dbmapcoord  6, 11
-	dbmapcoord 24, 16
-	db -1 ; end
+.nextToLance
+	call LancesRoomDoFacings
+	ld a, TEXT_LANCESROOM_LANCE
+	ldh [hTextID], a
+	jp DisplayTextID
 
 LancesRoomLanceEndBattleScript:
 	call EndTrainerBattle
@@ -104,14 +90,12 @@ LancesRoomLanceEndBattleScript:
 
 WalkToLance:
 ; Moves the player down the hallway to Lance's room.
-	ld a, PAD_BUTTONS | PAD_CTRL_PAD
-	ld [wJoyIgnore], a
 	ld hl, wSimulatedJoypadStatesEnd
 	ld de, WalkToLance_RLEList
 	call DecodeRLEList
 	dec a
 	ld [wSimulatedJoypadStatesIndex], a
-	call StartSimulatingJoypadStates
+	call StartSimulatingJoypadStatesNoJoypad
 	ld a, SCRIPT_LANCESROOM_PLAYER_IS_MOVING
 	ld [wLancesRoomCurScript], a
 	ld [wCurMapScript], a
@@ -129,20 +113,18 @@ LancesRoomPlayerIsMovingScript:
 	and a
 	ret nz
 	call Delay3
-	xor a ; SCRIPT_LANCESROOM_DEFAULT
-	ld [wJoyIgnore], a
-	ld [wLancesRoomCurScript], a
-	ld [wCurMapScript], a
+	call ResetMapScripts
+	ld [wLancesRoomCurScript], a ; SCRIPT_LANCESROOM_DEFAULT
 	ret
 
 LancesRoom_TextPointers:
 	def_text_pointers
-	dw_const LancesRoomLanceText, TEXT_LANCESROOM_LANCE
+	dba_const LancesRoomLanceText, TEXT_LANCESROOM_LANCE
 
 LancesRoomTrainerHeaders:
 	def_trainers
 LancesRoomTrainerHeader0:
-	trainer EVENT_BEAT_LANCES_ROOM_TRAINER_0, 0, LancesRoomLanceBeforeBattleText, LancesRoomLanceEndBattleText, LancesRoomLanceAfterBattleText
+	trainer EVENT_BEAT_LANCES_ROOM_TRAINER_0, 0, _LancesRoomLanceBeforeBattleText, _LancesRoomLanceEndBattleText, LancesRoomLanceAfterBattleText
 	db -1 ; end
 
 LancesRoomLanceText:
@@ -154,15 +136,7 @@ LancesRoomLanceText:
 	ld hl, LancesRoomTrainerHeader0
 	call TalkToTrainer
 	rst TextScriptEnd
-
-LancesRoomLanceBeforeBattleText:
-	text_far _LancesRoomLanceBeforeBattleText
-	text_end
-
-LancesRoomLanceEndBattleText:
-	text_far _LancesRoomLanceEndBattleText
-	text_end
-
+	
 LancesRoomLanceAfterBattleText:
 	text_far _LancesRoomLanceAfterBattleText
 	text_asm

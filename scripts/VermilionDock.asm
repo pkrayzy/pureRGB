@@ -17,8 +17,7 @@ VermilionDock_Script:
 	jp z, VermilionDockSSAnneLeavesScript
 	SetEventReuseHL EVENT_STARTED_WALKING_OUT_OF_DOCK
 	call Delay3
-	ld hl, wStatusFlags5
-	set BIT_SCRIPTED_MOVEMENT_STATE, [hl]
+	call SetPlayerAutoMoving
 	ld hl, wSimulatedJoypadStatesEnd
 	ld a, PAD_UP
 	ld [hli], a
@@ -29,9 +28,7 @@ VermilionDock_Script:
 	xor a
 	ld [wSpritePlayerStateData2MovementByte1], a
 	ld [wOverrideSimulatedJoypadStatesMask], a
-	dec a
-	ld [wJoyIgnore], a
-	ret
+	jp DisableAllJoypad
 .walking_out_of_dock
 	CheckEventAfterBranchReuseHL EVENT_WALKED_OUT_OF_DOCK, EVENT_STARTED_WALKING_OUT_OF_DOCK
 	ret nz
@@ -60,8 +57,9 @@ VermilionDockSSAnneLeavesScript:
 ;;;;;;;;;; we need to reset the palette here or the screen will be black
 	call GBPalNormal
 ;;;;;;;;;; 
-	ld a, SFX_STOP_ALL_MUSIC
-	ld [wJoyIgnore], a
+	call DisableAllJoypad
+	ASSERT SFX_STOP_ALL_MUSIC == $FF 
+	; a = SFX_STOP_ALL_MUSIC = $FF due to DisableAllJoypad
 	ld [wNewSoundID], a
 	rst _PlaySound
 	ld c, BANK(Music_Surfing)
@@ -71,7 +69,7 @@ VermilionDockSSAnneLeavesScript:
 	xor a
 	ld [wSpritePlayerStateData1ImageIndex], a
 	ld c, 120
-	rst _DelayFrames
+	rst DelayFrames
 	ld b, HIGH(vBGMap1)
 	call CopyScreenTileBufferToVRAM
 	hlcoord 0, 10
@@ -107,7 +105,24 @@ VermilionDockSSAnneLeavesScript:
 	ld [wMapViewVRAMPointer + 1], a
 	push hl
 	push de
-	call ScheduleEastColumnRedraw
+; ScheduleEastColumnRedraw was un-functioned in overworld so it was copied here
+	
+	hlcoord 18, 0
+	call ScheduleColumnRedrawHelper
+	ld a, [wMapViewVRAMPointer]
+	ld c, a
+	and $e0
+	ld b, a
+	ld a, c
+	add 18
+	and $1f
+	or b
+	ldh [hRedrawRowOrColumnDest], a
+	ld a, [wMapViewVRAMPointer + 1]
+	ldh [hRedrawRowOrColumnDest + 1], a
+	ld a, REDRAW_COL
+	ldh [hRedrawRowOrColumnMode], a
+
 	call VermilionDock_EmitSmokePuff
 	pop de
 	ld b, $10
@@ -203,7 +218,7 @@ VermilionDock_EraseSSAnne:
 	hlbgcoord 0, 10
 	ld de, wVermilionDockTileMapBuffer
 	lb bc, BANK(wVermilionDockTileMapBuffer), 12
-	call CopyVideoData
+	call CopyVideoDataHBlank
 
 ; Replace the blocks of the lower half of the ship with water blocks. This
 ; leaves the upper half alone, but that doesn't matter because replacing any of
@@ -220,12 +235,12 @@ VermilionDock_EraseSSAnne:
 	ld a, SFX_SS_ANNE_HORN
 	rst _PlaySound
 	ld c, 120
-	rst _DelayFrames
+	rst DelayFrames
 	ret
 
 VermilionDock_TextPointers:
 	def_text_pointers
-	dw_const VermilionDockMewText,      TEXT_VERMILIONDOCK_MEW
+	dba_const VermilionDockMewText,      TEXT_VERMILIONDOCK_MEW
 
 VermilionDockTrainerHeaders:
 	def_trainers
@@ -238,7 +253,7 @@ VermilionDockMewText:
 	ld hl, MewTrainerHeader
 	call TalkToTrainer
 	ld c, 60
-	rst _DelayFrames
+	rst DelayFrames
 	jp TextScriptEndNoButtonPress
 
 MewBattleText:
@@ -256,7 +271,7 @@ MewBattleText:
 	lb bc, BANK(MewBubbleTiles), 4
 	call CopyVideoData
 	ld c, 20
-	rst _DelayFrames
+	rst DelayFrames
 	ld b, BANK(SFX_Battle_24)
 	call MuteAudioAndChangeAudioBank
 	ld a, SFX_BATTLE_24
@@ -278,7 +293,7 @@ MewBattleText:
 	jr z, .adjustOAMCoords
 .continue
 	ld c, 5
-	rst _DelayFrames
+	rst DelayFrames
 	; move down slightly
 	call .mewDifferent
 	ld a, [wXCoord]
@@ -290,7 +305,7 @@ MewBattleText:
 	ld e, 6
 	call .loopMoveMewAndBubble
 	ld c, 20
-	rst _DelayFrames
+	rst DelayFrames
 	; move up into the air
 	ld a, SFX_BATTLE_1C
 	call PlaySoundResetSFXModifiers
@@ -304,7 +319,7 @@ MewBattleText:
 	lb bc, -1, 0
 	call .loopMoveMewAndBubble
 	ld c, 10
-	rst _DelayFrames
+	rst DelayFrames
 	; change player OAM to be the up facing sprite if it isn't already
 	ld a, [wYCoord]
 	cp 20
@@ -327,13 +342,13 @@ MewBattleText:
 	lb bc, 1, 0
 	call .loopMoveMewAndBubble
 	ld c, 10
-	rst _DelayFrames
+	rst DelayFrames
 	call .mewNormal
 	ld e, 4
 	lb bc, -1, 0
 	call .loopMoveMewAndBubble
 	ld c, 40
-	rst _DelayFrames
+	rst DelayFrames
 	call UnmuteAudioAndRestoreAudioBank
 	rst TextScriptEnd
 .adjustOAMCoords
@@ -420,13 +435,10 @@ TruckCheck:
 	res BIT_CUR_MAP_LOADED_1, [hl]
 	lb bc, FLAG_TEST, TOGGLE_MEW_VERMILION_DOCK
 	ld hl, wToggleableObjectFlags
-	predef FlagActionPredef
-	ld a, c
-	and a
+	call FlagAction
 	jr nz, .skiphidingmew
-	ld a, TOGGLE_MEW_VERMILION_DOCK
-	ld [wToggleableObjectIndex], a
-	predef HideObject
+	ld c, TOGGLE_MEW_VERMILION_DOCK
+	call HideObject
 .skiphidingmew
 	ld a, [wStatusFlags1]
 	bit BIT_STRENGTH_ACTIVE, a ; using Strength?
@@ -459,7 +471,7 @@ TruckCheck:
 	ld bc, (Bank(TruckSpriteGFX) << 8) | 8
 	ld hl, vChars1 + $400
 	ld de, TruckSpriteGFX
-	call CopyVideoData
+	call CopyVideoDataHBlank
 	ld hl, TruckOAMTable
 	ld bc, $20
 	ld de, wShadowOAM + $20
@@ -467,7 +479,7 @@ TruckCheck:
 	ld a, $c
 	ld [wNewTileBlockID], a ; used to be wd09f
 	ld bc, $a
-	predef ReplaceTileBlock
+	call ReplaceTileBlock
 	; moving the truck
 	ld a, SFX_PUSH_BOULDER
 	rst _PlaySound
@@ -482,32 +494,28 @@ TruckCheck:
 	dec a
 	jr nz, .movingtruck2
 	ld c, 2
-	rst _DelayFrames
+	rst DelayFrames
 	dec b
 	jr nz, .movingtruck
 	ld a, $3
 	ld [wNewTileBlockID], a ; used to be wd09f
 	ld bc, $9
-	predef ReplaceTileBlock
+	call ReplaceTileBlock
 	callfar AnimateBoulderDust
 	call ShowMew
 	ld c, 20
-	rst _DelayFrames
-	xor a
-	ld [wJoyIgnore], a
+	rst DelayFrames
+	call EnableAllJoypad
 	SetEvent EVENT_FOUND_MEW
 	ret
 
 ShowMew:
 	call EnableSpriteUpdates
-	ld a, TOGGLE_MEW_VERMILION_DOCK
-	ld [wToggleableObjectIndex], a
-	predef_jump ShowObject
+	ld c, TOGGLE_MEW_VERMILION_DOCK
+	jp ShowObject
 
 ChangeTruckTile:
-	ld hl, wCurrentMapScriptFlags
-	bit BIT_CUR_MAP_LOADED_1, [hl]
-	res BIT_CUR_MAP_LOADED_1, [hl]
+	call WasMapJustLoaded
 	res BIT_CUR_MAP_USED_ELEVATOR, [hl]
 	ret z
 	ld bc, $9
@@ -554,7 +562,7 @@ VermilionDockRedLeftAnimate:
 	ld hl, vSprites tile 8
 	call CopyVideoData
 	ld c, 10
-	rst _DelayFrames
+	rst DelayFrames
 	ld a, [wWalkBikeSurfState]
 	ld de, RedSprite tile 8
 	lb bc, BANK(RedSprite), 4

@@ -3,15 +3,12 @@
 
 BillsHouse_Script:
 	call BillsHouseAddDoors
-	call EnableAutoTextBoxDrawing
-	ld a, [wBillsHouseCurScript]
 	ld hl, BillsHouse_ScriptPointers
-	jp CallFunctionInTable
+	ld de, wBillsHouseCurScript
+	jp CallMapScriptInTable
 
 BillsHouseAddDoors:
-	ld hl, wCurrentMapScriptFlags
-	bit BIT_CUR_MAP_LOADED_1, [hl]
-	res BIT_CUR_MAP_LOADED_1, [hl]
+	call WasMapJustLoaded
 	ret z
 	ResetEvent EVENT_IN_BILLS_GARDEN
 	CheckEvent EVENT_BECAME_CHAMP
@@ -32,7 +29,6 @@ BillsHouse_ScriptPointers:
 	dw_const BillsHousePokemonEntersMachineScript, SCRIPT_BILLSHOUSE_POKEMON_ENTERS_MACHINE
 	dw_const BillsHouseBillExitsMachineScript,     SCRIPT_BILLSHOUSE_BILL_EXITS_MACHINE
 	dw_const BillsHouseCleanupScript,              SCRIPT_BILLSHOUSE_CLEANUP
-	dw_const BillsHousePCScript,                   SCRIPT_BILLSHOUSE_PC
 
 BillsHousePokemonWalkToMachineScript:
 	ld a, [wSpritePlayerStateData1FacingDirection]
@@ -64,17 +60,14 @@ BillsHousePokemonWalkToMachineScript:
 	db -1 ; end
 
 BillsHousePokemonEntersMachineScript:
-	ld a, [wStatusFlags5]
-	bit BIT_SCRIPTED_NPC_MOVEMENT, a
+	call IsNPCAutoMoving
 	ret nz
-	ld a, TOGGLE_BILL_POKEMON
-	ld [wToggleableObjectIndex], a
-	predef HideObject
+	ld c, TOGGLE_BILL_POKEMON
+	call HideObject
 	SetEvent EVENT_BILL_SAID_USE_CELL_SEPARATOR
 	ld a, SFX_TRADE_MACHINE
 	rst _PlaySound
-	xor a
-	ld [wJoyIgnore], a
+	call EnableAllJoypad
 	ld a, SCRIPT_BILLSHOUSE_BILL_EXITS_MACHINE
 	ld [wBillsHouseCurScript], a
 	ret
@@ -82,8 +75,7 @@ BillsHousePokemonEntersMachineScript:
 BillsHouseBillExitsMachineScript:
 	CheckEvent EVENT_USED_CELL_SEPARATOR_ON_BILL
 	ret z
-	ld a, PAD_CTRL_PAD
-	ld [wJoyIgnore], a
+	call DisableDpad
 	ld a, BILLSHOUSE_BILL_SS_TICKET
 	ld [wSpriteIndex], a
 	ld a, $c
@@ -95,11 +87,10 @@ BillsHouseBillExitsMachineScript:
 	ld a, 5
 	ldh [hSpriteMapXCoord], a
 	call SetSpritePosition1
-	ld a, TOGGLE_BILL_1
-	ld [wToggleableObjectIndex], a
-	predef ShowObject
+	ld c, TOGGLE_BILL_1
+	call ShowObject
 	ld c, 8
-	rst _DelayFrames
+	rst DelayFrames
 	ld a, BILLSHOUSE_BILL_SS_TICKET
 	ldh [hSpriteIndex], a
 	ld de, .BillExitMachineMovement
@@ -117,11 +108,9 @@ BillsHouseBillExitsMachineScript:
 	db -1 ; end
 
 BillsHouseCleanupScript:
-	ld a, [wStatusFlags5]
-	bit BIT_SCRIPTED_NPC_MOVEMENT, a
+	call IsNPCAutoMoving
 	ret nz
-	xor a
-	ld [wJoyIgnore], a
+	call EnableAllJoypad
 	SetEvent EVENT_MET_BILL_2 ; this event seems redundant
 	SetEvent EVENT_MET_BILL
 	ld a, SCRIPT_BILLSHOUSE_DEFAULT
@@ -138,44 +127,34 @@ BillsHousePCScript:
 
 BillsHouse_TextPointers:
 	def_text_pointers
-	dw_const BillsHouseBillPokemonText,               TEXT_BILLSHOUSE_BILL_POKEMON
-	dw_const BillsHouseBillSSTicketText,              TEXT_BILLSHOUSE_BILL_SS_TICKET
-	dw_const BillsHouseBillCheckOutMyRarePokemonText, TEXT_BILLSHOUSE_BILL_CHECK_OUT_MY_RARE_POKEMON
-	dw_const BillsHouseActivatePCScript,              TEXT_BILLSHOUSE_ACTIVATE_PC
-
-BillsHouseActivatePCScript:
-	script_bills_pc
+	dba_const BillsHouseBillPokemonText,               TEXT_BILLSHOUSE_BILL_POKEMON
+	dba_const BillsHouseBillSSTicketText,              TEXT_BILLSHOUSE_BILL_SS_TICKET
+	dba_const BillsHouseBillCheckOutMyRarePokemonText, TEXT_BILLSHOUSE_BILL_CHECK_OUT_MY_RARE_POKEMON
+	dba_const BillsHouseActivatePCScript,              TEXT_BILLSHOUSE_ACTIVATE_PC
 
 BillsHouseBillPokemonText:
 	text_asm
 	ld hl, .ImNotAPokemonText
 	rst _PrintText
 	call YesNoChoice
-	jr nz, .answered_no
-.use_machine
-	ld hl, .UseSeparationSystemText
-	rst _PrintText
-	ld a, SCRIPT_BILLSHOUSE_POKEMON_WALK_TO_MACHINE
-	ld [wBillsHouseCurScript], a
-	jr .text_script_end
-.answered_no
+	jr z, .use_machine
 	ld hl, .NoYouGottaHelpText
 	rst _PrintText
-	jr .use_machine
-.text_script_end
+.use_machine
+	ld a, SCRIPT_BILLSHOUSE_POKEMON_WALK_TO_MACHINE
+	ld [wBillsHouseCurScript], a
+	ld hl, .UseSeparationSystemText
+	rst _PrintText
 	rst TextScriptEnd
 
 .ImNotAPokemonText:
-	text_far _BillsHouseBillImNotAPokemonText
-	text_end
+	text_far_end _BillsHouseBillImNotAPokemonText
 
 .UseSeparationSystemText:
-	text_far _BillsHouseBillUseSeparationSystemText
-	text_end
+	text_far_end _BillsHouseBillUseSeparationSystemText
 
 .NoYouGottaHelpText:
-	text_far _BillsHouseBillNoYouGottaHelpText
-	text_end
+	text_far_end _BillsHouseBillNoYouGottaHelpText
 
 BillsHouseBillSSTicketText:
 	text_asm
@@ -185,48 +164,36 @@ BillsHouseBillSSTicketText:
 	rst _PrintText
 	lb bc, S_S_TICKET, 1
 	call GiveItem
-	jr nc, .bag_full
+	ld hl, .SSTicketNoRoomText
+	jr nc, .printDone
 	ld hl, .SSTicketReceivedText
 	rst _PrintText
 	SetEvent EVENT_GOT_SS_TICKET
-	ld a, TOGGLE_CERULEAN_GUARD_1
-	ld [wToggleableObjectIndex], a
-	predef ShowObject
-	ld a, TOGGLE_CERULEAN_GUARD_2
-	ld [wToggleableObjectIndex], a
-	predef HideObject
+	ld c, TOGGLE_CERULEAN_GUARD_1
+	call ShowObject
+	ld c, TOGGLE_CERULEAN_GUARD_2
+	call HideObject
 ;;;;;;;;;; PureRGBnote: MOVED: move this object hiding here since we could teleport out of bills house and miss this being triggered on route 25 instead
-	ld a, TOGGLE_NUGGET_BRIDGE_GUY
-	ld [wToggleableObjectIndex], a
-	predef HideObject
+	ld c, TOGGLE_NUGGET_BRIDGE_GUY
+	call HideObject
 ;;;;;;;;;;
 .got_ss_ticket
 	ld hl, .WhyDontYouGoInsteadOfMeText
+.printDone
 	rst _PrintText
-	jr .text_script_end
-.bag_full
-	ld hl, .SSTicketNoRoomText
-	rst _PrintText
-.text_script_end
 	rst TextScriptEnd
 
 .ThankYouText:
-	text_far _BillsHouseBillThankYouText
-	text_end
+	text_far_end _BillsHouseBillThankYouText
 
 .SSTicketReceivedText:
-	text_far _SSTicketReceivedText
-	sound_get_key_item
-	text_promptbutton
-	text_end
+	text_far_end _SSTicketReceivedText
 
 .SSTicketNoRoomText:
-	text_far _SSTicketNoRoomText
-	text_end
+	text_far_end _SSTicketNoRoomText
 
 .WhyDontYouGoInsteadOfMeText:
-	text_far _BillsHouseBillWhyDontYouGoInsteadOfMeText
-	text_end
+	text_far_end _BillsHouseBillWhyDontYouGoInsteadOfMeText
 
 BillsHouseBillCheckOutMyRarePokemonText:
 	text_asm
@@ -239,9 +206,149 @@ BillsHouseBillCheckOutMyRarePokemonText:
 	rst TextScriptEnd
 
 .Text:
-	text_far _BillsHouseBillCheckOutMyRarePokemonText
-	text_end
+	text_far_end _BillsHouseBillCheckOutMyRarePokemonText
 
 BillsHouseGardenInfo:
-	text_far _BillsHouseGardenInfo
-	text_end
+	text_far_end _BillsHouseGardenInfo
+
+BillsHousePC::
+	call EnableAutoTextBoxDrawing
+	ld a, [wSpritePlayerStateData1FacingDirection]
+	cp SPRITE_FACING_UP
+	ret nz
+	ld a, TEXT_BILLSHOUSE_ACTIVATE_PC
+	ldh [hTextID], a
+	jp DisplayTextID
+
+BillsHouseActivatePCScript:
+	text_asm
+	CheckEvent EVENT_LEFT_BILLS_HOUSE_AFTER_HELPING
+	jr nz, .displayBillsHousePokemonList
+	CheckEventReuseA EVENT_USED_CELL_SEPARATOR_ON_BILL
+	jr nz, .displayBillsHousePokemonList
+	CheckEventReuseA EVENT_BILL_SAID_USE_CELL_SEPARATOR
+	jr nz, .doCellSeparator
+.displayBillsHouseMonitorText
+	ld hl, .cellOnMonitor
+	jr .printDone
+.doCellSeparator
+	ld a, $1
+	ld [wDoNotWaitForButtonPressAfterDisplayingText], a
+	ld hl, .cellSeparationInitiated
+	rst _PrintText
+	ld c, 32
+	ld a, SFX_TINK
+	call .playSoundWithDelay
+	ld c, 80
+	ld a, SFX_SHRINK
+	call .playSoundWithDelay
+	ld c, 48
+	ld a, SFX_TINK
+	call .playSoundWithDelay
+	ld c, 32
+	ld a, SFX_GET_ITEM_1
+	call .playSoundWithDelay
+	call PlayDefaultMusic
+	SetEvent EVENT_USED_CELL_SEPARATOR_ON_BILL
+	rst TextScriptEnd
+.displayBillsHousePokemonList
+	ld a, $1
+	ld [wDoNotWaitForButtonPressAfterDisplayingText], a
+	ld hl, .pokemonList
+.printDone
+	rst _PrintText
+	rst TextScriptEnd
+.playSoundWithDelay
+	push af
+	rst DelayFrames
+	pop af
+	rst _PlaySound
+	jp WaitForSoundToFinish
+.cellOnMonitor
+	text_far_end _BillsHouseMonitorText
+.cellSeparationInitiated
+	text_far _BillsHouseInitiatedText
+	text_promptbutton
+	text_asm
+	ld a, SFX_STOP_ALL_MUSIC
+	ld [wNewSoundID], a
+	rst _PlaySound
+	ld c, 16
+	ld a, SFX_SWITCH
+	call .playSoundWithDelay
+	ld c, 60
+	rst DelayFrames
+	rst TextScriptEnd
+
+.pokemonList
+	text_asm
+	call SaveScreenTilesToBuffer1
+	ld hl, .favoritePokemon
+	rst _PrintText
+	xor a
+	ld [wMenuItemOffset], a ; not used
+	ld [wCurrentMenuItem], a
+	ld [wLastMenuItem], a
+	ld a, 4
+	ld [wMaxMenuItem], a
+	ld a, 2
+	ld [wTopMenuItemY], a
+	ld a, 1
+	ld [wTopMenuItemX], a
+.billsPokemonLoop
+;;;;;;;;;; PureRGBnote: MOVED: moved here because opening a pokedex entry changes wMenuWatchedKeys now and this needs to be repeated every menu loop.
+	ld a, PAD_A | PAD_B
+	ld [wMenuWatchedKeys], a
+;;;;;;;;;;
+	call DisableTextDelay
+	hlcoord 0, 0
+	lb bc, 10, 9
+	call TextBoxBorder
+	hlcoord 2, 2
+	ld de, BillsMonListText
+	call PlaceString
+	ld hl, .whichPokemonInfo
+	rst _PrintText
+	call SaveScreenTilesToBuffer2
+	call HandleMenuInput
+	bit B_PAD_B, a
+	jr nz, .cancel
+	ld a, [wCurrentMenuItem]
+	add EEVEE
+	cp VAPOREON + 1
+	jr z, .cancel
+.displayPokedex
+	call DisplayPokedex
+	; dex number still stored in wPokedexNum
+	callfar IsPokemonLearnsetUnlockedDirect
+	jr nz, .noFurtherText
+	call AreLearnsetsEnabled
+	jr z, .noFurtherText
+	callfar SetPokemonLearnsetUnlocked
+	ld hl, .listingTonsOfInfo
+	rst _PrintText
+	; wNameBuffer still contains pokemon name
+	callfar LearnsetUnlockedScript
+	call DisplayTextPromptButton
+.noFurtherText
+	call LoadScreenTilesFromBuffer2
+	jr .billsPokemonLoop
+.cancel
+	call EnableTextDelay
+	call LoadScreenTilesFromBuffer2
+	rst TextScriptEnd
+.favoritePokemon:
+	text_far_end _BillsHousePokemonListText1
+
+.whichPokemonInfo:
+	text_far_end _BillsHousePokemonListText2
+
+.listingTonsOfInfo::
+	text_far_end _BillsHousePCInfo
+
+BillsMonListText:
+	db   "EEVEE"
+	next "FLAREON"
+	next "JOLTEON"
+	next "VAPOREON"
+	next "CANCEL@"

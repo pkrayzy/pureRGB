@@ -1,5 +1,5 @@
 StartMenu_Pokedex::
-	predef ShowPokedexMenu
+	callfar ShowPokedexMenu
 	call LoadScreenTilesFromBuffer2
 	call Delay3
 	;call LoadGBPal ; shinpokerednote: gbcnote: moved to redisplaystartmenu for better visual effect
@@ -97,7 +97,7 @@ StartMenu_Pokemon::
 	call ClearSprites
 	xor a ; PLAYER_PARTY_DATA
 	ld [wMonDataLocation], a
-	predef StatusScreenLoop
+	callfar StatusScreenLoop
 	call ReloadMapData
 	jp StartMenu_Pokemon
 .choseOutOfBattleMove
@@ -155,7 +155,7 @@ StartMenu_Pokemon::
 .cut
 	bit BIT_CASCADEBADGE, a
 	jp z, .newBadgeRequired
-	predef UsedCut
+	callfar UsedCut
 	ld a, [wActionResultOrTookBattleTurn]
 	and a
 	jp z, .loop
@@ -180,7 +180,7 @@ StartMenu_Pokemon::
 .strength
 	bit BIT_RAINBOWBADGE, a
 	jp z, .newBadgeRequired
-	predef PrintStrengthText
+	callfar PrintStrengthText
 	call GBPalWhiteOutWithDelay3
 	jp .goBackToMap
 .flash
@@ -198,8 +198,7 @@ StartMenu_Pokemon::
 	call GBPalWhiteOutWithDelay3
 	jp .goBackToMap
 .flashLightsAreaText
-	text_far _FlashLightsAreaText
-	text_end
+	text_far_end _FlashLightsAreaText
 .dig
 	callfar DigFromPartyMenu
 	jp c, StartMenu_Pokemon
@@ -227,19 +226,16 @@ StartMenu_Pokemon::
 	set BIT_UNKNOWN_4_1, [hl]
 	res BIT_NO_BATTLES, [hl]
 	ld c, 60
-	rst _DelayFrames
+	rst DelayFrames
 	call GBPalWhiteOutWithDelay3
 	callfar ClearSafariFlags ; PureRGBnote: CHANGED: when teleporting, safari stuff is cleared.
 	jp .goBackToMap
 .warpToLastPokemonCenterText
-	text_far _WarpToLastPokemonCenterText
-	text_end
+	text_far_end _WarpToLastPokemonCenterText
 .cannotUseTeleportNowText
-	text_far _CannotUseTeleportNowText
-	text_end
+	text_far_end _CannotUseTeleportNowText
 .cannotFlyHereText
-	text_far _CannotFlyHereText
-	text_end
+	text_far_end _CannotFlyHereText
 .softboiled
 	ld hl, wPartyMon1MaxHP
 	ld a, [wWhichPokemon]
@@ -277,8 +273,7 @@ StartMenu_Pokemon::
 	rst _PrintText
 	jp .loop
 .notHealthyEnoughText
-	text_far _NotHealthyEnoughText
-	text_end
+	text_far_end _NotHealthyEnoughText
 .goBackToMap
 	call RestoreScreenTilesAndReloadTilePatterns
 	jp CloseTextDisplay
@@ -288,11 +283,9 @@ StartMenu_Pokemon::
 	rst _PrintText
 	jp .loop
 .newBadgeRequiredText
-	text_far _NewBadgeRequiredText
-	text_end
+	text_far_end _NewBadgeRequiredText
 .alreadyBright
-	text_far _AlreadyBrightText
-	text_end
+	text_far_end _AlreadyBrightText
 
 ; writes a blank tile to all possible menu cursor positions on the party menu
 ErasePartyMenuCursors::
@@ -311,7 +304,7 @@ ItemMenuLoop:
 	call RunDefaultPaletteCommand
 
 StartMenu_Item::
-	ld a, 1
+	ld a, TM_HOVER_TEXT
 	ld [wListMenuHoverTextType], a ; PureRGBnote: ADDED: we want TM names to get printed in this list menu
 	ld a, [wLinkState]
 	dec a ; is the player in the Colosseum or Trade Centre?
@@ -320,6 +313,7 @@ StartMenu_Item::
 	rst _PrintText
 	jr .exitMenu
 .notInCableClubRoom
+	callfar ClearStartMenuPrompt
 	ld bc, wNumBagItems
 	ld hl, wListPointer
 	ld a, c
@@ -438,7 +432,8 @@ StartMenu_Item::
 	jp z, ItemMenuLoop
 	xor a
 	ld [wListMenuHoverTextType], a ; PureRGBnote: ADDED: done with the item list interaction, so no TM names need to be printed anymore
-	jp CloseStartMenu
+	call LoadTextBoxTilePatterns
+	jp CloseTextDisplay
 .useItem_partyMenu
 	ld a, [wUpdateSpritesEnabled]
 	push af
@@ -499,12 +494,10 @@ ItemMenuRestoreItemIndex:
 	ret
 
 CannotUseItemsHereText:
-	text_far _CannotUseItemsHereText
-	text_end
+	text_far_end _CannotUseItemsHereText
 
 CannotGetOffHereText:
-	text_far _CannotGetOffHereText
-	text_end
+	text_far_end _CannotGetOffHereText
 
 INCLUDE "data/items/use_party.asm"
 
@@ -519,8 +512,8 @@ StartMenu_TrainerInfo::
 	xor a
 	ldh [hTileAnimations], a
 	call DrawTrainerInfo
-	predef DrawBadges
-	ld b, SET_PAL_TRAINER_CARD
+	callfar DrawBadges
+	ld d, SET_PAL_TRAINER_CARD
 	call RunPaletteCommand
 	call GBPalNormal
 	call WaitForTextScrollButtonPress
@@ -535,10 +528,9 @@ StartMenu_TrainerInfo::
 	jp RedisplayStartMenu
 
 ; loads tile patterns and draws everything except for gym leader faces / badges
+; TODO: move into another bank?
 DrawTrainerInfo:
-	ld de, RedPicFront
-	lb bc, BANK(RedPicFront), $01
-	predef DisplayPicCenteredOrUpperRight
+	callfar DisplayPicCenteredOrUpperRight
 	call DisableLCD
 	hlcoord 0, 2
 	ld a, ' '
@@ -702,7 +694,7 @@ StartMenu_SaveReset::
 	ld a, [wStatusFlags4]
 	bit BIT_LINK_CONNECTED, a
 	jp nz, Init
-	predef SaveMenu
+	callfar SaveMenu
 	call LoadScreenTilesFromBuffer2
 	jp HoldTextDisplayOpen
 
@@ -940,6 +932,19 @@ CheckLoadSavedIndex:
 
 ; PureRGBnote: ADDED: when pressing SELECT on the start menu over the SAVE option, we can change boxes whenever we want.
 StartMenu_SelectPressed::
+	ld a, [wCurrentMenuItem]
+	cp 4
+	jr z, .box
+	call SaveScreenTilesToBuffer2
+	callfar SortBagItems
+	call LoadScreenTilesFromBuffer2
+	jp RedisplayStartMenu
+.box
+	ld a, [wLinkState]
+	and a
+	jr nz, .done
+	CheckEvent EVENT_GOT_POKEDEX ; functionality only allowed if we have the pokedex
+	jr z, .done
 	ld a, [wCurrentMenuItem]
 	ld [wBattleAndStartSavedMenuItem], a ; save current menu selection
 	ld a, [wCurMapTextPtr]

@@ -40,38 +40,38 @@ ShowMapWildEncounters::
 	inc hl
 	ld a, [hl]
 	ld [wGenericPaletteOverride], a
-	ld b, SET_PAL_GENERIC
+	ld d, SET_PAL_GENERIC
 	call RunPaletteCommand
 .noSpecialPalette
 	; interface arrows
 	ld hl, vSprites tile $D0
 	ld de, WildDataArrows
 	lb bc, BANK(WildDataArrows), 2
-	call CopyVideoDataDouble
+	call CopyVideoDataHBlankDouble
 	ld hl, vSprites tile $D2
 	ld de, BattleHudTiles1 tile1bpp 1
 	lb bc, BANK(BattleHudTiles1), 1
-	call CopyVideoDataDouble
+	call CopyVideoDataHBlankDouble
 	; grass tile
 	ld hl, vSprites tile $D3
 	ld de, Overworld_GFX tile $52
 	lb bc, BANK(Overworld_GFX), 1
-	call CopyVideoData
+	call CopyVideoDataHBlank
 	; lava tile
 	ld hl, vSprites tile $D4
 	ld de, Volcano_GFX tile 20
 	lb bc, BANK(Volcano_GFX), 1
-	call CopyVideoData
+	call CopyVideoDataHBlank
 	; foot tile
 	ld hl, vSprites tile $D5
 	ld de, WildDataShoe
 	lb bc, BANK(WildDataShoe), 1
-	call CopyVideoData
+	call CopyVideoDataHBlank
 	; hook tile
 	ld hl, vSprites tile $D6
 	ld de, FishingWaterIcons
 	lb bc, BANK(FishingWaterIcons), 1
-	call CopyVideoDataDouble
+	call CopyVideoDataHBlankDouble
 	; ball tile
 	callfar LoadPokeballTileGraphics
 	pop de
@@ -171,7 +171,7 @@ ShowMapWildEncounters::
 	call ClearScreen
 	call Delay3
 	call LoadScreenTilesFromBuffer1
-	ld b, SET_PAL_TOWN_MAP
+	ld d, SET_PAL_TOWN_MAP
 	call RunPaletteCommand
 	ld hl, wTownMapSavedOAM + (wShadowOAMSprite36 - wShadowOAMSprite00)
 	ld de, wShadowOAMSprite36
@@ -486,15 +486,13 @@ WildMonCheckFlags::
 	push bc
 	push hl
 	ld [wPokedexNum], a
-	predef IndexToPokedex
+	call IndexToPokedex
 	ld a, [wPokedexNum]
 	pop hl
 	dec a
 	ld c, a
 	ld b, FLAG_TEST
-	predef FlagActionPredef
-	ld a, c
-	and a
+	call FlagAction
 	jr z, .done
 	scf
 .done

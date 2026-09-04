@@ -4,39 +4,25 @@ VermilionGym_Script:
 	bit BIT_CUR_MAP_LOADED_2, [hl]
 	res BIT_CUR_MAP_LOADED_2, [hl]
 	call nz, VermilionGymSetDoorTile
-	call EnableAutoTextBoxDrawing
 	ld hl, VermilionGymTrainerHeaders
 	ld de, VermilionGym_ScriptPointers
-	ld a, [wVermilionGymCurScript]
-	call ExecuteCurMapScriptInTable
-	ld [wVermilionGymCurScript], a
-	ret
+	ld bc, wVermilionGymCurScript
+	jp ExecuteCustomMapScriptInTable
 
 VermilionGymSetDoorTile:
 	CheckEvent EVENT_2ND_LOCK_OPENED
-	jr nz, .doorsOpen
-	ld a, $24 ; double door tile ID
-	jr .replaceTile
-.doorsOpen
-	ld a, SFX_GO_INSIDE
-	rst _PlaySound
 	ld a, $5 ; clear floor tile ID
+	jr nz, .replaceTile
+	ld a, $24 ; double door tile ID
 .replaceTile
 	ld [wNewTileBlockID], a
 	lb bc, 2, 2
-	predef ReplaceTileBlock
+	call ReplaceTileBlock
 	ld hl, wCurrentMapScriptFlags
 	bit BIT_MAP_LOADED_AFTER_BATTLE, [hl]
 	res BIT_MAP_LOADED_AFTER_BATTLE, [hl]
 	ret z
 	jp GBFadeInFromWhite ; PureRGBnote: ADDED: since trainer instantly talks to us after battle we need to fade back in here
-
-VermilionGymResetScripts:
-	xor a
-	ld [wJoyIgnore], a
-	ld [wVermilionGymCurScript], a
-	ld [wCurMapScript], a
-	ret
 
 VermilionGym_ScriptPointers:
 	def_script_pointers
@@ -45,12 +31,17 @@ VermilionGym_ScriptPointers:
 	dw_const EndTrainerBattle,                      SCRIPT_VERMILIONGYM_END_BATTLE
 	dw_const VermilionGymLTSurgeAfterBattleScript,  SCRIPT_VERMILIONGYM_LT_SURGE_AFTER_BATTLE
 
+VermilionGymResetScripts:
+	call ResetMapScripts
+	; a = 0 from ResetMapScripts
+	ld [wVermilionGymCurScript], a
+	ret
+
 VermilionGymLTSurgeAfterBattleScript:
 	ld a, [wIsInBattle]
 	cp $ff ; did we lose?
-	jp z, VermilionGymResetScripts
-	ld a, PAD_CTRL_PAD
-	ld [wJoyIgnore], a
+	jr z, VermilionGymResetScripts
+	call DisableDpad
 
 VermilionGymLTSurgeReceiveTM24Script:
 	ld d, VERMILIONGYM_LT_SURGE
@@ -81,29 +72,32 @@ VermilionGymLTSurgeReceiveTM24Script:
 	ld a, VERMILIONGYM_LT_SURGE
 	ldh [hSpriteIndex], a
 	call SetSpriteMovementBytesToFF
-	jp VermilionGymResetScripts
+	jr VermilionGymResetScripts
 
 VermilionGym_TextPointers:
 	def_text_pointers
-	dw_const VermilionGymLTSurgeText,                 TEXT_VERMILIONGYM_LT_SURGE
-	dw_const VermilionGymGentlemanText,               TEXT_VERMILIONGYM_SOLDIER1
-	dw_const VermilionGymSuperNerdText,               TEXT_VERMILIONGYM_ROCKER
-	dw_const VermilionGymSailorText,                  TEXT_VERMILIONGYM_SOLDIER2
-	dw_const VermilionGymGymGuideText,                TEXT_VERMILIONGYM_GYM_GUIDE
-	dw_const VermilionGymGarbageNearSurgeText,        TEXT_VERMILIONGYM_GARBAGE_NEAR_SURGE
-	dw_const VermilionGymBookshelfText,               TEXT_VERMILIONGYM_BOOKSHELF
-	dw_const VermilionGymLTSurgeThunderBadgeInfoText, TEXT_VERMILIONGYM_LT_SURGE_THUNDER_BADGE_INFO
-	dw_const VermilionGymLTSurgeReceivedTM24Text,     TEXT_VERMILIONGYM_LT_SURGE_RECEIVED_TM24
-	dw_const VermilionGymLTSurgeTM24NoRoomText,       TEXT_VERMILIONGYM_LT_SURGE_TM24_NO_ROOM
+	dba_const VermilionGymLTSurgeText,                 TEXT_VERMILIONGYM_LT_SURGE
+	dba_const VermilionGymGentlemanText,               TEXT_VERMILIONGYM_SOLDIER1
+	dba_const VermilionGymSuperNerdText,               TEXT_VERMILIONGYM_ROCKER
+	dba_const VermilionGymSailorText,                  TEXT_VERMILIONGYM_SOLDIER2
+	dba_const VermilionGymGymGuideText,                TEXT_VERMILIONGYM_GYM_GUIDE
+	dba_const _VermilionGymGarbageNearSurgeText,        TEXT_VERMILIONGYM_GARBAGE_NEAR_SURGE
+	dba_const _VermilionGymBookshelfText,               TEXT_VERMILIONGYM_BOOKSHELF
+	dba_const _VermilionGymLTSurgeThunderBadgeInfoText, TEXT_VERMILIONGYM_LT_SURGE_THUNDER_BADGE_INFO
+	dba_const VermilionGymLTSurgeReceivedTM24Text,     TEXT_VERMILIONGYM_LT_SURGE_RECEIVED_TM24
+	dba_const _VermilionGymLTSurgeTM24NoRoomText,       TEXT_VERMILIONGYM_LT_SURGE_TM24_NO_ROOM
+	dba_const _VermilionGymTrashText,                   TEXT_VERMILIONGYM_ONLY_TRASH_HERE
+	dba_const VermilionGymTrashSuccessText1,           TEXT_VERMILIONGYM_FOUND_FIRST_SWITCH
+	dba_const VermilionGymTrashSuccessText3,           TEXT_VERMILIONGYM_FOUND_SECOND_SWITCH
 
 VermilionGymTrainerHeaders:
 	def_trainers 2
 VermilionGymTrainerHeader0:
-	trainer EVENT_BEAT_VERMILION_GYM_TRAINER_0, 3, VermilionGymGentlemanBattleText, VermilionGymGentlemanEndBattleText, VermilionGymGentlemanAfterBattleText
+	trainer EVENT_BEAT_VERMILION_GYM_TRAINER_0, 3, _VermilionGymGentlemanBattleText, _VermilionGymGentlemanEndBattleText, VermilionGymGentlemanAfterBattleText
 VermilionGymTrainerHeader1:
-	trainer EVENT_BEAT_VERMILION_GYM_TRAINER_1, 2, VermilionGymSuperNerdBattleText, VermilionGymSuperNerdEndBattleText, VermilionGymSuperNerdAfterBattleText
+	trainer EVENT_BEAT_VERMILION_GYM_TRAINER_1, 2, _VermilionGymSuperNerdBattleText, _VermilionGymSuperNerdEndBattleText, VermilionGymSuperNerdAfterBattleText
 VermilionGymTrainerHeader2:
-	trainer EVENT_BEAT_VERMILION_GYM_TRAINER_2, 3, VermilionGymSailorBattleText, VermilionGymSailorEndBattleText, VermilionGymSailorAfterBattleText
+	trainer EVENT_BEAT_VERMILION_GYM_TRAINER_2, 3, _VermilionGymSailorBattleText, _VermilionGymSailorEndBattleText, VermilionGymSailorAfterBattleText
 	db -1 ; end
 
 VermilionGymLTSurgeText:
@@ -143,146 +137,92 @@ VermilionGymLTSurgeText:
 	rst TextScriptEnd
 
 .PreBattleText:
-	text_far _VermilionGymLTSurgePreBattleText
-	text_end
+	text_far_end _VermilionGymLTSurgePreBattleText
 
 .PostBattleAdviceText:
-	text_far _VermilionGymLTSurgePostBattleAdviceText
-	text_end
-
-VermilionGymLTSurgeThunderBadgeInfoText:
-	text_far _VermilionGymLTSurgeThunderBadgeInfoText
-	text_end
+	text_far_end _VermilionGymLTSurgePostBattleAdviceText
 
 VermilionGymLTSurgeReceivedTM24Text:
 	text_far _VermilionGymLTSurgeReceivedTM24Text
 	sound_get_key_item
-	text_far _TM24ExplanationText
-	text_end
-
-VermilionGymLTSurgeTM24NoRoomText:
-	text_far _VermilionGymLTSurgeTM24NoRoomText
-	text_end
+	text_far_end _TM24ExplanationText
 
 VermilionGymLTSurgeReceivedThunderBadgeText:
-	text_far _VermilionGymLTSurgeReceivedThunderBadgeText
-	text_end
+	text_far_end _VermilionGymLTSurgeReceivedThunderBadgeText
 
 VermilionGymGentlemanText:
-	text_asm
-	ld hl, VermilionGymTrainerHeader0
-	call TalkToTrainer
+	script_trainer VermilionGymTrainerHeader0
+
+VermilionGymSuperNerdText:
+	script_trainer VermilionGymTrainerHeader1
+
+VermilionGymSailorText:
+	script_trainer VermilionGymTrainerHeader2
+
+VermilionGymGetTrainerText:
+	call .getWhich
+	ld b, 0
+	add hl, bc
+	rst _PrintText
 	rst TextScriptEnd
-
-VermilionGymGentlemanBattleText:
-	text_far _VermilionGymGentlemanBattleText
-	text_end
-
-VermilionGymGentlemanEndBattleText:
-	text_far _VermilionGymGentlemanEndBattleText
-	text_end
+.getWhich
+	ld c, 0
+	CheckEvent EVENT_BEAT_LT_SURGE
+	ret nz
+	CheckEvent EVENT_2ND_LOCK_OPENED
+	ld c, 4
+	ret nz
+	ld c, 8
+	ret
 
 VermilionGymGentlemanAfterBattleText:
 	text_asm
-	CheckEvent EVENT_BEAT_LT_SURGE
-	ld hl, .afterBeat
-	ret nz
-	CheckEvent EVENT_2ND_LOCK_OPENED
-	ld hl, .afterLocks
-	ret nz
-	ld hl, .beforeBeat
-	ret
+	ld hl, .text_entries
+	jr VermilionGymGetTrainerText
+.text_entries
 .afterBeat
-	text_far _VermilionGymGentlemanAfterBattleGymDefeatedText
-	text_end
-.beforeBeat
-	text_far _VermilionGymGentlemanAfterBattleText
-	text_end
+	text_far_end _VermilionGymGentlemanAfterBattleGymDefeatedText
 .afterLocks
-	text_far _VermilionGymGentlemanAfterLocksText
-	text_end
-
-VermilionGymSuperNerdText:
-	text_asm
-	ld hl, VermilionGymTrainerHeader1
-	call TalkToTrainer
-	rst TextScriptEnd
-
-VermilionGymSuperNerdBattleText:
-	text_far _VermilionGymSuperNerdBattleText
-	text_end
-
-VermilionGymSuperNerdEndBattleText:
-	text_far _VermilionGymSuperNerdEndBattleText
-	text_end
+	text_far_end _VermilionGymGentlemanAfterLocksText
+.beforeBeat
+	text_far_end _VermilionGymGentlemanAfterBattleText
 
 VermilionGymSuperNerdAfterBattleText:
 	text_asm
-	CheckEvent EVENT_BEAT_LT_SURGE
-	ld hl, .afterBeat
-	ret nz
-	CheckEvent EVENT_2ND_LOCK_OPENED
-	ld hl, .afterLocks
-	ret nz
-	ld hl, .beforeBeat
-	ret
+	ld hl, .text_entries
+	jr VermilionGymGetTrainerText
+.text_entries
 .afterBeat
-	text_far _VermilionGymSuperNerdAfterBattleGymDefeatedText
-	text_end
-.beforeBeat
-	text_far _VermilionGymSuperNerdAfterBattleText
-	text_end
+	text_far_end _VermilionGymSuperNerdAfterBattleGymDefeatedText
 .afterLocks
-	text_far _VermilionGymSuperNerdAfterLocksText
-	text_end
-
-VermilionGymSailorText:
-	text_asm
-	ld hl, VermilionGymTrainerHeader2
-	call TalkToTrainer
-	rst TextScriptEnd
-
-VermilionGymSailorBattleText:
-	text_far _VermilionGymSailorBattleText
-	text_end
-
-VermilionGymSailorEndBattleText:
-	text_far _VermilionGymSailorEndBattleText
-	text_end
+	text_far_end _VermilionGymSuperNerdAfterLocksText
+.beforeBeat
+	text_far_end _VermilionGymSuperNerdAfterBattleText
 
 VermilionGymSailorAfterBattleText:
 	text_asm
-	CheckEvent EVENT_BEAT_LT_SURGE
-	ld hl, .afterBeat
-	ret nz
-	CheckEvent EVENT_2ND_LOCK_OPENED
-	ld hl, .afterLocks
-	ret nz
-	ld hl, .beforeBeat
-	ret
+	ld hl, .text_entries
+	jr VermilionGymGetTrainerText
+.text_entries
 .afterBeat
-	text_far _VermilionGymSailorAfterBattleGymDefeatedText
-	text_end
-.beforeBeat
-	text_far _VermilionGymSailorAfterBattleText
-	text_end
+	text_far_end _VermilionGymSailorAfterBattleGymDefeatedText
 .afterLocks
-	text_far _VermilionGymSailorAfterLocksText
-	text_end
+	text_far_end _VermilionGymSailorAfterLocksText
+.beforeBeat
+	text_far_end _VermilionGymSailorAfterBattleText
 
 VermilionGymGymGuideText: ; PureRGBnote: ADDED: gym guide gives you apex chips after beating the leader
 	text_asm
 	ld a, [wObtainedBadges]
 	bit BIT_THUNDERBADGE, a
-	jr nz, .afterBeat
 	ld hl, VermilionGymGuideChampInMakingText
-	rst _PrintText
-	jr .done
+	jr z, .printDone
 .afterBeat
 	CheckEvent EVENT_GOT_PEWTER_APEX_CHIPS ; have to hear about apex chips to receive them after that
-	jr z, .postNoPrompt
-	ld hl, VermilionGymGuidePostBattleTextPrompt
+	ld hl, VermilionGymGuidePostBattleText
+	jr z, .printDone
 	rst _PrintText
+	call DisplayTextPromptButton
 	CheckEvent EVENT_GOT_VERMILION_APEX_CHIPS
 	jr nz, .alreadyApexChips
 .giveApexChips
@@ -290,7 +230,8 @@ VermilionGymGymGuideText: ; PureRGBnote: ADDED: gym guide gives you apex chips a
 	rst _PrintText
 	lb bc, APEX_CHIP, 2
 	call GiveItem
-	jr nc, .BagFull
+	ld hl, ApexNoRoomText3
+	jr nc, .printDone
 	ld hl, ReceivedApexChipsText3
 	rst _PrintText
 	ld hl, VermilionGymGuideApexChipElectricText
@@ -298,59 +239,194 @@ VermilionGymGymGuideText: ; PureRGBnote: ADDED: gym guide gives you apex chips a
 	SetEvent EVENT_GOT_VERMILION_APEX_CHIPS
 .alreadyApexChips
 	ld hl, AlreadyReceivedApexChipsText3
+.printDone
 	rst _PrintText
-	jr .done
-.BagFull
-	ld hl, ApexNoRoomText3
-	rst _PrintText
-.done
 	rst TextScriptEnd
-.postNoPrompt
-	ld hl, VermilionGymGuidePostBattleText
-	rst _PrintText
-	jr .done
 
 ReceivedApexChipsText3:
-	text_far _ReceivedApexChipsText
-	sound_get_item_1
-	text_end
+	text_far_end _ReceivedApexChipsText
 
 ApexNoRoomText3:
-	text_far _PewterGymTM34NoRoomText
-	text_end
+	text_far_end _PewterGymTM34NoRoomText
 
 GymGuideMoreApexChipText3:
-	text_far _GymGuideMoreApexChipText
-	text_end
+	text_far_end _GymGuideMoreApexChipText
 
 AlreadyReceivedApexChipsText3:
-	text_far _AlreadyReceivedApexChipsText
-	text_end
+	text_far_end _AlreadyReceivedApexChipsText
 
 VermilionGymGuideChampInMakingText:
 	text_far _GymGuideChampInMakingText
-	text_far _VermilionGymGymGuideChampInMakingText
-	text_end
+	text_far_end _VermilionGymGymGuideChampInMakingText
 
 VermilionGymGuidePostBattleText:
-	text_far _VermilionGymGymGuideBeatLTSurgeText
-	text_end
-
-VermilionGymGuidePostBattleTextPrompt:
-	text_far _VermilionGymGymGuideBeatLTSurgeText
-	text_promptbutton
-	text_end
+	text_far_end _VermilionGymGymGuideBeatLTSurgeText
 
 VermilionGymGuideApexChipElectricText:
-	text_far _VermilionGymGuideApexChipElectricText
-	text_end
+	text_far_end _VermilionGymGuideApexChipElectricText
 
 ; PureRGBnote: ADDED: text entries for the garbage can and bookcase near surge for some flavour
 
-VermilionGymGarbageNearSurgeText:
-	text_far _VermilionGymGarbageNearSurgeText
-	text_end
+GymTrashScript::
+	call EnableAutoTextBoxDrawing
+	ld a, [wHiddenEventFunctionArgument]
+	ld [wGymTrashCanIndex], a
 
-VermilionGymBookshelfText:
-	text_far _VermilionGymBookshelfText
-	text_end
+; Don't do the trash can puzzle if it's already been done.
+	CheckEvent EVENT_2ND_LOCK_OPENED
+	jr nz, .onlyTrashHere
+.ok
+	CheckEventReuseA EVENT_1ST_LOCK_OPENED
+	jr nz, .trySecondLock
+
+	ld a, [wFirstLockTrashCanIndex]
+	ld b, a
+	ld a, [wGymTrashCanIndex]
+	cp b
+	jr z, .openFirstLock
+.onlyTrashHere
+	ld a, TEXT_VERMILIONGYM_ONLY_TRASH_HERE
+.displayText
+	ldh [hTextID], a
+	jp DisplayTextID
+.openFirstLock
+; Next can is trying for the second switch.
+	SetEvent EVENT_1ST_LOCK_OPENED
+
+	ld hl, GymTrashCans
+	ld a, [wGymTrashCanIndex]
+	; * 5
+	ld b, a
+	add a
+	add a
+	add b
+
+	ld d, 0
+	ld e, a
+	add hl, de
+	ld a, [hli]
+
+; Bug: This code should calculate a value in the range [0, 3],
+; but if the mask and random number don't have any 1 bits in common, then
+; the result of the AND will be 0. When 1 is subtracted from that, the value
+; will become $ff. This will result in 255 being added to hl, which will cause
+; hl to point to one of the zero bytes that pad the end of the ROM bank.
+; Trash can 0 was intended to be able to have the second lock only when the
+; first lock was in trash can 1 or 3. However, due to this bug, trash can 0 can
+; have the second lock regardless of which trash can had the first lock.
+
+	ldh [hGymTrashCanRandNumMask], a
+	push hl
+.tryagain
+	call Random
+	swap a
+	ld b, a
+	ldh a, [hGymTrashCanRandNumMask]
+	and b
+	jr z, .tryagain ; PureRGBnote: FIXED: never AND to 0
+	dec a
+	pop hl
+
+	ld d, 0
+	ld e, a
+	add hl, de
+	ld a, [hl]
+	and $f
+	ld [wSecondLockTrashCanIndex], a
+
+	ld a, TEXT_VERMILIONGYM_FOUND_FIRST_SWITCH
+	jr .displayText
+
+.trySecondLock
+	ld a, [wSecondLockTrashCanIndex]
+	ld b, a
+	ld a, [wGymTrashCanIndex]
+	cp b
+	jr z, .openSecondLock
+
+; Reset the cans. ; PureRGBnote: CHANGED: don't reset locks because it's just an annoying waste of time
+	;ResetEvent EVENT_1ST_LOCK_OPENED
+	;call Random
+
+	;and $e
+	;ld [wFirstLockTrashCanIndex], a
+
+	;tx_pre_id VermilionGymTrashFailText
+	jr .onlyTrashHere
+
+.openSecondLock
+; Completed the trash can puzzle.
+	SetEvent EVENT_2ND_LOCK_OPENED
+	ld hl, wCurrentMapScriptFlags
+	set BIT_CUR_MAP_LOADED_2, [hl]
+
+	ld a, TEXT_VERMILIONGYM_FOUND_SECOND_SWITCH
+	jr .displayText
+
+GymTrashCans:
+; byte 0: mask for random number
+; bytes 1-4: indices of the trash cans that can have the second lock
+;            (but see the comment above explaining a bug regarding this)
+; Note that the mask is simply the number of valid trash can indices that
+; follow. The remaining bytes are filled with 0 to pad the length of each entry
+; to 5 bytes.
+	db 2,  1,  3,  0,  0 ; 0
+	db 3,  0,  2,  4,  0 ; 1
+	db 2,  1,  5,  0,  0 ; 2
+	db 3,  0,  4,  6,  0 ; 3
+	db 4,  1,  3,  5,  7 ; 4
+	db 3,  2,  4,  8,  0 ; 5
+	db 3,  3,  7,  9,  0 ; 6
+	db 4,  4,  6,  8, 10 ; 7
+	db 3,  5,  7, 11,  0 ; 8
+	db 3,  6, 10, 12,  0 ; 9
+	db 4,  7,  9, 11, 13 ; 10
+	db 3,  8, 10, 14,  0 ; 11
+	db 2,  9, 13,  0,  0 ; 12
+	db 3, 10, 12, 14,  0 ; 13
+	db 2, 11, 13,  0,  0 ; 14
+
+VermilionGymTrashSuccessText1::
+	text_far _VermilionGymTrashSuccessText1
+	text_asm
+	ld a, SFX_SWITCH
+	call PlaySoundWaitForCurrent
+	call DisplayTextPromptButton
+	ld hl, .lockOpened
+	rst _PrintText
+	ld a, SFX_TELEPORT_ENTER_2
+	call PlaySoundWaitForCurrent
+	call WaitForSoundToFinish
+	rst TextScriptEnd
+.lockOpened
+	text_far_end _VermilionGym1stElectricLock
+
+VermilionGymTrashSuccessText3::
+	text_far _VermilionGymTrashSuccessText2
+	text_asm
+	ld a, SFX_SWITCH
+	call PlaySoundWaitForCurrent
+	call DisplayTextPromptButton
+	ld hl, .lockOpened
+	rst _PrintText
+	ld a, SFX_TELEPORT_ENTER_2
+	call PlaySoundWaitForCurrent
+	call DisplayTextPromptButton
+	ld hl, .motorizedDoorOpened
+	rst _PrintText
+	ld a, SFX_GO_INSIDE
+	call PlaySoundWaitForCurrent
+	call WaitForSoundToFinish
+	rst TextScriptEnd
+.lockOpened
+	text_far_end _VermilionGym2ndElectricLock
+.motorizedDoorOpened
+	text_far_end _VermilionGymTrashSuccessText3
+
+;VermilionGymTrashFailText::
+;	text_far _VermilionGymTrashFailText
+;	text_asm
+;	ld a, SFX_DENIED
+;	rst PlaySoundWaitForCurrent
+;	call WaitForSoundToFinish
+;	rst TextScriptEnd

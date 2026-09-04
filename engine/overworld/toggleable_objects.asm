@@ -5,7 +5,7 @@ MarkTownVisitedAndLoadToggleableObjects::
 	ld c, a
 	ld b, FLAG_SET
 	ld hl, wTownVisitedFlag   ; mark town as visited (for flying)
-	predef FlagActionPredef
+	call FlagAction
 .notInTown
 	ld hl, ToggleableObjectMapPointers
 	ld a, [wCurMap]
@@ -105,7 +105,7 @@ InitializeToggleableObjectsFlags:
 	ld a, [wToggleableObjectCounter]
 	ld c, a
 	ld b, FLAG_SET
-	call ToggleableObjectFlagAction ; set flag if object is toggled off
+	call FlagAction ; set flag if object is toggled off
 .skip
 	ld hl, wToggleableObjectCounter
 	inc [hl]
@@ -135,7 +135,7 @@ InitializeExtraToggleableObjectsFlags::
 	ld a, [wToggleableObjectCounter]
 	ld c, a
 	ld b, FLAG_SET
-	call ToggleableObjectFlagAction ; set flag if Item is hidden
+	call FlagAction ; set flag if Item is hidden
 .skip
 	ld hl, wToggleableObjectCounter
 	inc [hl]
@@ -143,140 +143,6 @@ InitializeExtraToggleableObjectsFlags::
 	inc hl
 	inc hl
 	jr .toggleableObjectsLoop
-
-; tests if current object is toggled off/has been hidden
-IsObjectHidden:
-	ldh a, [hCurrentSpriteOffset]
-	swap a
-	ld b, a
-	ld hl, wToggleableObjectList
-.loop
-	ld a, [hli]
-	cp -1
-	jr z, .notHidden ; not toggleable -> not hidden
-	cp b
-	ld a, [hli]
-	jr nz, .loop
-	ld c, a
-	ld b, FLAG_TEST
-;;;;;;;;;; PureRGBnote: ADDED: when in certain maps we use a different set of flags for hiding/showing objects.
-	CheckEvent EVENT_IN_EXTRA_TOGGLEABLE_OBJECTS_MAP
-	ld hl, wToggleableObjectFlags
-	jr z, .doAction
-.extraMap
-	ld hl, wExtraToggleableObjectFlags
-.doAction
-;;;;;;;;;;
-	call ToggleableObjectFlagAction
-	ld a, c
-	and a
-	jr nz, .hidden
-.notHidden
-	xor a
-.hidden
-	ldh [hIsToggleableObjectOff], a
-	ret
-
-; adds toggleable object (items, leg. pokemon, etc.) to the map
-; [wToggleableObjectIndex]: index of the toggleable object to be added (global index)
-ShowObject:
-	ld hl, wToggleableObjectFlags
-	jr ShowObjectCommon
-
-ShowExtraObject:
-	ld hl, wExtraToggleableObjectFlags
-	; fall through
-ShowObjectCommon:
-	ld a, [wToggleableObjectIndex]
-	ld c, a
-	ld b, FLAG_RESET
-	call ToggleableObjectFlagAction   ; reset "removed" flag
-	jp UpdateSprites
-
-; removes toggleable object (items, leg. pokemon, etc.) from the map
-; [wToggleableObjectIndex]: index of the toggleable object to be removed (global index)
-HideObject:
-	ld hl, wToggleableObjectFlags
-	jr HideObjectCommon
-
-HideExtraObject:
-	ld hl, wExtraToggleableObjectFlags
-	; fall through
-
-HideObjectCommon:
-	ld a, [wToggleableObjectIndex]
-	ld c, a
-	ld b, FLAG_SET
-	call ToggleableObjectFlagAction   ; set "removed" flag
-	jp UpdateSprites
-
-ToggleableObjectFlagAction:
-; identical to FlagAction ; TODO: use flagaction instead?
-
-	push hl
-	push de
-	push bc
-
-	; bit
-	ld a, c
-	ld d, a
-	and 7
-	ld e, a
-
-	; byte
-	ld a, d
-	srl_a_3x
-	add l
-	ld l, a
-	jr nc, .ok
-	inc h
-.ok
-
-	; d = 1 << e (bitmask)
-	inc e
-	ld d, 1
-.shift
-	dec e
-	jr z, .shifted
-	sla d
-	jr .shift
-.shifted
-
-	ld a, b
-	and a
-	jr z, .reset
-	cp FLAG_TEST
-	jr z, .read
-
-; set
-	ld a, [hl]
-	ld b, a
-	ld a, d
-	or b
-	ld [hl], a
-	jr .done
-
-.reset
-	ld a, [hl]
-	ld b, a
-	ld a, d
-	cpl
-	and b
-	ld [hl], a
-	jr .done
-
-.read
-	ld a, [hl]
-	ld b, a
-	ld a, d
-	and b
-
-.done
-	pop bc
-	pop de
-	pop hl
-	ld c, a
-	ret
 
 ; input e = which flag it is
 ; output d = what the default state is

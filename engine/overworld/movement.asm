@@ -1,5 +1,4 @@
 ; PureRGBnote: CHANGED: file was updated to deal with higher framerate (60fps) overworld.
-DEF MAP_TILESET_SIZE EQU $60
 
 UpdatePlayerSprite:
 	CheckFlag FLAG_HIDE_PLAYER_SPRITE
@@ -34,7 +33,7 @@ UpdatePlayerSprite:
 ; check if down
 	bit PLAYER_DIR_BIT_DOWN, a
 	jr z, .checkIfUp
-	xor a ; ld a, SPRITE_FACING_DOWN
+	xor a ; SPRITE_FACING_DOWN
 	jr .next
 .checkIfUp
 	bit PLAYER_DIR_BIT_UP, a
@@ -382,20 +381,15 @@ UpdateSpriteInWalkingAnimation:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;shinpokerednote: 60fps - updated xy every other tick
 	pop bc
-	push bc
 	ld a, b
 	and a 
 	jr nz, .xydone
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;	
 	ld a, [hli]                      ; x#SPRITESTATEDATA1_YSTEPVECTOR
-	ld b, a
-	ld a, [hl]                       ; x#SPRITESTATEDATA1_YPIXELS
-	add b
+	add [hl]
 	ld [hli], a                      ; update [x#SPRITESTATEDATA1_YPIXELS]
 	ld a, [hli]                      ; x#SPRITESTATEDATA1_XSTEPVECTOR
-	ld b, a
-	ld a, [hl]                       ; x#SPRITESTATEDATA1_XPIXELS
-	add b
+	add [hl]
 	ld [hl], a                       ; update [x#SPRITESTATEDATA1_XPIXELS]
 .xydone
 	ldh a, [hCurrentSpriteOffset]
@@ -404,7 +398,6 @@ UpdateSpriteInWalkingAnimation:
 	ld a, [hl]                       ; x#SPRITESTATEDATA2_WALKANIMATIONCOUNTER
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;shinpokerednote: 60fps - make the delay decounter update every other tick	
-	pop bc
 	add b	;60fps
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	dec a
@@ -570,8 +563,35 @@ InitializeSpriteScreenPosition:
 
 ; tests if sprite is off screen or otherwise unable to do anything
 CheckSpriteAvailability:
-	predef IsObjectHidden
-	ldh a, [hIsToggleableObjectOff]
+;;;; IsObjectHidden: ; tests if current object is toggled off/has been hidden ; was moved here because it was only used once anyway
+	ldh a, [hCurrentSpriteOffset]
+	swap a
+	ld b, a
+	ld hl, wToggleableObjectList
+.loop
+	ld a, [hli]
+	cp -1
+	jr z, .notHidden ; not toggleable -> not hidden
+	cp b
+	ld a, [hli]
+	jr nz, .loop
+	ld c, a
+	ld b, FLAG_TEST
+;;;;;;;;;; PureRGBnote: ADDED: when in certain maps we use a different set of flags for hiding/showing objects.
+	CheckEvent EVENT_IN_EXTRA_TOGGLEABLE_OBJECTS_MAP
+	ld hl, wToggleableObjectFlags
+	jr z, .doAction
+.extraMap
+	ld hl, wExtraToggleableObjectFlags
+.doAction
+;;;;;;;;;;
+	call FlagAction
+	and a
+	jr nz, .hidden
+.notHidden
+	xor a
+.hidden
+;;;;
 	and a
 	jp nz, .spriteInvisible
 	ld h, HIGH(wSpriteStateData2)
@@ -850,8 +870,7 @@ DoScriptedNPCMovement:
 ; a few times in the game. It is used when the NPC and player must walk together
 ; in sync, such as when the player is following the NPC somewhere. An NPC can't
 ; be moved in sync with the player using the other method.
-	ld a, [wStatusFlags5]
-	bit BIT_SCRIPTED_MOVEMENT_STATE, a
+	call IsPlayerAutoMoving
 	ret z
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; shinpokerednote: 60fps - update animations every other frame and halve movement

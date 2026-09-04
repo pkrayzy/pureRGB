@@ -1,13 +1,8 @@
-DrawHP:
-; Draws the HP bar in the stats screen
-	call GetPredefRegisters
-	ld a, $1
-	jr DrawHP_
-
-DrawHP2:
-; Draws the HP bar in the party screen
-	call GetPredefRegisters
-	ld a, $2
+DrawHP::
+; Draws the HP bar, c = 1 (stats screen), c = 2 (party screen)
+	ld h, d
+	ld l, e
+	ld a, c
 
 DrawHP_:
 	ld [wHPBarType], a
@@ -86,29 +81,29 @@ StatusScreen:
 	ld de, BattleHudTiles1  ; source
 	ld hl, vChars2 tile $6d ; dest
 	lb bc, BANK(BattleHudTiles1), 3
-	call CopyVideoDataDouble ; ·│ :L and halfarrow line end
+	call CopyVideoDataHBlankDouble ; ·│ :L and halfarrow line end
 	ld de, BattleHudTiles2
 	ld hl, vChars2 tile $78
 	lb bc, BANK(BattleHudTiles2), 1
-	call CopyVideoDataDouble ; │
+	call CopyVideoDataHBlankDouble ; │
 	ld de, BattleHudTiles3
 	ld hl, vChars2 tile $76
 	lb bc, BANK(BattleHudTiles3), 2
-	call CopyVideoDataDouble ; ─ ┘
+	call CopyVideoDataHBlankDouble ; ─ ┘
 	ld de, PTile
 	ld hl, vChars2 tile $72
 	lb bc, BANK(PTile), 1
-	call CopyVideoDataDouble ; bold P (for PP)
+	call CopyVideoDataHBlankDouble ; bold P (for PP)
 	; copy the apex prompt and the stat exp prompt, which is next to it in memory
 	ld hl, vFont tile 73
 	ld de, ApexPrompt
 	lb bc, BANK(ApexPrompt), 7
-	call CopyVideoDataDouble
+	call CopyVideoDataHBlankDouble
 	ASSERT BANK(StatExpPrompt) == BANK(ApexPrompt)
 	ld hl, vFont tile 80
 	ld de, PokeBallSprite
 	lb bc, BANK(PokeBallSprite), 4
-	call CopyVideoData
+	call CopyVideoDataHBlank
 	ldh a, [hTileAnimations]
 	push af
 	ld a, [wUpdateSpritesEnabled]
@@ -130,12 +125,13 @@ StatusScreen:
 	hlcoord 10, 9
 	ld de, TypesIDNoOTText
 	call PlaceString
-	hlcoord 11, 3
-	predef DrawHP
+	decoord 11, 3
+	ld c, 1
+	callfar DrawHP
 	ld hl, wStatusScreenHPBarColor
 	call GetHealthBarColor
-	ld b, SET_PAL_STATUS_SCREEN
-	call RunPaletteCommand
+	ld d, SET_PAL_STATUS_SCREEN
+	call RunPaletteCommandWithoutGBCDelay
 	hlcoord 16, 6
 	ld de, wLoadedMonStatus
 	call PrintStatusCondition
@@ -152,13 +148,13 @@ StatusScreen:
 	ld a, [wMonHIndex]
 	ld [wPokedexNum], a
 	ld [wCurSpecies], a
-	predef IndexToPokedex
+	call IndexToPokedex
 	hlcoord 3, 7
 	ld de, wPokedexNum
 	lb bc, LEADING_ZEROES | 1, 3
 	call PrintNumber ; Pokémon no.
-	hlcoord 11, 10
-	predef PrintMonType
+	decoord 11, 10
+	callfar PrintMonType
 	ld hl, NamePointers2
 	call .GetStringPointer
 	ld d, h

@@ -1,34 +1,17 @@
-TextScript_ItemStoragePC::
-	call SaveScreenTilesToBuffer2
-	ld b, BANK(PlayerPC)
-	ld hl, PlayerPC
-	jr BankswitchAndContinue
-
-TextScript_BillsPC::
-	call SaveScreenTilesToBuffer2
-	ld b, BANK(BillsPC_)
-	ld hl, BillsPC_
-	jr BankswitchAndContinue
-
-TextScript_GameCornerPrizeMenu::
-	ld b, BANK(CeladonPrizeMenu)
-	ld hl, CeladonPrizeMenu
-BankswitchAndContinue::
-	rst _Bankswitch
-	jp HoldTextDisplayOpen        ; continue to main text-engine function
-
-TextScript_PokemonCenterPC::
-	ld b, BANK(ActivatePC)
-	ld hl, ActivatePC
-	jr BankswitchAndContinue
-
+StartSimulatingJoypadStatesOnlyAOrBPress::
+	ld a, PAD_START | PAD_SELECT | PAD_CTRL_PAD
+	jr StartSimulatingJoypadStatesNoJoypad.load
+	
+StartSimulatingJoypadStatesNoJoypad::
+	xor a
+.load
+	ld [wJoyIgnore], a
+	; fall through
 StartSimulatingJoypadStates::
 	xor a
 	ld [wOverrideSimulatedJoypadStatesMask], a
 	ld [wSpritePlayerStateData2MovementByte1], a
-	ld hl, wStatusFlags5
-	set BIT_SCRIPTED_MOVEMENT_STATE, [hl]
-	ret
+	jp SetPlayerAutoMoving
 
 IsItemInBag::
 ; given an item_id in b
@@ -47,7 +30,7 @@ DisplayPokedex::
 SetSpriteFacingDirectionAndDelay::
 	call SetSpriteFacingDirection
 	ld c, 6
-	rst _DelayFrames
+	rst DelayFrames
 	ret
 
 SetSpriteFacingDirection::
@@ -103,30 +86,6 @@ CheckCoords::
 .notInArray
 	and a
 	ret
-
-; tests if a boulder's coordinates are in a specified array
-; INPUT:
-; hl = address of array
-; [hSpriteIndex] = index of boulder sprite
-; OUTPUT:
-; [wCoordIndex] = if there is match, the matching array index
-; sets carry if the coordinates are in the array, clears carry if not
-CheckBoulderCoords::
-	push hl
-	ld hl, wSpritePlayerStateData2MapY
-	ldh a, [hSpriteIndex]
-	swap a
-	ld d, $0
-	ld e, a
-	add hl, de
-	ld a, [hli]
-	sub $4 ; because sprite coordinates are offset by 4
-	ld b, a
-	ld a, [hl]
-	sub $4 ; because sprite coordinates are offset by 4
-	ld c, a
-	pop hl
-	jp CheckCoords
 
 GetFromSpriteStateData1::
 	ld a, c
@@ -189,15 +148,16 @@ DecodeRLEList::
 	ret
 
 ; sets movement byte 1 for sprite [hSpriteIndex] to $FE and byte 2 to [hSpriteMovementByte2]
-SetSpriteMovementBytesToFE::
-	push hl
-	call GetSpriteMovementByte1Pointer
-	ld [hl], $fe
-	call GetSpriteMovementByte2Pointer
-	ldh a, [hSpriteMovementByte2]
-	ld [hl], a
-	pop hl
-	ret
+; PureRGBnote: unused?
+;SetSpriteMovementBytesToFE::
+;	push hl
+;	call GetSpriteMovementByte1Pointer
+;	ld [hl], $fe
+;	call GetSpriteMovementByte2Pointer
+;	ldh a, [hSpriteMovementByte2]
+;	ld [hl], a
+;	pop hl
+;	ret
 
 ; sets both movement bytes for sprite [hSpriteIndex] to $FF
 SetSpriteMovementBytesToFF::
@@ -230,3 +190,17 @@ GetSpriteMovementByte2Pointer::
 	add hl, de
 	pop de
 	ret
+
+TextScript_CableClubNPC::
+	jpfar CableClubNPC
+
+TextScript_Trainer::
+	inc hl
+	hl_deref
+	jp TalkToTrainer
+
+; input hl = script pointers for the current map
+CallMapScriptInTable::
+	call EnableAutoTextBoxDrawing
+	ld a, [de]
+	jp CallFunctionInTable

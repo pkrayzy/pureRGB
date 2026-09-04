@@ -3,50 +3,35 @@ CinnabarMart_Script:
 
 CinnabarMart_TextPointers:
 	def_text_pointers
-	dw_const CinnabarMartClerkText,        TEXT_CINNABARMART_CLERK
-	dw_const CinnabarMartSilphWorkerFText, TEXT_CINNABARMART_SILPH_WORKER_F
-	dw_const CinnabarMartScientistText,    TEXT_CINNABARMART_SCIENTIST
-	dw_const CinnabarMartTMKid,            TEXT_CINNABARMART_TM_KID
+	dba_const CinnabarMartClerkText,         TEXT_CINNABARMART_CLERK
+	dba_const _CinnabarMartSilphWorkerFText, TEXT_CINNABARMART_SILPH_WORKER_F
+	dba_const _CinnabarMartScientistText,    TEXT_CINNABARMART_SCIENTIST
+	dba_const CinnabarMartTMKid,             TEXT_CINNABARMART_TM_KID
 
 CinnabarMartTMKid: ; PureRGBnote: ADDED: new NPC who will sell TMs
 	text_asm
 	ld hl, .TMKidGreet
 	rst _PrintText
-	CheckEvent EVENT_MET_CINNABAR_TM_KID
-	jr z, .intro
-	ld hl, .TMKidQuick
-	rst _PrintText
-	jr .shop
-.intro
+	CheckAndSetEvent EVENT_MET_CINNABAR_TM_KID
 	ld hl, .TMKidFlavor
+	jr z, .gotText
+	ld hl, .TMKidQuick
+.gotText
 	rst _PrintText
-	SetEvent EVENT_MET_CINNABAR_TM_KID
-.shop
 	ld hl, CinnabarTMKidShop
 	call DisplayPokemartNoGreeting
 	rst TextScriptEnd
 	
 .TMKidGreet::
-	text_far _TMKidGreet
-	text_end
+	text_far_end _TMKidGreet
 
 .TMKidFlavor:
 	text_far _TMKidBringingTMsAnyCost
 	text_far _CinnabarMartTMKidFlavor
 	text_far _TMKidSellingTMsCopiedDadOriginals
-	text_far _TMKidWantSomeText
-	text_end
+	text_far_end _TMKidWantSomeText
 
 .TMKidQuick::
-	text_far _TMKidQuick
-	text_end
-
-CinnabarMartSilphWorkerFText:
-	text_far _CinnabarMartSilphWorkerFText
-	text_end
-
-CinnabarMartScientistText:
-	text_far _CinnabarMartScientistText
-	text_end
+	text_far_end _TMKidQuick
 
 INCLUDE "data/items/marts/cinnabar.asm"

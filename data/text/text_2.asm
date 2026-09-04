@@ -130,15 +130,19 @@ _DexRatingText::
 	text "#DEX Rating<COLON>"
 	done
 
-_GymStatueText::
+_GymSignGenericCallText::
+	db "@"
+_GymSignGenericText::
 	text_ram_stringbuffer
 	text_start
 	line "#MON GYM"
 	cont "LEADER: @"
 	text_ram_namebuffer
-	text_start
+	text_end
 
-	para "WINNING <TRAINER>S:@"
+_GymStatueText::
+	text_call _GymSignGenericCallText
+	text "<PARA>WINNING <TRAINER>S:@"
 	text_end
 
 _GymStatueRival::
@@ -150,14 +154,14 @@ _GymStatueRivalPlayer::
 	cont "<PLAYER>"
 	done
 
-_ViridianCityPokecenterGuyText::
+_ViridianPokecenterBenchGuyText::
 	text "#MON CENTERs"
 	line "heal your tired,"
 	cont "hurt or fainted"
 	cont "#MON!"
 	done
 
-_PewterCityPokecenterGuyText::
+_PewterPokecenterBenchGuyText::
 	text "Yawn!"
 
 	para "When JIGGLYPUFF"
@@ -168,7 +172,7 @@ _PewterCityPokecenterGuyText::
 	line "Snore<...>"
 	done
 
-_CeruleanPokecenterGuyText::
+_CeruleanPokecenterBenchGuyText::
 	text "BILL has lots of"
 	line "#MON!"
 
@@ -176,7 +180,7 @@ _CeruleanPokecenterGuyText::
 	line "ones too!"
 	done
 
-_LavenderPokecenterGuyText::
+_LavenderPokecenterBenchGuyText::
 	text "CUBONEs wear"
 	line "skulls, right?"
 
@@ -191,18 +195,13 @@ _MtMoonPokecenterBenchGuyText::
 	cont "via <PC>!"
 	done
 
-_RockTunnelPokecenterGuyText::
+_RockTunnelPokecenterBenchGuyText::
 	text "I heard that"
 	line "GHOSTs haunt"
 	cont "LAVENDER TOWN!"
 	done
 
-_UnusedBenchGuyText1::
-	text "I wish I could"
-	line "catch #MON."
-	done
-
-_UnusedBenchGuyText2::
+_SafariZoneTiredGuyText::
 	text "I'm tired from"
 	line "all the fun<...>"
 	done
@@ -213,7 +212,7 @@ _UnusedBenchGuyText2::
 ;	cont "SAFARI ZONE."
 ;	done
 
-_VermilionPokecenterGuyText::
+_VermilionPokecenterBenchGuyText::
 	text "It is true that a"
 	line "higher level"
 	cont "#MON will be"
@@ -229,13 +228,13 @@ _VermilionPokecenterGuyText::
 	cont "strong #MON."
 	done
 
-_CeladonCityPokecenterGuyText::
+_CeladonPokecenterBenchGuyText::
 	text "If I had a BIKE,"
 	line "I would go to"
 	cont "CYCLING ROAD!"
 	done
 
-_FuchsiaCityPokecenterGuyText::
+_FuchsiaPokecenterBenchGuyText::
 	text "If you're studying"
 	line "#MON, visit"
 	cont "the SAFARI ZONE."
@@ -244,7 +243,7 @@ _FuchsiaCityPokecenterGuyText::
 	line "of rare #MON."
 	done
 
-_CinnabarPokecenterGuyText::
+_CinnabarPokecenterBenchGuyText::
 	text "#MON can still"
 	line "learn techniques"
 	cont "after canceling"
@@ -269,7 +268,7 @@ _SaffronCityPokecenterGuyText2::
 	cont "That's great!"
 	done
 
-_CeladonCityHotelText::
+_CeladonHotelBenchGuyText::
 	text "My sis brought me"
 	line "on this vacation!"
 	done
@@ -312,9 +311,10 @@ _RangerHuntSuccessText::
 	text "PA: <PLAYER>"
 	line "has defeated all"
 	cont "5 RANGERs!!"
-
-	para "Congratulations!"
-	done
+	para "@"
+	text_far _GenericCongratulationsText
+	sound_get_item_2
+	text_end
 
 _CinnabarGymQuizStartText::
 	text "#MON Quiz!"
@@ -493,14 +493,15 @@ _TurnPageText::
 	done
 
 _ViridianSchoolNotebookText5::
-	text "GIRL: Hey! Don't"
+	text "GIRL" ; fall through
+_ViridianSchoolHeyDontLookAtNotes::
+	db ": Hey! Don't"
 	line "look at my notes!@"
 	text_end
 
 _ViridianSchoolNotebookTextGus::
-	text "GUS: Hey! Don't"
-	line "look at my notes!@"
-	text_end
+	text "GUS@"
+	text_jump _ViridianSchoolHeyDontLookAtNotes
 
 _ViridianSchoolNotebookText1::
 	text "Looked at the"
@@ -577,11 +578,6 @@ _FightingDojoText::
 	text "FIGHTING DOJO"
 	done
 
-_IndigoPlateauHQText::
-	text "INDIGO PLATEAU"
-	line "#MON LEAGUE HQ"
-	done
-
 _RedBedroomSNESText::
 	text "<PLAYER> is"
 	line "playing the SNES!"
@@ -593,16 +589,12 @@ _Route15UpstairsBinocularsText::
 	text "A large, shining"
 	line "bird is flying"
 	cont "toward the sea."
-	done
+	prompt
 
-_AerodactylFossilText::
-	text "AERODACTYL Fossil"
-	line "A primitive and"
-	cont "rare #MON."
-	done
-
-_KabutopsFossilText::
-	text "KABUTOPS Fossil"
+_AerodactylKabutopsFossilText::
+	text "@"
+	text_ram wNameBuffer
+	text " Fossil"
 	line "A primitive and"
 	cont "rare #MON."
 	done
@@ -730,27 +722,36 @@ _VermilionGymTrashText::
 _VermilionGymTrashSuccessText1::
 	text "Hey! There's a"
 	line "switch under the"
-	cont "trash!"
-	cont "Turn it on!"
+	cont "trash!@"
+	text_jump _VermilionGymTurnItOn
 
-	para "The 1st electric"
-	line "lock opened!@"
-	text_end
+_VermilionGymTurnItOn::
+	cont "Turn it on!"
+	done
+
+_VermilionGym1stElectricLock::
+	text "The 1st@"
+	text_jump _VermilionTheElectricLockOpened
+
+_VermilionGym2ndElectricLock::
+	text "The 2nd@"
+	text_jump _VermilionTheElectricLockOpened
+
+_VermilionTheElectricLockOpened::
+	db " electric"
+	line "lock opened!"
+	done
 
 _VermilionGymTrashSuccessText2::
 	text "Hey! There's"
 	line "another switch"
-	cont "under the trash!"
-	cont "Turn it on!"
-	prompt
+	cont "under the trash!@"
+	text_jump _VermilionGymTurnItOn
 
 _VermilionGymTrashSuccessText3::
-	text "The 2nd electric"
-	line "lock opened!"
-
-	para "The motorized door"
-	line "opened!@"
-	text_end
+	text "The motorized door"
+	line "opened!"
+	done
 
 ;_VermilionGymTrashFailText::
 ;	text "Nope! There's"
@@ -786,17 +787,12 @@ _FoundHiddenCoinsText::
 	line "@"
 	text_bcd hCoins, 2 | LEADING_ZEROES | LEFT_ALIGN
 	text " coins!@"
-	text_end
-
-_FoundHiddenCoins2Text::
-	text "<PLAYER> found"
-	line "@"
-	text_bcd hCoins, 2 | LEADING_ZEROES | LEFT_ALIGN
-	text " coins!@"
+	sound_get_item_2
 	text_end
 
 _DroppedHiddenCoinsText::
 	text_start
+
 	para "Oops! Dropped"
 	line "some coins!"
 	done
@@ -1188,10 +1184,10 @@ _SubstituteBrokeText::
 	line "SUBSTITUTE broke!"
 	prompt
 
-_BuildingRageText::
-	text "<USER>'s"
-	line "RAGE is building!"
-	prompt
+;_BuildingRageText::
+;	text "<USER>'s"
+;	line "RAGE is building!"
+;	prompt
 
 _MirrorMoveFailedText::
 	text "The MIRROR MOVE"
@@ -1231,6 +1227,7 @@ _GrewLevelText::
 	line "to level @"
 	text_decimal wCurEnemyLevel, 1, 3
 	text "!@"
+	sound_level_up
 	text_end
 
 _WildMonAppearedText::
@@ -1368,8 +1365,17 @@ _PartyMenuNormalText::
 	done
 
 _PartyMenuItemUseText::
-	text "Use item on which"
-	line "#MON?"
+	text "Use @"
+	text_ram_namebuffer
+	text_start
+	line "on which <PK><MN>?"
+	done
+
+_PartyMenuItemUseFullText::
+	text "Use @"
+	text_ram_namebuffer
+	text_start
+	line "on which #MON?"
 	done
 
 _PartyMenuBattleText::
@@ -1447,6 +1453,8 @@ _RareCandyText::
 	line "to level @"
 	text_decimal wCurEnemyLevel, 1, 3
 	text "!@"
+	sound_get_item_1 ; probably supposed to play SFX_LEVEL_UP but the wrong music bank is loaded
+	text_promptbutton
 	text_end
 
 _TurnedOnPC1Text::
@@ -1457,18 +1465,16 @@ _TurnedOnPC1Text::
 _AccessedBillsPCText::
 	text "Accessed BILL's"
 	line "<PC>."
-
+	; fall through
+_AccessedMonStorageSystemText::
 	para "Accessed #MON"
 	line "Storage System."
 	prompt
 
 _AccessedSomeonesPCText::
 	text "Accessed someone's"
-	line "<PC>."
-
-	para "Accessed #MON"
-	line "Storage System."
-	prompt
+	line "<PC>.@"
+	text_jump _AccessedMonStorageSystemText
 
 _AccessedMyPCText::
 	text "Accessed my <PC>."
@@ -1572,15 +1578,11 @@ _WhatText::
 	text "What?"
 	done
 
-_ViewModeText::
-	text "BOX viewer"
-	line "mode active."
-	done
-
-_DepositWhichMonText::
-	text "Deposit which"
-	line "#MON?"
-	done
+; PureRGBnote: unused text
+;_DepositWhichMonText::
+;	text "Deposit which?"
+;	line "#MON?"
+;	done
 
 _MonWasStoredText::
 	text_ram_stringbuffer
@@ -1622,10 +1624,11 @@ _CantTakeMonText::
 	line "first."
 	prompt
 
-_ReleaseWhichMonText::
-	text "Release which"
-	line "#MON?"
-	done
+; PureRGBnote: CHANGED: now unused text
+;_ReleaseWhichMonText::
+;	text "Release which"
+;	line "#MON?"
+;	done
 
 _OnceReleasedText::
 	text "Once released,"
@@ -1652,6 +1655,7 @@ _PressStartToReleaseText::
 _RequireCoinCaseText::
 	text "A COIN CASE is"
 	line "required!@"
+	text_waitbutton
 	text_end
 
 _ExchangeCoinsForPrizesText::
@@ -1669,8 +1673,9 @@ _HereYouGoText::
 	done
 
 _GoodChoice::
-	text "Good choice!"
-	done
+	text "Good choice!@"
+	text_waitbutton
+	text_end
 
 _SoYouWantPrizeText::
 	text "So, you want"
@@ -1682,15 +1687,18 @@ _SoYouWantPrizeText::
 _SorryNeedMoreCoinsText::
 	text "Sorry, you need"
 	line "more coins.@"
+	text_waitbutton
 	text_end
 
 _OopsYouDontHaveEnoughRoomText::
 	text "Oops! You don't"
 	line "have enough room.@"
+	text_waitbutton
 	text_end
 
 _OhFineThenText::
 	text "Oh, fine then.@"
+	text_waitbutton
 	text_end
 
 _GetDexRatedText::
@@ -1701,6 +1709,7 @@ _GetDexRatedText::
 _ClosedOaksPCText::
 	text "Closed link to"
 	line "PROF.OAK's <PC>.@"
+	text_waitbutton
 	text_end
 
 _AccessedOaksPCText::
@@ -1816,14 +1825,15 @@ _WillBeTradedText::
 ;	text " ERROR."
 ;	done
 
-_ContCharText::
-	text "<_CONT>@"
-	text_end
-
 _CantDepositSSTicketText::
 	text "You need that"
 	line "ticket while"
 	cont "on the S.S.ANNE!"
+	prompt
+
+_CantDepositBikeText::
+	text "You're riding it!"
+	line "Can't deposit now!"
 	prompt
 
 _SpiritAppearedNextLine::
@@ -1894,3 +1904,8 @@ _SaveFileUpdateWarpText::
 	cont "to a new version."
 	para "Warp to PALLET?"
 	done
+
+_MimicNoPointText::
+	text "No point in"
+	line "mimicking MIMIC!"
+	prompt

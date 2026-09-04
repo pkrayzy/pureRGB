@@ -1,8 +1,16 @@
 ; PureRGBnote: CHANGED: this function was modified in order to facilitate remapping types of pokemon to their original ones.
 ; [wCurSpecies] = pokemon ID
-; hl = dest addr
-PrintMonType:
-	call GetPredefRegisters
+; de = dest addr
+PrintMonTypeSingleSpaced::
+	ld bc, SCREEN_WIDTH
+	jr PrintMonTypeCommon
+	
+PrintMonType::
+	ld bc, SCREEN_WIDTH * 2
+PrintMonTypeCommon::
+	push bc
+	ld h, d
+	ld l, e
 	push hl
 	push hl
 	call GetMonHeader
@@ -19,8 +27,8 @@ PrintMonType:
 	pop hl
 	ld a, e
 	cp d
+	pop bc
 	jr z, EraseType2Text
-	ld bc, SCREEN_WIDTH * 2
 	add hl, bc
 
 ; a = type
@@ -32,13 +40,14 @@ PrintType:
 ; erase "TYPE2/" if the mon only has 1 type
 EraseType2Text:
 	ld a, ' '
-	ld bc, $13
+	ld bc, SCREEN_WIDTH - 1
 	add hl, bc
-	ld bc, $6
+	ld bc, CHARLEN("TYPE2/")
 	jp FillMemory
 
-PrintMoveType:
-	call GetPredefRegisters
+PrintMoveType::
+	ld h, d
+	ld l, e
 	push hl
 	ld a, [wPlayerMoveType]
 ; fall through

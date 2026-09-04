@@ -13,10 +13,10 @@ SSAnneCaptainsRoomEventScript:
 
 SSAnneCaptainsRoom_TextPointers:
 	def_text_pointers
-	dw_const SSAnneCaptainsRoomCaptainText,     TEXT_SSANNECAPTAINSROOM_CAPTAIN
-	dw_const SSAnneCaptainsRoomTrashText,       TEXT_SSANNECAPTAINSROOM_TRASH
-	dw_const SSAnneCaptainsRoomSeasickBookText, TEXT_SSANNECAPTAINSROOM_SEASICK_BOOK
-	dw_const SSAnneCaptainsRoomCutBookText, TEXT_SSANNECAPTAINSROOM_CUT_BOOK
+	dba_const SSAnneCaptainsRoomCaptainText,     TEXT_SSANNECAPTAINSROOM_CAPTAIN
+	dba_const _SSAnneCaptainsRoomTrashText,       TEXT_SSANNECAPTAINSROOM_TRASH
+	dba_const _SSAnneCaptainsRoomSeasickBookText, TEXT_SSANNECAPTAINSROOM_SEASICK_BOOK
+	dba_const SSAnneCaptainsRoomCutBookText, TEXT_SSANNECAPTAINSROOM_CUT_BOOK
 
 SSAnneCaptainsRoomCaptainText:
 	text_asm
@@ -86,13 +86,12 @@ SSAnneCaptainsRoomCaptainText:
 	ld a, S_S_TICKET
 	ldh [hItemToRemoveID], a
 	farcall RemoveItemByID
-	ld a, TOGGLE_VERMILIONFITNESSCLUB_CLERK
-	call .showObject
-	ld a, TOGGLE_VERMILIONFITNESSCLUB_MUSCLE1
-	call .showObject
-	ld a, TOGGLE_VERMILIONFITNESSCLUB_JANITOR
-	ld [wToggleableObjectIndex], a
-	predef HideExtraObject
+	ld c, TOGGLE_VERMILIONFITNESSCLUB_CLERK
+	call ShowExtraObject
+	ld c, TOGGLE_VERMILIONFITNESSCLUB_MUSCLE1
+	call ShowExtraObject
+	ld c, TOGGLE_VERMILIONFITNESSCLUB_JANITOR
+	call HideExtraObject
 	ld hl, .SSAnneWontBeNeedingThatAnymore
 	jr .printDone
 .bag_full
@@ -103,19 +102,13 @@ SSAnneCaptainsRoomCaptainText:
 	rst _PrintText
 .done
 	rst TextScriptEnd
-.showObject
-	ld [wToggleableObjectIndex], a
-	predef_jump ShowExtraObject
 
 .SSAnneCaptainsRoomCaptainFeelingABitBetter
-	text_far _SSAnneCaptainsRoomCaptainFeelingABitBetter
-	text_end
+	text_far_end _SSAnneCaptainsRoomCaptainFeelingABitBetter
 .SSAnneCaptainCutYourTicket
-	text_far _SSAnneCaptainCutYourTicket
-	text_end
+	text_far_end _SSAnneCaptainCutYourTicket
 .SSAnneWontBeNeedingThatAnymore
-	text_far _SSAnneWontBeNeedingThatAnymore
-	text_end
+	text_far_end _SSAnneWontBeNeedingThatAnymore
 
 SSAnneCaptainsRoomRubCaptainsBackText:
 	text_far _SSAnneCaptainsRoomRubCaptainsBackText
@@ -142,30 +135,19 @@ SSAnneCaptainsRoomRubCaptainsBackText:
 	rst TextScriptEnd
 
 SSAnneCaptainsRoomCaptainIFeelMuchBetterText:
-	text_far _SSAnneCaptainsRoomCaptainIFeelMuchBetterText
-	text_end
+	text_far_end _SSAnneCaptainsRoomCaptainIFeelMuchBetterText
 
 SSAnneCaptainsRoomCaptainReceivedHM01Text:
-	text_far _Route1Youngster1GotPotionText
+	text_far _GenericPlayerGotText
 	sound_get_key_item
 	text_promptbutton
 	text_end
 
 SSAnneCaptainsRoomCaptainNotSickAnymoreText:
-	text_far _SSAnneCaptainsRoomCaptainNotSickAnymoreText
-	text_end
+	text_far_end _SSAnneCaptainsRoomCaptainNotSickAnymoreText
 
 SSAnneCaptainsRoomCaptainHM01NoRoomText:
-	text_far _SSAnneCaptainsRoomCaptainHM01NoRoomText
-	text_end
-
-SSAnneCaptainsRoomTrashText:
-	text_far _SSAnneCaptainsRoomTrashText
-	text_end
-
-SSAnneCaptainsRoomSeasickBookText:
-	text_far _SSAnneCaptainsRoomSeasickBookText
-	text_end
+	text_far_end _SSAnneCaptainsRoomCaptainHM01NoRoomText
 
 SSAnneCaptainsRoomCutBookText:
 	text_far _SSAnneCaptainsRoomCutBookText
@@ -180,9 +162,7 @@ SSAnneCaptainsRoomCutBookText:
 	rst TextScriptEnd
 
 KeepReadingText1:
-	text_far _KeepReadingText
-	text_end
+	text_far_end _KeepReadingText
 
 ForgetItBookText2:
-	text_far _GenericForgetItText
-	text_end
+	text_far_end _GenericForgetItText

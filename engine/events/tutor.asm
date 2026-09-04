@@ -44,7 +44,7 @@ MoveTutorScript::
 	ld a, [hl] ; a = selected pokemon's species
 	ld b, a ; b = selected pokemon's index (species)
 	ld [wPokedexNum], a
-	predef IndexToPokedex
+	call IndexToPokedex
 	ld a, [wPokedexNum]
 	ld c, a ; c = selected pokemon's dex number
 	pop hl ; pop which list should be used into hl from de
@@ -68,11 +68,9 @@ MoveTutorScript::
 	; hl = flag array for all pokemon for the given move, check current pokemon's dex ID against this array
 	ld b, FLAG_TEST
 	; c = pokemon's dex number, aka which bit to check in flag array
-	call FlagAction ; calling FlagAction relies on this code being within Bank 3. Otherwise we need to copy the learnset data to wram and do FlagActionPredef.
+	call FlagAction
 	pop de
 	pop hl
-	ld a, c
-	and a
 	pop bc
 	jr .continue
 .onlyDittoCant
@@ -218,11 +216,9 @@ MoveTutorScript::
 	pop de
 	ret
 .noTeachableMoves
-	text_far _MoveTutorCantTeach
-	text_end
+	text_far_end _MoveTutorCantTeach
 .chooseMove
-	text_far _MoveTutorChooseMoveToLearnText
-	text_end
+	text_far_end _MoveTutorChooseMoveToLearnText
 
 ; input b = whether player needs to pay for the tutor, 0 = no, 1 = yes
 ; hMoney = the cost
@@ -279,17 +275,13 @@ PaidMoveTutorScript::
 	pop de
 	ret
 .notEnough
-	text_far _MoveTutorNotEnoughCash
-	text_end
+	text_far_end _MoveTutorNotEnoughCash
 .itCosts
-	text_far _MoveTutorLearnMoveCost
-	text_end
+	text_far_end _MoveTutorLearnMoveCost
 .noCost
-	text_far _MoveTutorFreebie
-	text_end
+	text_far_end _MoveTutorFreebie
 .ohwell
-	text_far _NoTrade1Text
-	text_end
+	text_far_end _NoTrade1Text
 
 ; show a window listing the moves a given move tutor can teach
 ; input 
@@ -326,8 +318,7 @@ ShowMoveTutorMoveList::
 	call Delay3
 	jp WaitForTextScrollButtonPress
 .info
-	text_far _MoveTutorInfoText
-	text_end
+	text_far_end _MoveTutorInfoText
 
 ; script for move tutors that teach one move
 ; [wMoveNum] = which move will be taught

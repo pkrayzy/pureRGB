@@ -1,10 +1,9 @@
 Route18Gate1F_Script:
 	ld hl, wStatusFlags6
 	res BIT_ALWAYS_ON_BIKE, [hl]
-	call EnableAutoTextBoxDrawing
-	ld a, [wRoute18Gate1FCurScript]
 	ld hl, Route18Gate1F_ScriptPointers
-	jp CallFunctionInTable
+	ld de, wRoute18Gate1FCurScript
+	jp CallMapScriptInTable
 
 Route18Gate1F_ScriptPointers:
 	def_script_pointers
@@ -55,8 +54,7 @@ Route18Gate1FPlayerMovingUpScript:
 	ld a, [wSimulatedJoypadStatesIndex]
 	and a
 	ret nz
-	ld a, PAD_CTRL_PAD
-	ld [wJoyIgnore], a
+	call DisableDpad
 
 Route18Gate1FGuardScript:
 	ld a, TEXT_ROUTE18GATE1F_GUARD
@@ -75,40 +73,27 @@ Route18Gate1FPlayerMovingRightScript:
 	ld a, [wSimulatedJoypadStatesIndex]
 	and a
 	ret nz
-	xor a
-	ld [wJoyIgnore], a
-	ld hl, wStatusFlags5
-	res BIT_SCRIPTED_MOVEMENT_STATE, [hl]
-	ld a, SCRIPT_ROUTE18GATE1F_DEFAULT
-	ld [wRoute18Gate1FCurScript], a
-	ret
+	call EnableAllJoypad
+	ld [wRoute18Gate1FCurScript], a ; SCRIPT_ROUTE18GATE1F_DEFAULT
+	jp StopPlayerAutoMoving
 
 Route18Gate1F_TextPointers:
 	def_text_pointers
-	dw_const Route18Gate1FGuardText,         TEXT_ROUTE18GATE1F_GUARD
-	dw_const Route18Gate1FGuardExcuseMeText, TEXT_ROUTE18GATE1F_GUARD_EXCUSE_ME
+	dba_const Route18Gate1FGuardText,         TEXT_ROUTE18GATE1F_GUARD
+	dba_const _Route18Gate1FGuardExcuseMeText, TEXT_ROUTE18GATE1F_GUARD_EXCUSE_ME
 
 Route18Gate1FGuardText:
 	text_asm
 	call Route16Gate1FIsBicycleInBagScript
-	jr z, .no_bike
-	ld hl, .CyclingRoadUphillText
-	rst _PrintText
-	jr .text_script_end
-.no_bike
 	ld hl, .YouNeedABicycleText
+	jr z, .printDone
+	ld hl, .CyclingRoadUphillText
+.printDone
 	rst _PrintText
-.text_script_end
 	rst TextScriptEnd
 
 .YouNeedABicycleText:
-	text_far _Route18Gate1FGuardYouNeedABicycleText
-	text_end
+	text_far_end _Route18Gate1FGuardYouNeedABicycleText
 
 .CyclingRoadUphillText:
-	text_far _Route18Gate1FGuardCyclingRoadUphillText
-	text_end
-
-Route18Gate1FGuardExcuseMeText:
-	text_far _Route18Gate1FGuardExcuseMeText
-	text_end
+	text_far_end _Route18Gate1FGuardCyclingRoadUphillText

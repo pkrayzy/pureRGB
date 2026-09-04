@@ -65,13 +65,15 @@ DEF CHOSE_SECOND_ITEM EQU 2
 ; party menu types
 ; PartyMenuMessagePointers indexes (see engine/menus/party_menu.asm)
 	const_def
-	const NORMAL_PARTY_MENU    ; $00
-	const USE_ITEM_PARTY_MENU  ; $01
-	const BATTLE_PARTY_MENU    ; $02
-	const TMHM_PARTY_MENU      ; $03
-	const SWAP_MONS_PARTY_MENU ; $04
-	const EVO_STONE_PARTY_MENU ; $05
-	const EMPTY_PARTY_MENU     ; $06
+	const NORMAL_PARTY_MENU          ; $00
+	const BATTLE_PARTY_MENU          ; $01
+	const TMHM_PARTY_MENU            ; $02
+	const SWAP_MONS_PARTY_MENU       ; $03
+	const EMPTY_PARTY_MENU           ; $04
+DEF FIRST_ITEM_NAME_NEEDING_PARTY_MENU_ID EQU const_value
+	const USE_ITEM_PARTY_MENU        ; $05
+	const EVO_STONE_PARTY_MENU       ; $06
+	const USE_ITEM_PARTY_MENU_BATTLE ; $07
 	
 ; party menu message IDs
 ; PartyMenuItemUseMessagePointers indexes (see engine/menus/party_menu.asm)
@@ -93,6 +95,7 @@ DEF FIRST_PARTY_MENU_TEXT_ID EQU const_value
 	const NAME_RIVAL_SCREEN  ; 1
 	const NAME_MON_SCREEN    ; 2
 	const NAME_BALL_SCREEN   ; 3
+	const NAME_BOX_SCREEN    ; 4
 
 ; Stats box layout (see engine/pokemon/status_screen.asm)
 	const_def

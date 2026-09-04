@@ -2,136 +2,20 @@
 
 SilphCo7F_Script:
 	call SilphCo7FGateCallbackScript
-	call EnableAutoTextBoxDrawing
 	ld hl, SilphCo7TrainerHeaders
 	ld de, SilphCo7F_ScriptPointers
-	ld a, [wSilphCo7FCurScript]
-	call ExecuteCurMapScriptInTable
-	ld [wSilphCo7FCurScript], a
-	ret
+	ld bc, wSilphCo7FCurScript
+	jp ExecuteCustomMapScriptInTable
 
 SilphCo7FGateCallbackScript::
-	ld hl, wCurrentMapScriptFlags
-	bit BIT_CUR_MAP_LOADED_1, [hl]
-	res BIT_CUR_MAP_LOADED_1, [hl]
+	call WasMapJustLoaded
 	ret z
-	ld hl, .GateCoordinates
-	call SilphCo7F_SetCardKeyDoorYScript
-	call SilphCo7F_UnlockedDoorEventScript
-	CheckEvent EVENT_SILPH_CO_7_UNLOCKED_DOOR1
-	jr nz, .unlock_door1
-	push af
-	ld a, $54
-	ld [wNewTileBlockID], a
-	lb bc, 3, 5
-	predef ReplaceTileBlock
-	pop af
-.unlock_door1
-	CheckEventAfterBranchReuseA EVENT_SILPH_CO_7_UNLOCKED_DOOR2, EVENT_SILPH_CO_7_UNLOCKED_DOOR1
-	jr nz, .unlock_door2
-	push af
-	ld a, $54
-	ld [wNewTileBlockID], a
-	lb bc, 2, 10
-	predef ReplaceTileBlock
-	pop af
-.unlock_door2
-	CheckEventAfterBranchReuseA EVENT_SILPH_CO_7_UNLOCKED_DOOR3, EVENT_SILPH_CO_7_UNLOCKED_DOOR2
-	jr nz, .maybeFadeIn
-	ld a, $54
-	ld [wNewTileBlockID], a
-	lb bc, 6, 10
-	predef ReplaceTileBlock
-.maybeFadeIn
+	callfar SilphCo7FCardKeyMapLoad
 	ld hl, wCurrentMapScriptFlags
 	bit BIT_MAP_LOADED_AFTER_BATTLE, [hl]
 	res BIT_MAP_LOADED_AFTER_BATTLE, [hl]
 	ret z
 	jp GBFadeInFromWhite ; PureRGBnote: ADDED: since trainer instantly talks to us after battle we need to fade back in here
-
-.GateCoordinates:
-	dbmapcoord  5,  3
-	dbmapcoord 10,  2
-	dbmapcoord 10,  6
-	db -1 ; end
-
-SilphCo7F_SetCardKeyDoorYScript:
-	push hl
-	ld hl, wCardKeyDoorY
-	ld a, [hli]
-	ld b, a
-	ld a, [hl]
-	ld c, a
-	xor a
-	ldh [hUnlockedSilphCoDoors], a
-	pop hl
-.loop_check_doors
-	ld a, [hli]
-	cp $ff
-	jr z, .exit_loop
-	push hl
-	ld hl, hUnlockedSilphCoDoors
-	inc [hl]
-	pop hl
-	cp b
-	jr z, .check_y_coord
-	inc hl
-	jr .loop_check_doors
-.check_y_coord
-	ld a, [hli]
-	cp c
-	jr nz, .loop_check_doors
-	ld hl, wCardKeyDoorY
-	xor a
-	ld [hli], a
-	ld [hl], a
-	ret
-.exit_loop
-	xor a
-	ldh [hUnlockedSilphCoDoors], a
-	ret
-
-SilphCo7F_UnlockedDoorEventScript:
-	EventFlagAddress hl, EVENT_SILPH_CO_7_UNLOCKED_DOOR1
-	ldh a, [hUnlockedSilphCoDoors]
-	and a
-	ret z
-	cp $1
-	jr nz, .unlock_door1
-	SetEventReuseHL EVENT_SILPH_CO_7_UNLOCKED_DOOR1
-	callfar CheckAllCardKeyEvents
-	jp Load7FCheckCardKeyText
-.unlock_door1
-	cp $2
-	jr nz, .unlock_door2
-	SetEventAfterBranchReuseHL EVENT_SILPH_CO_7_UNLOCKED_DOOR2, EVENT_SILPH_CO_7_UNLOCKED_DOOR1
-	callfar CheckAllCardKeyEvents
-	jp Load7FCheckCardKeyText
-.unlock_door2
-	SetEventAfterBranchReuseHL EVENT_SILPH_CO_7_UNLOCKED_DOOR3, EVENT_SILPH_CO_7_UNLOCKED_DOOR1
-	callfar CheckAllCardKeyEvents
-	; fall through
-
-Load7FCheckCardKeyText:
-	CheckEvent EVENT_ALL_CARD_KEY_DOORS_OPENED
-	ret z
-	ld a, TEXT_SILPHCO7F_CARD_KEY_DONE
-	ldh [hTextID], a
-	jp DisplayTextID
-
-SilphCo7Text16:
-	text_asm
-	callfar PrintCardKeyDoneText
-	rst TextScriptEnd
-
-SilphCo7FSetDefaultScript:
-	xor a
-	ld [wJoyIgnore], a
-
-SilphCo7FSetCurScript:
-	ld [wSilphCo7FCurScript], a
-	ld [wCurMapScript], a
-	ret
 
 SilphCo7F_ScriptPointers:
 	def_script_pointers
@@ -148,10 +32,13 @@ SilphCo7FDefaultScript:
 	ld hl, .RivalEncounterCoordinates
 	call ArePlayerCoordsInArray
 	jp nc, CheckFightingMapTrainers
+IF DEF(_DEBUG)
+	call DebugPressedOrHeldB
+	ret nz
+ENDC
 	xor a
 	ldh [hJoyHeld], a
-	ld a, PAD_CTRL_PAD
-	ld [wJoyIgnore], a
+	call DisableDpad
 	ld a, PLAYER_DIR_DOWN
 	ld [wPlayerMovingDirection], a
 	ld a, SFX_STOP_ALL_MUSIC
@@ -177,7 +64,7 @@ SilphCo7FDefaultScript:
 	ldh [hSpriteIndex], a
 	call MoveSprite
 	ld a, SCRIPT_SILPHCO7F_RIVAL_START_BATTLE
-	jp SilphCo7FSetCurScript
+	jr SilphCo7FSetCurScript
 
 .RivalEncounterCoordinates:
 	dbmapcoord  3,  2
@@ -192,14 +79,12 @@ SilphCo7FDefaultScript:
 	db -1 ; end
 
 SilphCo7FRivalStartBattleScript:
-	ld a, [wStatusFlags5]
-	bit BIT_SCRIPTED_NPC_MOVEMENT, a
+	call IsNPCAutoMoving
 	ret nz
 	; reset rival's sprite behaviour bytes otherwise he can look around weirdly after battle for a moment
 	ld hl, wMapSpriteData + ((SILPHCO7F_RIVAL - 1) * 2)
 	ld [hl], UP
-	xor a
-	ld [wJoyIgnore], a
+	call EnableAllJoypad
 	ld a, TEXT_SILPHCO7F_RIVAL_WAITED_HERE
 	ldh [hTextID], a
 	call DisplayTextID
@@ -217,14 +102,27 @@ SilphCo7FRivalStartBattleScript:
 	add 6 ; third set of rival parties for RIVAL2
 	ld [wTrainerNo], a
 	ld a, SCRIPT_SILPHCO7F_RIVAL_AFTER_BATTLE
-	jp SilphCo7FSetCurScript
+	jr SilphCo7FSetCurScript
+
+SilphCo7FRivalDefeatedText:
+	text_far_end _SilphCo7FRivalDefeatedText
+
+SilphCo7FRivalVictoryText:
+	text_far_end _SilphCo7FRivalVictoryText
+
+SilphCo7FSetDefaultScript:
+	call EnableAllJoypad
+
+SilphCo7FSetCurScript:
+	ld [wSilphCo7FCurScript], a
+	ld [wCurMapScript], a
+	ret
 
 SilphCo7FRivalAfterBattleScript:
 	ld a, [wIsInBattle]
 	cp $ff
-	jp z, SilphCo7FSetDefaultScript
-	ld a, PAD_CTRL_PAD
-	ld [wJoyIgnore], a
+	jr z, SilphCo7FSetDefaultScript
+	call DisableDpad
 	SetEvent EVENT_BEAT_SILPH_CO_RIVAL
 	ld a, PLAYER_DIR_DOWN
 	ld [wPlayerMovingDirection], a
@@ -247,7 +145,7 @@ SilphCo7FRivalAfterBattleScript:
 	ldh [hSpriteIndex], a
 	call MoveSprite
 	ld a, SCRIPT_SILPHCO7F_RIVAL_EXIT
-	jp SilphCo7FSetCurScript
+	jr SilphCo7FSetCurScript
 
 .RivalExitRightMovement:
 	db NPC_MOVEMENT_RIGHT
@@ -265,54 +163,95 @@ SilphCo7FRivalAfterBattleScript:
 	db -1 ; end
 
 SilphCo7FRivalExitScript:
-	ld a, [wStatusFlags5]
-	bit BIT_SCRIPTED_NPC_MOVEMENT, a
+	call IsNPCAutoMoving
 	ret nz
-	ld a, TOGGLE_SILPH_CO_7F_RIVAL
-	ld [wToggleableObjectIndex], a
-	predef HideObject
+	; PureRGBnote: ADDED: make rival teleport away
+	ld a, SILPHCO7F_RIVAL
+	call SetSpriteFacingDown
+	call UpdateSpritesAndDelay3
+	ld a, SFX_TELEPORT_EXIT_1
+	rst _PlaySound
+	call DisableSpriteUpdates
+.loopTeleportAway
+	ld hl, wShadowOAMSprite08YCoord
+	ld b, 0
+	ld d, [hl]
+	inc hl
+	; we will move up 3 pixels per frame, but the sprite hits pixel 0 (off top of screen), we will end the animation
+	dec d
+	jr z, .lastLoop
+	dec d
+	jr z, .lastLoop
+	dec d
+	jr z, .lastLoop
+.next
+	ld e, [hl]
+	ld c, 8
+	push bc
+	callfar LoadSpecificOAMSpriteCoords
+	pop bc
+	dec b
+	inc b
+	jr nz, .done
+	rst _DelayFrame
+	jr .loopTeleportAway
+.lastLoop
+	inc b
+	jr .next
+.done
+	call EnableSpriteUpdates
+	ld c, TOGGLE_SILPH_CO_7F_RIVAL
+	call HideObject
 	call PlayDefaultMusic
-	xor a
-	ld [wJoyIgnore], a
-	jp SilphCo7FSetCurScript
+	jp SilphCo7FSetDefaultScript
 
 SilphCo7F_TextPointers:
 	def_text_pointers
-	dw_const SilphCo7FSilphWorkerM1Text,      TEXT_SILPHCO7F_SILPH_WORKER_M1
-	dw_const SilphCo7FSilphWorkerM2Text,      TEXT_SILPHCO7F_SILPH_WORKER_M2
-	dw_const SilphCo7FSilphWorkerM3Text,      TEXT_SILPHCO7F_SILPH_WORKER_M3
-	dw_const SilphCo7FSilphWorkerM4Text,      TEXT_SILPHCO7F_SILPH_WORKER_M4
-	dw_const SilphCo7FRocket1Text,            TEXT_SILPHCO7F_ROCKET1
-	dw_const SilphCo7FScientistText,          TEXT_SILPHCO7F_SCIENTIST
-	dw_const SilphCo7FRocket2Text,            TEXT_SILPHCO7F_ROCKET2
-	dw_const SilphCo7FRocket3Text,            TEXT_SILPHCO7F_ROCKET3
-	dw_const SilphCo7FRivalText,              TEXT_SILPHCO7F_RIVAL
-	dw_const PickUpItemText,                  TEXT_SILPHCO7F_ITEM1
-	dw_const PickUpItemText,                  TEXT_SILPHCO7F_ITEM2
-	dw_const SilphCo7FRivalWaitedHereText,    TEXT_SILPHCO7F_RIVAL_WAITED_HERE
-	dw_const SilphCo7FRivalDefeatedText,      TEXT_SILPHCO7F_RIVAL_DEFEATED
-	dw_const SilphCo7FRivalGoodLuckToYouText, TEXT_SILPHCO7F_RIVAL_GOOD_LUCK_TO_YOU
-	dw_const SilphCo7Text16,                  TEXT_SILPHCO7F_CARD_KEY_DONE
+	dba_const SilphCo7FSilphWorkerM1Text,      TEXT_SILPHCO7F_SILPH_WORKER_M1
+	dba_const SilphCo7FSilphWorkerM2Text,      TEXT_SILPHCO7F_SILPH_WORKER_M2
+	dba_const SilphCo7FSilphWorkerM3Text,      TEXT_SILPHCO7F_SILPH_WORKER_M3
+	dba_const SilphCo7FSilphWorkerM4Text,      TEXT_SILPHCO7F_SILPH_WORKER_M4
+	dba_const SilphCo7FRocket1Text,            TEXT_SILPHCO7F_ROCKET1
+	dba_const SilphCo7FScientistText,          TEXT_SILPHCO7F_SCIENTIST
+	dba_const SilphCo7FRocket2Text,            TEXT_SILPHCO7F_ROCKET2
+	dba_const SilphCo7FRocket3Text,            TEXT_SILPHCO7F_ROCKET3
+	dba_const _SilphCo7FRivalText,              TEXT_SILPHCO7F_RIVAL
+	dba_const PickUpItemText,                  TEXT_SILPHCO7F_ITEM1
+	dba_const PickUpItemText,                  TEXT_SILPHCO7F_ITEM2
+	dba_const _SilphCo7FRivalWaitedHereText,    TEXT_SILPHCO7F_RIVAL_WAITED_HERE
+	dba_const SilphCo7FRivalDefeatedText,      TEXT_SILPHCO7F_RIVAL_DEFEATED
+	dba_const _SilphCo7FRivalGoodLuckToYouText, TEXT_SILPHCO7F_RIVAL_GOOD_LUCK_TO_YOU
 
 SilphCo7TrainerHeaders:
 	def_trainers 5
 SilphCo7TrainerHeader0:
-	trainer EVENT_BEAT_SILPH_CO_7F_TRAINER_0, 2, SilphCo7FRocket1BattleText, SilphCo7FRocket1EndBattleText, SilphCo7FRocket1AfterBattleText
+	trainer EVENT_BEAT_SILPH_CO_7F_TRAINER_0, 2, _SilphCo7FRocket1BattleText, _SilphCo7FRocket1EndBattleText, _SilphCo7FRocket1AfterBattleText
 SilphCo7TrainerHeader1:
-	trainer EVENT_BEAT_SILPH_CO_7F_TRAINER_1, 3, SilphCo7FScientistBattleText, SilphCo7FScientistEndBattleText, SilphCo7FScientistAfterBattleText
+	trainer EVENT_BEAT_SILPH_CO_7F_TRAINER_1, 3, _SilphCo7FScientistBattleText, _SilphCo7FScientistEndBattleText, _SilphCo7FScientistAfterBattleText
 SilphCo7TrainerHeader2:
-	trainer EVENT_BEAT_SILPH_CO_7F_TRAINER_2, 3, SilphCo7FRocket2BattleText, SilphCo7FRocket2EndBattleText, SilphCo7FRocket2AfterBattleText
+	trainer EVENT_BEAT_SILPH_CO_7F_TRAINER_2, 3, _SilphCo7FRocket2BattleText, _SilphCo7FRocket2EndBattleText, _SilphCo7FRocket2AfterBattleText
 SilphCo7TrainerHeader3:
-	trainer EVENT_BEAT_SILPH_CO_7F_TRAINER_3, 4, SilphCo7FRocket3BattleText, SilphCo7FRocket3EndBattleText, SilphCo7FRocket3AfterBattleText
+	trainer EVENT_BEAT_SILPH_CO_7F_TRAINER_3, 4, _SilphCo7FRocket3BattleText, _SilphCo7FRocket3EndBattleText, _SilphCo7FRocket3AfterBattleText
 	db -1 ; end
+
+SilphCo7FRocket1Text:
+	script_trainer SilphCo7TrainerHeader0
+
+SilphCo7FScientistText:
+	script_trainer SilphCo7TrainerHeader1
+
+SilphCo7FRocket2Text:
+	script_trainer SilphCo7TrainerHeader2
+
+SilphCo7FRocket3Text:
+	script_trainer SilphCo7TrainerHeader3
 
 ; PureRGBnote: ADDED: the guy who gives you lapras will give you something else if you already received lapras from him in celadon earlier in game.
 SilphCo7FSilphWorkerM1Text:
 ; lapras guy
 	text_asm
-	ld a, TOGGLE_LAPRAS_GUY_CELADON
-	ld [wToggleableObjectIndex], a
-	predef HideObject
+	ld c, TOGGLE_LAPRAS_GUY_CELADON
+	call HideObject
 	CheckEventHL EVENT_GOT_LAPRAS_EARLY
 	jr nz, .gotLaprasAlready
 	ld a, [wStatusFlags4]
@@ -370,24 +309,19 @@ SilphCo7FSilphWorkerM1Text:
 	jr .done
 
 .HaveThisPokemonText
-	text_far _SilphCo7FSilphWorkerM1HaveThisPokemonText
-	text_end
+	text_far_end _SilphCo7FSilphWorkerM1HaveThisPokemonText
 
 .LaprasDescriptionText
-	text_far _SilphCo7FSilphWorkerM1LaprasDescriptionText
-	text_end
+	text_far_end _SilphCo7FSilphWorkerM1LaprasDescriptionText
 
 .IsOurPresidentOkText
-	text_far _SilphCo7FSilphWorkerM1IsOurPresidentOkText
-	text_end
+	text_far_end _SilphCo7FSilphWorkerM1IsOurPresidentOkText
 
 .SavedText
-	text_far _SilphCo7FSilphWorkerM1SavedText
-	text_end
+	text_far_end _SilphCo7FSilphWorkerM1SavedText
 
 .LaprasGuyAlreadyText
-	text_far _LaprasGuySilphCoAlreadyText
-	text_end
+	text_far_end _LaprasGuySilphCoAlreadyText
 
 .LaprasGuyReceivedItemText
 	text_far _LastTwoGurusReceivedItemText
@@ -395,170 +329,52 @@ SilphCo7FSilphWorkerM1Text:
 	text_end
 
 .LaprasGuyGoodLuckText
-	text_far _GenericGoodLuckText
-	text_end
+	text_far_end _GenericGoodLuckText
 
 .LaprasGuyNoBagRoomText
-	text_far _GenericNoRoomText
-	text_end
+	text_far_end _GenericNoRoomText
 
 SilphCo7FSilphWorkerM2Text:
 	text_asm
-	CheckEvent EVENT_BEAT_SILPH_CO_GIOVANNI
-	jr nz, .saved_silph
 	ld hl, .AfterTheMasterBallText
-	rst _PrintText
-	jr .done
-.saved_silph
-	ld hl, .CancelledTheMasterBallText
-	rst _PrintText
-.done
-	rst TextScriptEnd
+	ld de, .CancelledTheMasterBallText
+	jr SilphCo7FAfterChoicesScript
 
 .AfterTheMasterBallText
-	text_far _SilphCo7FSilphWorkerM2AfterTheMasterBallText
-	text_end
+	text_far_end _SilphCo7FSilphWorkerM2AfterTheMasterBallText
 
 .CancelledTheMasterBallText
-	text_far _SilphCo7FSilphWorkerM2CancelledMasterBallText
-	text_end
+	text_far_end _SilphCo7FSilphWorkerM2CancelledMasterBallText
 
 SilphCo7FSilphWorkerM3Text:
 	text_asm
-	CheckEvent EVENT_BEAT_SILPH_CO_GIOVANNI
-	jr nz, .saved_silph
 	ld hl, .ItWouldBeBadText
-	rst _PrintText
-	jr .done
-.saved_silph
-	ld hl, .YouChasedOffTeamRocketText
-	rst _PrintText
-.done
-	rst TextScriptEnd
+	ld de, .YouChasedOffTeamRocketText
+	jr SilphCo7FAfterChoicesScript
 
 .ItWouldBeBadText
-	text_far _SilphCo7FSilphWorkerM3ItWouldBeBadText
-	text_end
+	text_far_end _SilphCo7FSilphWorkerM3ItWouldBeBadText
 
 .YouChasedOffTeamRocketText
-	text_far _SilphCo7FSilphWorkerM3YouChasedOffTeamRocketText
-	text_end
+	text_far_end _SilphCo7FSilphWorkerM3YouChasedOffTeamRocketText
 
 SilphCo7FSilphWorkerM4Text:
 	text_asm
-	CheckEvent EVENT_BEAT_SILPH_CO_GIOVANNI
-	jr nz, .saved_silph
 	ld hl, .ItsReallyDangerousHereText
-	rst _PrintText
-	jr .done
-.saved_silph
-	ld hl, .SafeAtLastText
-	rst _PrintText
-.done
-	rst TextScriptEnd
+	ld de, .SafeAtLastText
+	jr SilphCo7FAfterChoicesScript
 
 .ItsReallyDangerousHereText
-	text_far _SilphCo7FSilphWorkerM4ItsReallyDangerousHereText
-	text_end
+	text_far_end _SilphCo7FSilphWorkerM4ItsReallyDangerousHereText
 
 .SafeAtLastText
-	text_far _SilphCo7FSilphWorkerM4SafeAtLastText
-	text_end
+	text_far_end _SilphCo7FSilphWorkerM4SafeAtLastText
 
-SilphCo7FRocket1Text:
-	text_asm
-	ld hl, SilphCo7TrainerHeader0
-	call TalkToTrainer
-	rst TextScriptEnd
-
-SilphCo7FRocket1BattleText:
-	text_far _SilphCo7FRocket1BattleText
-	text_end
-
-SilphCo7FRocket1EndBattleText:
-	text_far _SilphCo7FRocket1EndBattleText
-	text_end
-
-SilphCo7FRocket1AfterBattleText:
-	text_far _SilphCo7FRocket1AfterBattleText
-	text_end
-
-SilphCo7FScientistText:
-	text_asm
-	ld hl, SilphCo7TrainerHeader1
-	call TalkToTrainer
-	rst TextScriptEnd
-
-SilphCo7FScientistBattleText:
-	text_far _SilphCo7FScientistBattleText
-	text_end
-
-SilphCo7FScientistEndBattleText:
-	text_far _SilphCo7FScientistEndBattleText
-	text_end
-
-SilphCo7FScientistAfterBattleText:
-	text_far _SilphCo7FScientistAfterBattleText
-	text_end
-
-SilphCo7FRocket2Text:
-	text_asm
-	ld hl, SilphCo7TrainerHeader2
-	call TalkToTrainer
-	rst TextScriptEnd
-
-SilphCo7FRocket2BattleText:
-	text_far _SilphCo7FRocket2BattleText
-	text_end
-
-SilphCo7FRocket2EndBattleText:
-	text_far _SilphCo7FRocket2EndBattleText
-	text_end
-
-SilphCo7FRocket2AfterBattleText:
-	text_far _SilphCo7FRocket2AfterBattleText
-	text_end
-
-SilphCo7FRocket3Text:
-	text_asm
-	ld hl, SilphCo7TrainerHeader3
-	call TalkToTrainer
-	rst TextScriptEnd
-
-SilphCo7FRocket3BattleText:
-	text_far _SilphCo7FRocket3BattleText
-	text_end
-
-SilphCo7FRocket3EndBattleText:
-	text_far _SilphCo7FRocket3EndBattleText
-	text_end
-
-SilphCo7FRocket3AfterBattleText:
-	text_far _SilphCo7FRocket3AfterBattleText
-	text_end
-
-SilphCo7FRivalText:
-	text_asm
-	ld hl, .Text
+SilphCo7FAfterChoicesScript:
+	CheckEvent EVENT_BEAT_SILPH_CO_GIOVANNI
+	jr z, .printDone
+	ld h, d
+	ld l, e
+.printDone
 	rst _PrintText
 	rst TextScriptEnd
-
-.Text:
-	text_far _SilphCo7FRivalText
-	text_end
-
-SilphCo7FRivalWaitedHereText:
-	text_far _SilphCo7FRivalWaitedHereText
-	text_end
-
-SilphCo7FRivalDefeatedText:
-	text_far _SilphCo7FRivalDefeatedText
-	text_end
-
-SilphCo7FRivalVictoryText:
-	text_far _SilphCo7FRivalVictoryText
-	text_end
-
-SilphCo7FRivalGoodLuckToYouText:
-	text_far _SilphCo7FRivalGoodLuckToYouText
-	text_end

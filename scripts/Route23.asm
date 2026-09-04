@@ -1,9 +1,8 @@
 Route23_Script:
 	call Route23SetVictoryRoadBoulders
-	call EnableAutoTextBoxDrawing
 	ld hl, Route23_ScriptPointers
-	ld a, [wRoute23CurScript]
-	jp CallFunctionInTable
+	ld de, wRoute23CurScript
+	jp CallMapScriptInTable
 
 Route23SetVictoryRoadBoulders:
 	ld hl, wCurrentMapScriptFlags
@@ -12,12 +11,10 @@ Route23SetVictoryRoadBoulders:
 	ret z
 	ResetEvents EVENT_VICTORY_ROAD_2_BOULDER_ON_SWITCH1, EVENT_VICTORY_ROAD_2_BOULDER_ON_SWITCH2
 	ResetEvents EVENT_VICTORY_ROAD_3_BOULDER_ON_SWITCH1, EVENT_VICTORY_ROAD_3_BOULDER_ON_SWITCH2
-	ld a, TOGGLE_VICTORY_ROAD_3F_BOULDER
-	ld [wToggleableObjectIndex], a
-	predef ShowObject
-	ld a, TOGGLE_VICTORY_ROAD_2F_BOULDER
-	ld [wToggleableObjectIndex], a
-	predef_jump HideObject
+	ld c, TOGGLE_VICTORY_ROAD_3F_BOULDER
+	call ShowObject
+	ld c, TOGGLE_VICTORY_ROAD_2F_BOULDER
+	jp HideObject
 
 Route23_ScriptPointers:
 	def_script_pointers
@@ -51,9 +48,7 @@ Route23DefaultScript:
 	ld [wWhichBadge], a
 	ld b, FLAG_TEST
 	EventFlagAddress hl, EVENT_PASSED_CASCADEBADGE_CHECK
-	predef FlagActionPredef
-	ld a, c
-	and a
+	call FlagAction
 	ret nz
 	call Route23CopyBadgeTextScript
 	call DisplayTextID
@@ -81,9 +76,9 @@ Route23MovePlayerDownScript:
 	ld [wSimulatedJoypadStatesIndex], a
 	ld a, PAD_DOWN
 	ld [wSimulatedJoypadStatesEnd], a
-	xor a
+	call EnableAllJoypad
+	; a = 0 due to EnableAllJoypad
 	ld [wSpritePlayerStateData1FacingDirection], a
-	ld [wJoyIgnore], a
 	jp StartSimulatingJoypadStates
 
 Route23PlayerMovingScript:
@@ -97,16 +92,16 @@ Route23ResetToDefaultScript:
 
 Route23_TextPointers:
 	def_text_pointers
-	dw_const Route23Guard1Text,              TEXT_ROUTE23_GUARD1
-	dw_const Route23Guard2Text,              TEXT_ROUTE23_GUARD2
-	dw_const Route23Swimmer1Text,            TEXT_ROUTE23_SWIMMER1
-	dw_const Route23Swimmer2Text,            TEXT_ROUTE23_SWIMMER2
-	dw_const Route23Guard3Text,              TEXT_ROUTE23_GUARD3
-	dw_const Route23Guard4Text,              TEXT_ROUTE23_GUARD4
-	dw_const Route23Guard5Text,              TEXT_ROUTE23_GUARD5
-	dw_const PickUpItemText,                 TEXT_ROUTE23_ITEM1 ; PureRGBnote: ADDED: new item on this route.
-	dw_const PickUpItemText,                 TEXT_ROUTE23_ITEM2 ; PureRGBnote: ADDED: new item on this route.
-	dw_const Route23VictoryRoadGateSignText, TEXT_ROUTE23_VICTORY_ROAD_GATE_SIGN
+	dba_const Route23Guard1Text,              TEXT_ROUTE23_GUARD1
+	dba_const Route23Guard2Text,              TEXT_ROUTE23_GUARD2
+	dba_const Route23Swimmer1Text,            TEXT_ROUTE23_SWIMMER1
+	dba_const Route23Swimmer2Text,            TEXT_ROUTE23_SWIMMER2
+	dba_const Route23Guard3Text,              TEXT_ROUTE23_GUARD3
+	dba_const Route23Guard4Text,              TEXT_ROUTE23_GUARD4
+	dba_const Route23Guard5Text,              TEXT_ROUTE23_GUARD5
+	dba_const PickUpItemText,                 TEXT_ROUTE23_ITEM1 ; PureRGBnote: ADDED: new item on this route.
+	dba_const PickUpItemText,                 TEXT_ROUTE23_ITEM2 ; PureRGBnote: ADDED: new item on this route.
+	dba_const _Route23VictoryRoadGateSignText, TEXT_ROUTE23_VICTORY_ROAD_GATE_SIGN
 
 Route23Guard1Text:
 	text_asm
@@ -158,9 +153,7 @@ Route23CheckForBadgeScript:
 	ld c, a
 	ld b, FLAG_TEST
 	ld hl, wObtainedBadges
-	predef FlagActionPredef
-	ld a, c
-	and a
+	call FlagAction
 	jr nz, .have_badge
 	ld hl, Route23YouDontHaveTheBadgeYetText
 	rst _PrintText
@@ -175,14 +168,10 @@ Route23CheckForBadgeScript:
 	ld c, a
 	ld b, FLAG_SET
 	EventFlagAddress hl, EVENT_PASSED_CASCADEBADGE_CHECK
-	predef FlagActionPredef
+	call FlagAction
 	ld a, SCRIPT_ROUTE23_RESET_TO_DEFAULT
 	ld [wRoute23CurScript], a
 	ret
-
-Route23PrintOhThatsTheBadgeTextScript: ; unreferenced
-	ld hl, Route23OhThatIsTheBadgeText
-	jp PrintText
 
 Route23YouDontHaveTheBadgeYetText:
 	text_far _Route23YouDontHaveTheBadgeYetText
@@ -195,9 +184,4 @@ Route23YouDontHaveTheBadgeYetText:
 Route23OhThatIsTheBadgeText:
 	text_far _Route23OhThatIsTheBadgeText
 	sound_get_item_1
-	text_far _Route23GoRightAheadText
-	text_end
-
-Route23VictoryRoadGateSignText:
-	text_far _Route23VictoryRoadGateSignText
-	text_end
+	text_far_end _Route23GoRightAheadText

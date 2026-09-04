@@ -17,7 +17,8 @@
 	const EVENT_SAW_LEARNSET_UNLOCK_TEXT_ONCE
 	const EVENT_PAUSED_MUSIC_BEFORE_BATTLE
 	const EVENT_ALREADY_BACKED_UP_MUSIC_BEFORE_BATTLE
-	const_skip 6
+	const EVENT_INITIALIZED_BOX_NAMES
+	const_skip 5
 	const EVENT_MET_DAD
 	const EVENT_CALLED_DAD_WAITING
 	const EVENT_GOT_TOWN_MAP
@@ -34,7 +35,7 @@
 	const EVENT_BATTLED_RIVAL_IN_OAKS_LAB
 	const EVENT_GOT_POKEBALLS_FROM_OAK
 	const EVENT_GOT_POKEDEX
-	const EVENT_PALLET_AFTER_GETTING_POKEBALLS_2
+	const_skip ; used to be EVENT_PALLET_AFTER_GETTING_POKEBALLS_2 which seemed pointless
 	const EVENT_OAK_APPEARED_IN_PALLET
 
 	; pureRGBnote: no free event space?
@@ -44,8 +45,9 @@
 	const EVENT_VIRIDIAN_GYM_OPEN
 	const EVENT_GOT_TM42
 	const EVENT_USING_MAX_REPEL
-	const_skip 13
-	const EVENT_OAK_GOT_PARCEL
+	const EVENT_NURSE_TEXT_LOOP_BLOCKER
+	const_skip 12
+	const_skip ; used to be EVENT_OAK_GOT_PARCEL but it's no different from EVENT_GOT_POKEDEX
 	const EVENT_GOT_OAKS_PARCEL
 	const EVENT_CHECKED_AROUND_SCHOOLHOUSE
 	const EVENT_GOT_MOVEDEX
@@ -767,7 +769,7 @@ DEF FLAG_JIGGLE_TOGGLE EQU const_value
 
 ; Route 20 events
 	const_next $500
-	const EVENT_IN_SEAFOAM_ISLANDS
+	const_skip ; used to be EVENT_IN_SEAFOAM_ISLANDS but this wasn't necessary
 	const EVENT_BEAT_ROUTE_20_TRAINER_0
 	const EVENT_BEAT_ROUTE_20_TRAINER_1
 	const EVENT_BEAT_ROUTE_20_TRAINER_2
@@ -1272,15 +1274,15 @@ DEF INDIGO_PLATEAU_EVENTS_START EQU const_value
 	const_skip
 	const EVENT_BEAT_LORELEIS_ROOM_TRAINER_0
 	const_skip 4
-	const EVENT_AUTOWALKED_INTO_LORELEIS_ROOM
+	const_skip ;const EVENT_AUTOWALKED_INTO_LORELEIS_ROOM ; no longer used but would need save file updater to use
 	const_skip 2
 	const EVENT_BEAT_BRUNOS_ROOM_TRAINER_0
 	const_skip 4
-	const EVENT_AUTOWALKED_INTO_BRUNOS_ROOM
+	const_skip ;const EVENT_AUTOWALKED_INTO_BRUNOS_ROOM ; no longer used but would need save file updater to use
 	const_skip 2
 	const EVENT_BEAT_AGATHAS_ROOM_TRAINER_0
 	const_skip 4
-	const EVENT_AUTOWALKED_INTO_AGATHAS_ROOM
+	const_skip ;const EVENT_AUTOWALKED_INTO_AGATHAS_ROOM ; no longer used but would need save file updater to use
 	const_skip 2
 	const EVENT_BEAT_LANCES_ROOM_TRAINER_0
 	const_skip 4

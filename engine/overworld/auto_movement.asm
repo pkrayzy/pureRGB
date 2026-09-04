@@ -28,13 +28,10 @@ ForceStepFromDoor::
 	ld hl, wMovementFlags
 	res BIT_STANDING_ON_DOOR, [hl]
 	res BIT_EXITING_DOOR, [hl]
-	ld hl, wStatusFlags5
-	res BIT_SCRIPTED_MOVEMENT_STATE, [hl]
-	ret
+	jp StopPlayerAutoMoving
 
 _EndNPCMovementScript::
-	ld hl, wStatusFlags5
-	res BIT_SCRIPTED_MOVEMENT_STATE, [hl]
+	call StopPlayerAutoMoving
 	ld hl, wStatusFlags4
 	res BIT_INIT_SCRIPTED_MOVEMENT, [hl]
 	ld hl, wMovementFlags
@@ -90,13 +87,12 @@ PalletMovementScript_OakMoveLeft:
 	ret
 
 PalletMovementScript_PlayerMoveLeft:
-	ld a, [wStatusFlags5]
-	bit BIT_SCRIPTED_NPC_MOVEMENT, a
+	call IsNPCAutoMoving
 	ret nz ; return if Oak is still moving
 	ld a, [wNumStepsToTake]
 	ld [wSimulatedJoypadStatesIndex], a
 	ldh [hNPCMovementDirections2Index], a
-	predef ConvertNPCMovementDirectionsToJoypadMasks
+	callfar ConvertNPCMovementDirectionsToJoypadMasks
 	call StartSimulatingJoypadStates
 	ld a, $2
 	ld [wNPCMovementScriptFunctionNum], a
@@ -125,8 +121,7 @@ PalletMovementScript_WalkToLab:
 	call DecodeRLEList
 	ld hl, wStatusFlags4
 	res BIT_INIT_SCRIPTED_MOVEMENT, [hl]
-	ld hl, wStatusFlags5
-	set BIT_SCRIPTED_MOVEMENT_STATE, [hl]
+	call SetPlayerAutoMoving
 	ld a, $4
 	ld [wNPCMovementScriptFunctionNum], a
 	ret
@@ -152,11 +147,9 @@ PalletMovementScript_Done:
 	ld a, [wSimulatedJoypadStatesIndex]
 	and a
 	ret nz
-	ld a, TOGGLE_PALLET_TOWN_OAK
-	ld [wToggleableObjectIndex], a
-	predef HideObject
-	ld hl, wStatusFlags5
-	res BIT_SCRIPTED_MOVEMENT_STATE, [hl]
+	ld c, TOGGLE_PALLET_TOWN_OAK
+	call HideObject
+	call StopPlayerAutoMoving
 	ld hl, wStatusFlags4
 	res BIT_INIT_SCRIPTED_MOVEMENT, [hl]
 	jp EndNPCMovementScript
@@ -183,8 +176,8 @@ PewterMovementScript_WalkToMuseum:
 	dec a
 	ld [wSimulatedJoypadStatesIndex], a
 	xor a
-	ld [wWhichPewterGuy], a
-	predef PewterGuys
+	ld d, a ; which pewter guy
+	callfar PewterGuys
 	ld hl, wNPCMovementDirections2
 	ld de, RLEList_PewterMuseumGuy
 	call DecodeRLEList
@@ -212,8 +205,7 @@ PewterMovementScript_Done:
 	ld a, [wSimulatedJoypadStatesIndex]
 	and a
 	ret nz
-	ld hl, wStatusFlags5
-	res BIT_SCRIPTED_MOVEMENT_STATE, [hl]
+	call StopPlayerAutoMoving
 	ld hl, wStatusFlags4
 	res BIT_INIT_SCRIPTED_MOVEMENT, [hl]
 	jp EndNPCMovementScript
@@ -241,15 +233,14 @@ PewterMovementScript_WalkToGym:
 	dec a
 	ld [wSimulatedJoypadStatesIndex], a
 	ld a, 1
-	ld [wWhichPewterGuy], a
-	predef PewterGuys
+	ld d, a ; which pewter guy
+	callfar PewterGuys
 	ld hl, wNPCMovementDirections2
 	ld de, RLEList_PewterGymGuy
 	call DecodeRLEList
 	ld hl, wStatusFlags4
 	res BIT_INIT_SCRIPTED_MOVEMENT, [hl]
-	ld hl, wStatusFlags5
-	set BIT_SCRIPTED_MOVEMENT_STATE, [hl]
+	call SetPlayerAutoMoving
 	ld a, $1
 	ld [wNPCMovementScriptFunctionNum], a
 	ret
