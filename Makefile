@@ -198,9 +198,9 @@ gfx/tilesets/reds_house.2bpp: tools/gfx += --preserve=0x48
 
 gfx/trade/game_boy.2bpp: tools/gfx += --remove-duplicates
 
-gfx/sgb/blue_border.sgb.tilemap: gfx/sgb/blue_border.tilemap ; tr < $< -d '\000' > $@
-gfx/sgb/red_border.sgb.tilemap: gfx/sgb/red_border.tilemap ; tr < $< -d '\000' > $@
-gfx/sgb/green_border.sgb.tilemap: gfx/sgb/green_border.tilemap ; tr < $< -d '\000' > $@
+gfx/sgb/blue_border.sgb.tilemap: gfx/sgb/blue_border.tilemap ; LC_ALL=C tr < $< -d '\000' > $@
+gfx/sgb/red_border.sgb.tilemap: gfx/sgb/red_border.tilemap ; LC_ALL=C tr < $< -d '\000' > $@
+gfx/sgb/green_border.sgb.tilemap: gfx/sgb/green_border.tilemap ; LC_ALL=C tr < $< -d '\000' > $@
 
 
 ### Catch-all graphics rules

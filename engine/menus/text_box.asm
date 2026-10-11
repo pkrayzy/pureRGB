@@ -538,7 +538,7 @@ GetMonFieldMoves:
 	push hl
 	push de
 	ld [wMoveNum], a
-	predef CanLearnTM
+	callfar CanLearnTM
 	ld a, c
 	and a
 	pop de
